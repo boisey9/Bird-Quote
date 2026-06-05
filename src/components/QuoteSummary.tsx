@@ -1,4 +1,5 @@
 import { Pencil } from 'lucide-react';
+import { seatCmsConfig } from '../data/featureOptionMatrix';
 import type { FeatureSelection, RfqDraft, RfqStep } from '../types/rfq';
 
 type QuoteSummaryProps = {
@@ -12,6 +13,8 @@ type QuoteSummaryProps = {
 };
 
 export function QuoteSummary({ draft, progress, step, selectedChassis, selectedWheelbase, selectedBusType, features }: QuoteSummaryProps) {
+  const selectedSeatLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId)?.title ?? draft.seatPackage.layoutId;
+
   return (
     <aside className="summary">
       <h3>Quote Summary <button>Edit <Pencil size={14} /></button></h3>
@@ -39,6 +42,16 @@ export function QuoteSummary({ draft, progress, step, selectedChassis, selectedW
       <strong>{draft.specs.wheelchairCapacity}</strong>
       {step >= 3 && (
         <>
+          <hr />
+          <small>SEATS</small>
+          <span>Selected Layout</span>
+          <strong>{selectedSeatLayout}</strong>
+          <span>Material / Color</span>
+          <strong>{draft.seatPackage.material} / {draft.seatPackage.color}</strong>
+          <span>Seat Types</span>
+          <strong>{draft.seatGroups.length}</strong>
+          <span>Wheelchair Positions</span>
+          <strong>{draft.seatPackage.wheelchairPositions}</strong>
           <hr />
           <small>SELECTED FEATURES</small>
           {features.map((feature) => (
