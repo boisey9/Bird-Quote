@@ -23,6 +23,25 @@ export interface BusSpecs {
   wheelchairCapacity: number;
 }
 
+export interface SeatPackage {
+  layoutId: string;
+  material: string;
+  color: string;
+  estimatedPassengerSeats: number;
+  wheelchairPositions: number;
+}
+
+export interface SeatGroup {
+  id: string;
+  name: string;
+  quantity: number;
+  seatStyle: string;
+  restraintType: string;
+  armrest: string;
+  grabType: string;
+  branding: string;
+}
+
 export interface FeatureSelection {
   category: string;
   label: string;
@@ -32,6 +51,8 @@ export interface FeatureSelection {
 export interface RfqDraft {
   company: CompanyInfo;
   specs: BusSpecs;
+  seatPackage: SeatPackage;
+  seatGroups: SeatGroup[];
   features: FeatureSelection[];
   confirmedAccuracy: boolean;
   consentToContact: boolean;
@@ -133,4 +154,8 @@ export interface SeatCmsConfig {
   seatTypes: string[];
   materials: string[];
   colors: string[];
+  restraintTypes: string[];
+  armrests: string[];
+  grabTypes: string[];
+  brandingOptions: string[];
 }
