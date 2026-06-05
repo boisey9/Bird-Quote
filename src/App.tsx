@@ -2,10 +2,13 @@ import { useMemo, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { busSpecMatrixData } from './data/busSpecMatrix';
 import { initialDraft } from './data/initialDraft';
-import { Header } from './components/Header';
+import { Header, type AppPage } from './components/Header';
 import { RecentRequests } from './components/RecentRequests';
 import { Hero, Stepper } from './components/RfqShell';
 import { QuoteSummary } from './components/QuoteSummary';
+import { MyRequestsPage } from './components/pages/MyRequestsPage';
+import { QuoteStatusPage } from './components/pages/QuoteStatusPage';
+import './components/pages/PageStyles.css';
 import { CompanyStep } from './components/steps/CompanyStep';
 import { SpecsStep } from './components/steps/SpecsStep';
 import { FeaturesStep } from './components/steps/FeaturesStep';
@@ -13,6 +16,7 @@ import { ReviewStep } from './components/steps/ReviewStep';
 import type { RfqDraft, RfqStep } from './types/rfq';
 
 export function App() {
+  const [page, setPage] = useState<AppPage>('new-quote');
   const [step, setStep] = useState<RfqStep>(1);
   const [draft, setDraft] = useState<RfqDraft>(initialDraft);
 
@@ -31,40 +35,52 @@ export function App() {
 
   return (
     <div className="appShell">
-      <Header />
-      <main className="layout">
-        <RecentRequests />
-        <section className="contentCard">
-          <Hero step={step} />
-          <Stepper step={step} />
-          {step === 1 && <CompanyStep draft={draft} setDraft={setDraft} />}
-          {step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}
-          {step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}
-          {step === 4 && (
-            <ReviewStep
-              draft={draft}
-              selectedChassis={selectedChassisName}
-              selectedWheelbase={selectedWheelbaseName}
-              selectedBusType={selectedBusTypeName}
-            />
-          )}
-          <div className="actions">
-            <button className="secondary" onClick={goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
-            <button className="primary" onClick={step === 4 ? undefined : goNext}>
-              {step === 4 ? 'Submit Quote Request' : step === 1 ? 'Next: Bus Specifications' : step === 2 ? 'Next: Features & Options' : 'Next: Review & Submit'} <ArrowRight size={18} />
-            </button>
-          </div>
-        </section>
-        <QuoteSummary
-          draft={draft}
-          progress={progress}
-          step={step}
-          selectedChassis={selectedChassisName}
-          selectedWheelbase={selectedWheelbaseName}
-          selectedBusType={selectedBusTypeName}
-          features={summaryFeatures}
-        />
-      </main>
+      <Header page={page} onNavigate={setPage} />
+      {page === 'new-quote' && (
+        <main className="layout">
+          <RecentRequests />
+          <section className="contentCard">
+            <Hero step={step} />
+            <Stepper step={step} />
+            {step === 1 && <CompanyStep draft={draft} setDraft={setDraft} />}
+            {step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}
+            {step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}
+            {step === 4 && (
+              <ReviewStep
+                draft={draft}
+                selectedChassis={selectedChassisName}
+                selectedWheelbase={selectedWheelbaseName}
+                selectedBusType={selectedBusTypeName}
+              />
+            )}
+            <div className="actions">
+              <button className="secondary" onClick={goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
+              <button className="primary" onClick={step === 4 ? undefined : goNext}>
+                {step === 4 ? 'Submit Quote Request' : step === 1 ? 'Next: Bus Specifications' : step === 2 ? 'Next: Features & Options' : 'Next: Review & Submit'} <ArrowRight size={18} />
+              </button>
+            </div>
+          </section>
+          <QuoteSummary
+            draft={draft}
+            progress={progress}
+            step={step}
+            selectedChassis={selectedChassisName}
+            selectedWheelbase={selectedWheelbaseName}
+            selectedBusType={selectedBusTypeName}
+            features={summaryFeatures}
+          />
+        </main>
+      )}
+      {page === 'my-requests' && (
+        <main className="layout singlePageLayout">
+          <MyRequestsPage />
+        </main>
+      )}
+      {page === 'quote-status' && (
+        <main className="layout singlePageLayout">
+          <QuoteStatusPage />
+        </main>
+      )}
     </div>
   );
 }
