@@ -1,10 +1,11 @@
+import type { Dispatch, SetStateAction } from 'react';
 import { busTypes, chassisOptions, wheelbaseOptions } from '../../data/rfqData';
 import { Counter, Range } from '../FormControls';
 import type { RfqDraft } from '../../types/rfq';
 
 type SpecsStepProps = {
   draft: RfqDraft;
-  setDraft: React.Dispatch<React.SetStateAction<RfqDraft>>;
+  setDraft: Dispatch<SetStateAction<RfqDraft>>;
 };
 
 export function SpecsStep({ draft, setDraft }: SpecsStepProps) {
