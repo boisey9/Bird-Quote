@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { busTypes, chassisOptions, wheelbaseOptions } from './data/rfqData';
+import { busSpecMatrixData } from './data/busSpecMatrix';
 import { initialDraft } from './data/initialDraft';
 import { Header } from './components/Header';
 import { RecentRequests } from './components/RecentRequests';
@@ -16,9 +16,9 @@ export function App() {
   const [step, setStep] = useState<RfqStep>(1);
   const [draft, setDraft] = useState<RfqDraft>(initialDraft);
 
-  const selectedChassis = chassisOptions.find((item) => item.id === draft.specs.chassis);
-  const selectedWheelbase = wheelbaseOptions.find((item) => item.id === draft.specs.wheelbase);
-  const selectedBusType = busTypes.find((item) => item.id === draft.specs.busType);
+  const selectedChassis = busSpecMatrixData.chassis.find((item) => item.id === draft.specs.chassis);
+  const selectedWheelbase = busSpecMatrixData.wheelbases.find((item) => item.id === draft.specs.wheelbase);
+  const selectedBusType = busSpecMatrixData.busTypes.find((item) => item.id === draft.specs.busType);
   const summaryFeatures = useMemo(() => draft.features.slice(0, 6), [draft.features]);
   const progress = step * 25;
 
