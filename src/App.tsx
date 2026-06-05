@@ -31,6 +31,12 @@ export function App() {
 
   const goNext = () => setStep((current) => Math.min(4, current + 1) as RfqStep);
   const goBack = () => setStep((current) => Math.max(1, current - 1) as RfqStep);
+  const startNewRfq = () => {
+    setDraft(initialDraft);
+    setStep(1);
+    setSubmitStatus('');
+    setPage('new-quote');
+  };
 
   const selectedChassisName = selectedChassis?.name ?? '';
   const selectedWheelbaseName = selectedWheelbase?.name ?? '';
@@ -89,7 +95,7 @@ export function App() {
           <QuoteSummary draft={draft} progress={progress} step={step} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} features={summaryFeatures} />
         </main>
       )}
-      {page === 'my-requests' && <main className="layout singlePageLayout"><MyRequestsPage /></main>}
+      {page === 'my-requests' && <main className="layout singlePageLayout"><MyRequestsPage onStartNew={startNewRfq} /></main>}
       {page === 'quote-status' && <main className="layout singlePageLayout"><QuoteStatusPage /></main>}
     </div>
   );
