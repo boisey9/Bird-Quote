@@ -92,3 +92,45 @@ export interface FeatureCategory {
   name: string;
   options: FeatureSelection[];
 }
+
+export interface FeatureOptionCategory {
+  id: number;
+  title: string;
+  description: string;
+  sortOrder: number;
+  active: boolean;
+  comments: string;
+}
+
+export interface FeatureOptionItem {
+  id: number;
+  categoryId: number;
+  title: string;
+  description: string;
+  sortOrder: number;
+  active: boolean;
+  imageExt: string;
+}
+
+export interface SeatLayoutTemplate {
+  id: string;
+  title: string;
+  description: string;
+  maxSeats: number;
+  layoutType: string;
+}
+
+export interface SeatLayoutRule {
+  layoutId: string;
+  chassisIds: string[];
+  busTypeIds: string[];
+  wheelbaseIds: string[];
+}
+
+export interface SeatCmsConfig {
+  layouts: SeatLayoutTemplate[];
+  rules: SeatLayoutRule[];
+  seatTypes: string[];
+  materials: string[];
+  colors: string[];
+}
