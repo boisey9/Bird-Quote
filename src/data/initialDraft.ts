@@ -14,7 +14,8 @@ export const initialDraft: RfqDraft = {
   },
   specs: {
     chassis: 'ford',
-    wheelbase: '158-drw',
+    certification: 'ford-shuttle',
+    wheelbase: 'ford-158-drw',
     busType: 'hotel',
     quantity: 1,
     seatingCapacity: 16,
