@@ -2,7 +2,7 @@ import type { BusSpecs, FeatureOptionCategory, FeatureOptionItem, SeatCmsConfig 
 
 export const featureOptionCategories: FeatureOptionCategory[] = [
   { id: 1, title: 'Layout', description: 'Customer-facing layout intent and floorplan reference.', sortOrder: 1, active: true, comments: 'Market segments and layout intent. Seats module is managed separately.' },
-  { id: 17, title: 'Seats', description: 'Seat layout, material, color, belts, and seat-type requirements.', sortOrder: 2, active: true, comments: 'Critical CMS-managed module by model/wheelbase.' },
+  { id: 17, title: 'Seats', description: 'Seat layout, material, color, and seat type requirements.', sortOrder: 2, active: true, comments: 'Critical CMS-managed module by model/wheelbase.' },
   { id: 9, title: 'Interior Features', description: 'Interior materials, grab rails, wall/ceiling finish, lighting, and flooring.', sortOrder: 3, active: true, comments: '' },
   { id: 7, title: 'Doors and Accessibility', description: 'Entry door, wheelchair lift/ramp, securement, handrails, and accessibility aids.', sortOrder: 4, active: true, comments: '' },
   { id: 2, title: 'Climate and Comfort', description: 'A/C, heating, defrost, comfort package, and passenger climate requirements.', sortOrder: 5, active: true, comments: '' },
@@ -39,24 +39,34 @@ export const featureOptions: FeatureOptionItem[] = [
 
 export const seatCmsConfig: SeatCmsConfig = {
   layouts: [
-    { id: 'front-facing-2x2', title: '2x2 Front Facing', description: 'Standard forward-facing passenger rows.', maxSeats: 16, layoutType: 'front_facing' },
-    { id: 'front-facing-2x1', title: '2x1 Front Facing', description: 'Narrower aisle layout for access or smaller groups.', maxSeats: 14, layoutType: 'front_facing' },
-    { id: 'school-3x3', title: '3x3 School Layout', description: 'School-style bench layout reference.', maxSeats: 30, layoutType: 'school' },
-    { id: 'perimeter', title: 'Perimeter Seating', description: 'Side-facing seating for specialty commercial applications.', maxSeats: 12, layoutType: 'perimeter' },
-    { id: 'rear-lounge', title: 'Rear Lounge', description: 'Rear lounge or mixed passenger configuration.', maxSeats: 10, layoutType: 'lounge' },
-    { id: 'wheelchair-foldaway', title: 'Wheelchair / Foldaway', description: 'Accessible layout with wheelchair positions and foldaway seating.', maxSeats: 12, layoutType: 'accessible' }
+    { id: 'front-facing-2x2', title: '2x2 Front Facing', description: 'Standard paired seats with center aisle.', maxSeats: 24, layoutType: 'front_facing' },
+    { id: 'front-facing-2x1', title: '2x1 Front Facing', description: 'Single seats with center aisle.', maxSeats: 18, layoutType: 'front_facing' },
+    { id: 'perimeter', title: 'Perimeter Seating', description: 'Side-facing seating for shuttle use.', maxSeats: 18, layoutType: 'perimeter' },
+    { id: 'rear-lounge', title: 'Rear Lounge', description: 'Lounge-style seating at the rear.', maxSeats: 16, layoutType: 'lounge' },
+    { id: 'school-3x3', title: '3x3 School Seating', description: 'High-capacity school seating layout.', maxSeats: 36, layoutType: 'school' },
+    { id: 'school-3x2', title: '3x2 School Seating', description: 'High-capacity school seating layout.', maxSeats: 30, layoutType: 'school' },
+    { id: 'school-3x1', title: '3x1 School Seating', description: 'Traditional school seating layout.', maxSeats: 24, layoutType: 'school' },
+    { id: 'school-2x2', title: '2x2 School Seating', description: 'School layout with paired seats.', maxSeats: 20, layoutType: 'school' },
+    { id: 'wheelchair-foldaway', title: 'Wheelchair / Foldaway', description: 'Space for wheelchair or foldaway seats.', maxSeats: 16, layoutType: 'accessible' }
   ],
   rules: [
     { layoutId: 'front-facing-2x2', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['commercial', 'hotel', 'airport', 'church', 'commercial-special-needs', 'assisted-living'], wheelbaseIds: [] },
     { layoutId: 'front-facing-2x1', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['commercial', 'hotel', 'airport', 'church', 'commercial-special-needs', 'assisted-living'], wheelbaseIds: [] },
-    { layoutId: 'school-3x3', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['church', 'commercial'], wheelbaseIds: [] },
     { layoutId: 'perimeter', chassisIds: ['ford', 'ford-transit'], busTypeIds: ['commercial', 'hotel', 'airport'], wheelbaseIds: ['ford-158-drw', 'ford-176-drw', 'transit-156-drw'] },
     { layoutId: 'rear-lounge', chassisIds: ['ford'], busTypeIds: ['hotel', 'commercial'], wheelbaseIds: ['ford-158-drw', 'ford-176-drw'] },
-    { layoutId: 'wheelchair-foldaway', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['commercial-special-needs', 'assisted-living', 'commercial'], wheelbaseIds: [] }
+    { layoutId: 'school-3x3', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['church', 'commercial'], wheelbaseIds: [] },
+    { layoutId: 'school-3x2', chassisIds: ['gm', 'ford'], busTypeIds: ['church', 'commercial'], wheelbaseIds: [] },
+    { layoutId: 'school-3x1', chassisIds: ['gm', 'ford'], busTypeIds: ['church', 'commercial'], wheelbaseIds: [] },
+    { layoutId: 'school-2x2', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['church', 'commercial'], wheelbaseIds: [] },
+    { layoutId: 'wheelchair-foldaway', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['commercial-special-needs', 'assisted-living', 'commercial', 'hotel'], wheelbaseIds: [] }
   ],
   seatTypes: ['High Back Standard', 'High Back Premium', 'Low Back Standard', 'Foldaway Seat', 'Perimeter / Lounge Seat'],
   materials: ['Vinyl', 'Cloth', 'Freedman Level 4 Vinyl'],
-  colors: ['Black', 'Gray', 'Blue', 'Custom']
+  colors: ['Black', 'Gray', 'Blue', 'Custom'],
+  restraintTypes: ['None', 'Lap Belt', '3-Point', 'Integrated Child Seat'],
+  armrests: ['None', 'Aisle Side', 'Wall Side', 'Both Sides'],
+  grabTypes: ['None', 'Standard Grab', 'Wall Grab Rail', 'Seat Back Grab'],
+  brandingOptions: ['No Branding', 'Standard Micro Bird', 'Customer Logo Patch', 'Custom Embroidery']
 };
 
 export function getVisibleFeatureCategories(specs: BusSpecs): FeatureOptionCategory[] {
