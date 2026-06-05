@@ -1,6 +1,13 @@
 import { Clock, FileText, HelpCircle, Menu, Plus } from 'lucide-react';
 
-export function Header() {
+export type AppPage = 'new-quote' | 'my-requests' | 'quote-status';
+
+type HeaderProps = {
+  page: AppPage;
+  onNavigate: (page: AppPage) => void;
+};
+
+export function Header({ page, onNavigate }: HeaderProps) {
   return (
     <header className="topbar">
       <div className="brand">
@@ -8,9 +15,9 @@ export function Header() {
         <span>MICRO BIRD</span>
       </div>
       <nav className="tabs">
-        <button className="active"><Plus size={18} /> New Quote</button>
-        <button><FileText size={18} /> My Requests</button>
-        <button><Clock size={18} /> Quote Status</button>
+        <button className={page === 'new-quote' ? 'active' : ''} onClick={() => onNavigate('new-quote')}><Plus size={18} /> New Quote</button>
+        <button className={page === 'my-requests' ? 'active' : ''} onClick={() => onNavigate('my-requests')}><FileText size={18} /> My Requests</button>
+        <button className={page === 'quote-status' ? 'active' : ''} onClick={() => onNavigate('quote-status')}><Clock size={18} /> Quote Status</button>
       </nav>
       <div className="profile">
         <HelpCircle size={22} />
