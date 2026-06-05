@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { getAvailableFeatureOptions, getAvailableSeatLayouts, getVisibleFeatureCategories, seatCmsConfig } from '../../data/featureOptionMatrix';
 import type { RfqDraft, SeatGroup } from '../../types/rfq';
+import './SeatsModule.css';
 
 type FeaturesStepProps = {
   draft: RfqDraft;
