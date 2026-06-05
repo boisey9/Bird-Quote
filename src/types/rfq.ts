@@ -15,6 +15,7 @@ export interface CompanyInfo {
 
 export interface BusSpecs {
   chassis: string;
+  certification: string;
   wheelbase: string;
   busType: string;
   quantity: number;
@@ -41,19 +42,49 @@ export interface ChassisOption {
   name: string;
   description: string;
   badge: string;
+  sortOrder: number;
+  active: boolean;
+}
+
+export interface CertificationOption {
+  id: string;
+  chassisId: string;
+  name: string;
+  description: string;
+  sortOrder: number;
+  active: boolean;
 }
 
 export interface WheelbaseOption {
   id: string;
+  chassisId: string;
   name: string;
   description: string;
-  commercialOnly?: boolean;
+  certificationScope: 'school_commercial' | 'commercial_only' | 'school_only';
+  sortOrder: number;
+  active: boolean;
 }
 
 export interface BusTypeOption {
   id: string;
   name: string;
   description: string;
+  sortOrder: number;
+  active: boolean;
+}
+
+export interface BusTypeCompatibility {
+  chassisId: string;
+  wheelbaseId: string;
+  busTypeId: string;
+}
+
+export interface BusSpecMatrixData {
+  chassis: ChassisOption[];
+  certifications: CertificationOption[];
+  wheelbases: WheelbaseOption[];
+  busTypes: BusTypeOption[];
+  compatibility: BusTypeCompatibility[];
 }
 
 export interface FeatureCategory {
