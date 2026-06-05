@@ -39,7 +39,7 @@ export function App() {
           <Stepper step={step} />
           {step === 1 && <CompanyStep draft={draft} setDraft={setDraft} />}
           {step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}
-          {step === 3 && <FeaturesStep draft={draft} />}
+          {step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}
           {step === 4 && (
             <ReviewStep
               draft={draft}
