@@ -1,10 +1,11 @@
+import type { Dispatch, SetStateAction } from 'react';
 import { ChevronRight, ClipboardList, Upload, User } from 'lucide-react';
 import { FileRow, Input } from '../FormControls';
 import type { RfqDraft } from '../../types/rfq';
 
 type CompanyStepProps = {
   draft: RfqDraft;
-  setDraft: React.Dispatch<React.SetStateAction<RfqDraft>>;
+  setDraft: Dispatch<SetStateAction<RfqDraft>>;
 };
 
 export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
