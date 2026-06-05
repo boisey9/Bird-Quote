@@ -1,26 +1,4 @@
-import type { BusTypeOption, ChassisOption, FeatureCategory, WheelbaseOption } from '../types/rfq';
-
-export const chassisOptions: ChassisOption[] = [
-  { id: 'gm', name: 'GM', description: 'General Motors chassis platform', badge: 'GM' },
-  { id: 'ford', name: 'Ford', description: 'Ford chassis platform', badge: 'Ford' },
-  { id: 'ford-transit', name: 'Ford Transit', description: 'Ford Transit chassis platform', badge: 'Ford' }
-];
-
-export const wheelbaseOptions: WheelbaseOption[] = [
-  { id: '138-srw', name: '138” WB SRW', description: '138” Wheelbase — School & Commercial' },
-  { id: '138-drw', name: '138” WB DRW', description: '138” Wheelbase DRW — School & Commercial' },
-  { id: '158-drw', name: '158” WB DRW', description: '158” Wheelbase DRW — School & Commercial' },
-  { id: '176-drw', name: '176” WB DRW', description: '176” Wheelbase DRW — Commercial only', commercialOnly: true }
-];
-
-export const busTypes: BusTypeOption[] = [
-  { id: 'commercial-special-needs', name: 'Commercial Special Needs', description: 'Commercial bus equipped for special needs passenger transport.' },
-  { id: 'commercial', name: 'Commercial Bus', description: 'Standard passenger transport for commercial use.' },
-  { id: 'assisted-living', name: 'Assisted Living Special Needs', description: 'Accessible vehicles with low steps and safer boarding features.' },
-  { id: 'airport', name: 'Airport & Off-Airport', description: 'Shuttle vehicles for passenger and luggage transfer.' },
-  { id: 'hotel', name: 'Hotel, Casino & Resort', description: 'Comfortable shuttle vehicles for resorts and guest transfers.' },
-  { id: 'church', name: 'Church & Community', description: 'Reliable vehicles for group transport and community activities.' }
-];
+import type { FeatureCategory } from '../types/rfq';
 
 export const featureCategories: FeatureCategory[] = [
   {
