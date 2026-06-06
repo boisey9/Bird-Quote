@@ -1,6 +1,6 @@
 import { Clock, FileText, HelpCircle, Menu, Plus } from 'lucide-react';
 
-export type AppPage = 'new-quote' | 'my-requests' | 'quote-status';
+export type AppPage = 'new-quote' | 'my-requests' | 'quote-status' | 'rfq-queue';
 
 type HeaderProps = {
   page: AppPage;
@@ -18,6 +18,7 @@ export function Header({ page, onNavigate }: HeaderProps) {
         <button className={page === 'new-quote' ? 'active' : ''} onClick={() => onNavigate('new-quote')}><Plus size={18} /> New Quote</button>
         <button className={page === 'my-requests' ? 'active' : ''} onClick={() => onNavigate('my-requests')}><FileText size={18} /> My Requests</button>
         <button className={page === 'quote-status' ? 'active' : ''} onClick={() => onNavigate('quote-status')}><Clock size={18} /> Quote Status</button>
+        <button className={page === 'rfq-queue' ? 'active' : ''} onClick={() => onNavigate('rfq-queue')}><FileText size={18} /> RFQ Queue</button>
       </nav>
       <div className="profile">
         <HelpCircle size={22} />
