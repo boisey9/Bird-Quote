@@ -1,0 +1,116 @@
+import { useEffect, useState } from 'react';
+import { mockRequests, type MockRequest, type RequestStatus } from '../../data/mockRequests';
+import { fetchRfqRequests } from '../../services/rfqApi';
+
+const owners = ['Unassigned', 'Sales Ops', 'Jason Watson', 'Melissa Nadeau', 'Estimating Team'];
+const statuses: RequestStatus[] = ['Submitted', 'In Review', 'Assigned', 'Quote In Progress', 'Quote Sent', 'Converted to Order'];
+
+function priorityFromSla(slaAge: string) {
+  const days = Number.parseFloat(slaAge);
+  if (Number.isNaN(days)) return 'Normal';
+  if (days >= 3) return 'High';
+  if (days >= 2) return 'Watch';
+  return 'Normal';
+}
+
+export function InternalQueuePage() {
+  const [requests, setRequests] = useState<MockRequest[]>(mockRequests);
+  const [selectedId, setSelectedId] = useState(mockRequests[0]?.id ?? '');
+  const [loadStatus, setLoadStatus] = useState('Loading RFQ queue...');
+
+  useEffect(() => {
+    let mounted = true;
+    fetchRfqRequests()
+      .then((items) => {
+        if (!mounted) return;
+        const nextRequests = items.length > 0 ? items : mockRequests;
+        setRequests(nextRequests);
+        setSelectedId(nextRequests[0]?.id ?? '');
+        setLoadStatus(items.length > 0 ? 'Live queue loaded from Neon.' : 'No live RFQs yet. Showing sample queue.');
+      })
+      .catch((error) => {
+        if (!mounted) return;
+        const message = error instanceof Error ? error.message : 'Unable to load RFQ queue.';
+        setLoadStatus(`${message} Showing sample queue.`);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const selectedRequest = requests.find((request) => request.id === selectedId) ?? requests[0];
+  const unassignedCount = requests.filter((request) => request.owner === 'Unassigned').length;
+  const activeCount = requests.filter((request) => ['Submitted', 'In Review', 'Assigned', 'Quote In Progress'].includes(request.status)).length;
+  const slaWatchCount = requests.filter((request) => priorityFromSla(request.slaAge) !== 'Normal').length;
+
+  const updateLocalOwner = (rfqId: string, owner: string) => {
+    setRequests((current) => current.map((request) => request.id === rfqId ? { ...request, owner, status: owner === 'Unassigned' ? request.status : 'Assigned' } : request));
+  };
+
+  const updateLocalStatus = (rfqId: string, status: RequestStatus) => {
+    setRequests((current) => current.map((request) => request.id === rfqId ? { ...request, status, lastUpdate: `Status updated to ${status}` } : request));
+  };
+
+  return (
+    <section className="contentCard pageCard">
+      <div className="pageHero opsHero">
+        <div>
+          <h1>Internal RFQ Queue</h1>
+          <p>Review incoming RFQs, assign ownership, monitor SLA, and prepare quote creation.</p>
+        </div>
+        <div className="statusSearch">Sales Ops View</div>
+      </div>
+
+      <div className="kpiGrid">
+        <div><strong>{requests.length}</strong><span>Total RFQs</span></div>
+        <div><strong>{activeCount}</strong><span>Active Queue</span></div>
+        <div><strong>{unassignedCount}</strong><span>Unassigned</span></div>
+        <div><strong>{slaWatchCount}</strong><span>SLA Watch</span></div>
+      </div>
+
+      <section className="panel tablePanel">
+        <h2>Review Incoming RFQs</h2>
+        <p className="muted">{loadStatus}</p>
+        <div className="requestTable opsTable">
+          <div className="requestHead opsHead">
+            <span>RFQ</span><span>Customer</span><span>Status</span><span>Owner</span><span>Priority</span><span>SLA</span><span>Action</span>
+          </div>
+          {requests.map((request) => (
+            <div className={selectedId === request.id ? 'requestRow opsRow selectedQueueRow' : 'requestRow opsRow'} key={request.id} onClick={() => setSelectedId(request.id)}>
+              <strong>{request.id}<small>{request.submittedDate}</small></strong>
+              <span>{request.finalCustomer}<small>{request.busType}</small></span>
+              <select value={request.status} onChange={(event) => updateLocalStatus(request.id, event.target.value as RequestStatus)}>
+                {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+              <select value={request.owner} onChange={(event) => updateLocalOwner(request.id, event.target.value)}>
+                {owners.map((owner) => <option key={owner} value={owner}>{owner}</option>)}
+              </select>
+              <em>{priorityFromSla(request.slaAge)}</em>
+              <span>{request.slaAge}</span>
+              <button type="button">Open</button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {selectedRequest && (
+        <section className="reviewGrid">
+          <div className="panel">
+            <h2>RFQ Review Details</h2>
+            <p><strong>{selectedRequest.id}</strong> — {selectedRequest.finalCustomer}</p>
+            <p>{selectedRequest.busType} • {selectedRequest.chassis} • {selectedRequest.wheelbase}</p>
+            <p><strong>Dealer:</strong> {selectedRequest.dealer}</p>
+            <p><strong>Last update:</strong> {selectedRequest.lastUpdate}</p>
+          </div>
+          <div className="panel">
+            <h2>Queue Controls</h2>
+            <p><strong>Current Owner:</strong> {selectedRequest.owner}</p>
+            <p><strong>Current Status:</strong> {selectedRequest.status}</p>
+            <p><strong>SLA Age:</strong> {selectedRequest.slaAge}</p>
+            <div className="infoBox">Next V2 step: persist owner/status changes to Neon with audit trail rows.</div>
+          </div>
+        </section>
+      )}
+    </section>
+  );
+}
