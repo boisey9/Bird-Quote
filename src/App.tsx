@@ -75,17 +75,15 @@ export function App() {
     <div className="appShell">
       <Header page={page} onNavigate={setPage} />
       {page === 'new-quote' && (
-        <main className="layout">
+        <main className="quoteFormLayout">
           <RecentRequests />
-          <section className="contentCard">
+          <section className="contentCard quoteFormCard">
             <Hero step={step} />
             <Stepper step={step} />
             {step === 1 && <CompanyStep draft={draft} setDraft={setDraft} />}
             {step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}
             {step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}
-            {step === 4 && (
-              <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} />
-            )}
+            {step === 4 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} />}
             {submitStatus && <div className="submitStatus">{submitStatus}</div>}
             <div className="actions">
               <button className="secondary" onClick={goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
@@ -97,9 +95,9 @@ export function App() {
           <QuoteSummary draft={draft} progress={progress} step={step} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} features={summaryFeatures} />
         </main>
       )}
-      {page === 'my-requests' && <main className="layout singlePageLayout"><MyRequestsPage onStartNew={startNewRfq} /></main>}
-      {page === 'quote-status' && <main className="layout singlePageLayout"><QuoteStatusPage /></main>}
-      {page === 'rfq-queue' && <main className="layout singlePageLayout"><InternalQueuePage /></main>}
+      {page === 'my-requests' && <main className="pageLayout"><MyRequestsPage onStartNew={startNewRfq} /></main>}
+      {page === 'quote-status' && <main className="pageLayout"><QuoteStatusPage /></main>}
+      {page === 'rfq-queue' && <main className="pageLayout"><InternalQueuePage /></main>}
     </div>
   );
 }
