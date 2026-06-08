@@ -16,6 +16,25 @@ export type RfqApiRow = {
   payload: unknown;
 };
 
+export type RfqHistoryRow = {
+  id: number;
+  rfq_id: string;
+  status: string;
+  note: string;
+  actor: string;
+  created_at: string;
+};
+
+export type RfqDocumentRow = {
+  id: number;
+  rfq_id: string;
+  file_name: string;
+  file_type: string;
+  file_size: string;
+  document_type: string;
+  created_at: string;
+};
+
 function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -58,6 +77,20 @@ export async function fetchRfqRequests(): Promise<MockRequest[]> {
   const result = await response.json();
   if (!response.ok || !result.ok) throw new Error(result.error ?? 'Unable to load RFQ requests.');
   return (result.requests as RfqApiRow[]).map(mapRfqRowToRequest);
+}
+
+export async function fetchRfqRows(): Promise<RfqApiRow[]> {
+  const response = await fetch('/api/rfqs');
+  const result = await response.json();
+  if (!response.ok || !result.ok) throw new Error(result.error ?? 'Unable to load RFQ requests.');
+  return result.requests as RfqApiRow[];
+}
+
+export async function fetchRfqHistory(rfqId: string): Promise<{ history: RfqHistoryRow[]; documents: RfqDocumentRow[] }> {
+  const response = await fetch(`/api/rfq-history?rfqId=${encodeURIComponent(rfqId)}`);
+  const result = await response.json();
+  if (!response.ok || !result.ok) throw new Error(result.error ?? 'Unable to load RFQ history.');
+  return { history: result.history as RfqHistoryRow[], documents: result.documents as RfqDocumentRow[] };
 }
 
 export async function updateRfqRequest(input: { rfqId: string; status?: RequestStatus; assignedOwner?: string }) {
