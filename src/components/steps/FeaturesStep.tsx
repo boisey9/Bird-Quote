@@ -1,8 +1,10 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { ChevronDown, ChevronUp, Eye, Info, Plus, Trash2, Copy, CheckCircle2 } from 'lucide-react';
-import { getAvailableFeatureOptions, getAvailableSeatLayouts, getVisibleFeatureCategories, seatCmsConfig } from '../../data/featureOptionMatrix';
+import { getAvailableFeatureOptions, getVisibleFeatureCategories, seatCmsConfig } from '../../data/featureOptionMatrix';
+import { SeatLayoutCard, SeatReferencePreview, useAvailableSeatLayouts } from './SeatFramePreview';
 import type { FeatureOptionItem, RfqDraft, SeatGroup } from '../../types/rfq';
 import './SeatsModule.css';
+import './SeatFramePreview.css';
 
 type FeaturesStepProps = {
   draft: RfqDraft;
@@ -42,52 +44,6 @@ function NumberStepper({ value, onChange, min = 0, max }: { value: number; onCha
   );
 }
 
-function LayoutThumbnail({ layoutType }: { layoutType: string }) {
-  const seatCount = layoutType === 'school' ? 12 : layoutType === 'perimeter' ? 10 : layoutType === 'accessible' ? 8 : 8;
-  return (
-    <div className={`layoutThumb layout-${layoutType}`}>
-      {Array.from({ length: seatCount }).map((_, index) => <span key={index} />)}
-      <b />
-    </div>
-  );
-}
-
-function SeatPreview({ draft }: { draft: RfqDraft }) {
-  const selectedLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId);
-  const seatCells = Array.from({ length: Math.min(24, Math.max(6, draft.seatPackage.estimatedPassengerSeats)) });
-
-  return (
-    <aside className="seatPreviewCard refinedPreview">
-      <div className="previewHeader">
-        <Eye size={18} />
-        <h3>Reference Preview / Summary</h3>
-      </div>
-      <div className="seatSummaryList">
-        <p><strong>Selected Layout</strong><span>{selectedLayout?.title ?? 'Not selected'}</span></p>
-        <p><strong>Seat Material</strong><span>{draft.seatPackage.material}</span></p>
-        <p><strong>Seat Color</strong><span>{draft.seatPackage.color}</span></p>
-        <p><strong>Estimated Capacity</strong><span>{draft.seatPackage.estimatedPassengerSeats} passenger seats</span></p>
-        <p><strong>Wheelchair Positions</strong><span>{draft.seatPackage.wheelchairPositions}</span></p>
-        <p><strong>Seat Type Rows</strong><span>{draft.seatGroups.length}</span></p>
-      </div>
-      <div className="busPreviewShell refinedBus">
-        <div className="busLabel top">FRONT</div>
-        <div className="busCab" />
-        <div className="busSeatMap">
-          {seatCells.map((_, index) => <span key={index} />)}
-          {draft.seatPackage.wheelchairPositions > 0 && <em />}
-        </div>
-        <div className="busLabel bottom">ENTRY DOOR</div>
-      </div>
-      <div className="seatLegend">
-        <span><i className="seatBox" />Passenger Seats</span>
-        <span><i className="openBox" />Wheelchair / Foldaway Area</span>
-      </div>
-      <p className="warningNote">Reference only - final seating layout will be reviewed and validated by Micro Bird.</p>
-    </aside>
-  );
-}
-
 function FeatureOptionCard({ option, selected, onClick }: { option: FeatureOptionItem; selected: boolean; onClick: () => void }) {
   return (
     <button type="button" className={selected ? 'featureOptionCard selected' : 'featureOptionCard'} onClick={onClick}>
@@ -100,7 +56,7 @@ function FeatureOptionCard({ option, selected, onClick }: { option: FeatureOptio
 
 export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
   const categories = getVisibleFeatureCategories(draft.specs);
-  const seatLayouts = getAvailableSeatLayouts(draft.specs);
+  const seatLayouts = useAvailableSeatLayouts(draft);
   const [openCategories, setOpenCategories] = useState<Record<number, boolean>>(() => Object.fromEntries(categories.map((category) => [category.id, category.title === 'Seats' || category.sortOrder <= 4])));
   const [showQuickSummary, setShowQuickSummary] = useState(false);
 
@@ -175,26 +131,27 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
               <div className="featureSectionHeader">
                 <div>
                   <h2>{category.title}</h2>
-                  <p>Configure layout intent, material, color, and seat type details.</p>
+                  <p>Configure customer seating intent. Final floorplan validation remains with Micro Bird.</p>
                 </div>
                 <span className="pill">CMS-managed per model</span>
               </div>
 
-              <div className="seatsLayout refinedSeatsLayout">
+              <div className="seatsLayout refinedSeatsLayout productionSeatsLayout">
                 <div className="seatLeftColumn">
                   <div className="seatBlockTitle"><span>1</span><strong>Seat Package</strong></div>
                   <div className="seatSubHeader">
                     <h3>Seating Layout</h3>
                     <small>Filtered by selected chassis, wheelbase, and bus type.</small>
                   </div>
-                  <div className="seatLayoutGrid refinedLayoutGrid">
+                  <div className="seatLayoutGrid refinedLayoutGrid productionLayoutGrid">
                     {seatLayouts.map((layout) => (
-                      <button key={layout.id} type="button" className={draft.seatPackage.layoutId === layout.id ? 'seatLayoutCard selected' : 'seatLayoutCard'} onClick={() => updateSeatPackage({ layoutId: layout.id, estimatedPassengerSeats: Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats) })}>
-                        <LayoutThumbnail layoutType={layout.layoutType} />
-                        <strong>{layout.title}</strong>
-                        <small>{layout.description}</small>
-                        <em>Capacity hint: up to {layout.maxSeats}</em>
-                      </button>
+                      <SeatLayoutCard
+                        key={layout.id}
+                        layout={layout}
+                        selected={draft.seatPackage.layoutId === layout.id}
+                        draft={draft}
+                        onSelect={() => updateSeatPackage({ layoutId: layout.id, estimatedPassengerSeats: Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats) })}
+                      />
                     ))}
                   </div>
 
@@ -202,7 +159,7 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
                     <SelectField label="Seat Material" value={draft.seatPackage.material} options={seatCmsConfig.materials} onChange={(value) => updateSeatPackage({ material: value })} />
                     <SelectField label="Seat Color" value={draft.seatPackage.color} options={seatCmsConfig.colors} onChange={(value) => updateSeatPackage({ color: value })} />
                     <div className="controlField"><span>Estimated Passenger Seats</span><NumberStepper value={draft.seatPackage.estimatedPassengerSeats} min={1} max={48} onChange={(value) => updateSeatPackage({ estimatedPassengerSeats: value })} /></div>
-                    <div className="controlField"><span>Wheelchair Positions</span><NumberStepper value={draft.seatPackage.wheelchairPositions} min={0} max={8} onChange={(value) => updateSeatPackage({ wheelchairPositions: value })} /></div>
+                    <div className="controlField"><span>Wheelchair / Rear Lift Positions</span><NumberStepper value={draft.seatPackage.wheelchairPositions} min={0} max={8} onChange={(value) => updateSeatPackage({ wheelchairPositions: value })} /></div>
                   </div>
 
                   <div className="seatTypeHeader refinedSeatTypeHeader">
@@ -233,7 +190,7 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
                   </div>
                   {totalWarning && <p className="warningNote">Seat type quantity total is {totalSeatGroupQty}. Estimated passenger seats is {draft.seatPackage.estimatedPassengerSeats}. Micro Bird will validate the final layout.</p>}
                 </div>
-                <SeatPreview draft={draft} />
+                <SeatReferencePreview draft={draft} />
               </div>
             </section>
           );
@@ -270,7 +227,7 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
           <button type="button" onClick={() => setShowQuickSummary((current) => !current)}><Eye size={16} /> {showQuickSummary ? 'Hide Summary' : 'View Summary'}</button>
         </div>
         <div className="summaryChips">
-          <span>{draft.specs.chassis}</span><span>{draft.specs.wheelbase}</span><span>{draft.specs.busType}</span><span>{draft.seatPackage.estimatedPassengerSeats} seats</span><span>{draft.seatPackage.wheelchairPositions} wheelchair positions</span><span>{draft.features.length} options</span>
+          <span>{draft.specs.chassis}</span><span>{draft.specs.wheelbase}</span><span>{draft.specs.busType}</span><span>{draft.seatPackage.estimatedPassengerSeats} seats</span><span>{draft.seatPackage.wheelchairPositions} wheelchair / lift</span><span>{draft.features.length} options</span>
         </div>
         {showQuickSummary && (
           <div className="expandedOptionSummary">
