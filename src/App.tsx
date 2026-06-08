@@ -8,6 +8,7 @@ import { Hero, Stepper } from './components/RfqShell';
 import { QuoteSummary } from './components/QuoteSummary';
 import { MyRequestsPage } from './components/pages/MyRequestsPage';
 import { QuoteStatusPage } from './components/pages/QuoteStatusPage';
+import { InternalQueuePage } from './components/pages/InternalQueuePage';
 import './components/pages/PageStyles.css';
 import { CompanyStep } from './components/steps/CompanyStep';
 import { SpecsStep } from './components/steps/SpecsStep';
@@ -97,6 +98,7 @@ export function App() {
       )}
       {page === 'my-requests' && <main className="layout singlePageLayout"><MyRequestsPage onStartNew={startNewRfq} /></main>}
       {page === 'quote-status' && <main className="layout singlePageLayout"><QuoteStatusPage /></main>}
+      {page === 'rfq-queue' && <main className="layout singlePageLayout"><InternalQueuePage /></main>}
     </div>
   );
 }
