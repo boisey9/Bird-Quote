@@ -33,6 +33,11 @@ export function App() {
 
   const goNext = () => setStep((current) => Math.min(4, current + 1) as RfqStep);
   const goBack = () => setStep((current) => Math.max(1, current - 1) as RfqStep);
+  const jumpToStep = (targetStep: RfqStep) => {
+    setPage('new-quote');
+    setStep(targetStep);
+    setSubmitStatus('');
+  };
   const startNewRfq = () => {
     setDraft(initialDraft);
     setStep(1);
@@ -83,16 +88,16 @@ export function App() {
             {step === 1 && <CompanyStep draft={draft} setDraft={setDraft} />}
             {step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}
             {step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}
-            {step === 4 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} />}
+            {step === 4 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}
             {submitStatus && <div className="submitStatus">{submitStatus}</div>}
             <div className="actions">
               <button className="secondary" onClick={goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
-              <button className="primary" onClick={step === 4 ? submitRfq : goNext}>
+              <button className="primary" disabled={isSubmitting} onClick={step === 4 ? submitRfq : goNext}>
                 {isSubmitting ? 'Submitting...' : step === 4 ? 'Submit Quote Request' : step === 1 ? 'Next: Bus Specifications' : step === 2 ? 'Next: Features & Options' : 'Next: Review & Submit'} <ArrowRight size={18} />
               </button>
             </div>
           </section>
-          <QuoteSummary draft={draft} progress={progress} step={step} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} features={summaryFeatures} />
+          <QuoteSummary draft={draft} progress={progress} step={step} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} features={summaryFeatures} onEdit={jumpToStep} />
         </main>
       )}
       {page === 'my-requests' && <main className="pageLayout"><MyRequestsPage onStartNew={startNewRfq} /></main>}
