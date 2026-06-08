@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { mockRequests, type MockRequest, type RequestStatus } from '../../data/mockRequests';
-import { fetchRfqRequests } from '../../services/rfqApi';
+import { fetchRfqRequests, updateRfqRequest } from '../../services/rfqApi';
 
 const owners = ['Unassigned', 'Sales Ops', 'Jason Watson', 'Melissa Nadeau', 'Estimating Team'];
 const statuses: RequestStatus[] = ['Submitted', 'In Review', 'Assigned', 'Quote In Progress', 'Quote Sent', 'Converted to Order'];
@@ -17,6 +17,7 @@ export function InternalQueuePage() {
   const [requests, setRequests] = useState<MockRequest[]>(mockRequests);
   const [selectedId, setSelectedId] = useState(mockRequests[0]?.id ?? '');
   const [loadStatus, setLoadStatus] = useState('Loading RFQ queue...');
+  const [saveStatus, setSaveStatus] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -43,12 +44,26 @@ export function InternalQueuePage() {
   const activeCount = requests.filter((request) => ['Submitted', 'In Review', 'Assigned', 'Quote In Progress'].includes(request.status)).length;
   const slaWatchCount = requests.filter((request) => priorityFromSla(request.slaAge) !== 'Normal').length;
 
-  const updateLocalOwner = (rfqId: string, owner: string) => {
-    setRequests((current) => current.map((request) => request.id === rfqId ? { ...request, owner, status: owner === 'Unassigned' ? request.status : 'Assigned' } : request));
+  async function persistQueueChange(rfqId: string, updates: { status?: RequestStatus; assignedOwner?: string }) {
+    setSaveStatus('Saving queue update...');
+    try {
+      await updateRfqRequest({ rfqId, ...updates });
+      setSaveStatus('Queue update saved to Neon and audit history.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to save queue update.';
+      setSaveStatus(message);
+    }
+  }
+
+  const updateOwner = (rfqId: string, owner: string) => {
+    const nextStatus = owner === 'Unassigned' ? requests.find((request) => request.id === rfqId)?.status : 'Assigned';
+    setRequests((current) => current.map((request) => request.id === rfqId ? { ...request, owner, status: nextStatus ?? request.status, lastUpdate: `Owner updated to ${owner}` } : request));
+    persistQueueChange(rfqId, { assignedOwner: owner, status: nextStatus });
   };
 
-  const updateLocalStatus = (rfqId: string, status: RequestStatus) => {
+  const updateStatus = (rfqId: string, status: RequestStatus) => {
     setRequests((current) => current.map((request) => request.id === rfqId ? { ...request, status, lastUpdate: `Status updated to ${status}` } : request));
+    persistQueueChange(rfqId, { status });
   };
 
   return (
@@ -71,6 +86,7 @@ export function InternalQueuePage() {
       <section className="panel tablePanel">
         <h2>Review Incoming RFQs</h2>
         <p className="muted">{loadStatus}</p>
+        {saveStatus && <div className="submitStatus queueSaveStatus">{saveStatus}</div>}
         <div className="requestTable opsTable">
           <div className="requestHead opsHead">
             <span>RFQ</span><span>Customer</span><span>Status</span><span>Owner</span><span>Priority</span><span>SLA</span><span>Action</span>
@@ -79,10 +95,10 @@ export function InternalQueuePage() {
             <div className={selectedId === request.id ? 'requestRow opsRow selectedQueueRow' : 'requestRow opsRow'} key={request.id} onClick={() => setSelectedId(request.id)}>
               <strong>{request.id}<small>{request.submittedDate}</small></strong>
               <span>{request.finalCustomer}<small>{request.busType}</small></span>
-              <select value={request.status} onChange={(event) => updateLocalStatus(request.id, event.target.value as RequestStatus)}>
+              <select value={request.status} onChange={(event) => updateStatus(request.id, event.target.value as RequestStatus)}>
                 {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
               </select>
-              <select value={request.owner} onChange={(event) => updateLocalOwner(request.id, event.target.value)}>
+              <select value={request.owner} onChange={(event) => updateOwner(request.id, event.target.value)}>
                 {owners.map((owner) => <option key={owner} value={owner}>{owner}</option>)}
               </select>
               <em>{priorityFromSla(request.slaAge)}</em>
@@ -97,7 +113,7 @@ export function InternalQueuePage() {
         <section className="reviewGrid">
           <div className="panel">
             <h2>RFQ Review Details</h2>
-            <p><strong>{selectedRequest.id}</strong> — {selectedRequest.finalCustomer}</p>
+            <p><strong>{selectedRequest.id}</strong> - {selectedRequest.finalCustomer}</p>
             <p>{selectedRequest.busType} • {selectedRequest.chassis} • {selectedRequest.wheelbase}</p>
             <p><strong>Dealer:</strong> {selectedRequest.dealer}</p>
             <p><strong>Last update:</strong> {selectedRequest.lastUpdate}</p>
@@ -107,7 +123,7 @@ export function InternalQueuePage() {
             <p><strong>Current Owner:</strong> {selectedRequest.owner}</p>
             <p><strong>Current Status:</strong> {selectedRequest.status}</p>
             <p><strong>SLA Age:</strong> {selectedRequest.slaAge}</p>
-            <div className="infoBox">Next V2 step: persist owner/status changes to Neon with audit trail rows.</div>
+            <div className="infoBox">Owner and status changes now persist to Neon with status history audit rows.</div>
           </div>
         </section>
       )}
