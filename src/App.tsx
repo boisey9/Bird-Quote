@@ -10,6 +10,7 @@ import { MyRequestsPage } from './components/pages/MyRequestsPage';
 import { QuoteStatusPage } from './components/pages/QuoteStatusPage';
 import { InternalQueuePage } from './components/pages/InternalQueuePage';
 import './components/pages/PageStyles.css';
+import './components/pages/LayoutFixes.css';
 import { CompanyStep } from './components/steps/CompanyStep';
 import { SpecsStep } from './components/steps/SpecsStep';
 import { FeaturesStep } from './components/steps/FeaturesStep';
