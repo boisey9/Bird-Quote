@@ -1,42 +1,45 @@
 import { Pencil } from 'lucide-react';
 import { getDraftValidationIssues } from '../../utils/rfqSubmission';
-import type { RfqDraft } from '../../types/rfq';
+import { seatCmsConfig } from '../../data/featureOptionMatrix';
+import type { RfqDraft, RfqStep } from '../../types/rfq';
 
 type ReviewStepProps = {
   draft: RfqDraft;
   selectedChassis: string;
   selectedWheelbase: string;
   selectedBusType: string;
+  onEdit: (step: RfqStep) => void;
 };
 
-export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selectedBusType }: ReviewStepProps) {
+export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selectedBusType, onEdit }: ReviewStepProps) {
   const validationIssues = getDraftValidationIssues(draft);
   const warningCount = validationIssues.filter((issue) => issue.severity === 'warning').length;
   const errorCount = validationIssues.filter((issue) => issue.severity === 'error').length;
+  const selectedSeatLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId)?.title ?? draft.seatPackage.layoutId;
 
   return (
     <div className="sectionStack">
       <section className="reviewGrid">
         <div className="panel">
-          <h2>Company Information <button className="edit"><Pencil size={15} /> Edit</button></h2>
+          <h2>Company Information <button className="edit" type="button" onClick={() => onEdit(1)}><Pencil size={15} /> Edit</button></h2>
           <p><strong>{draft.company.dealerName}</strong> • {draft.company.dealerContact} • {draft.company.provinceState}</p>
           <p>{draft.company.finalCustomerName}</p>
           <p>{draft.company.additionalInfo}</p>
         </div>
         <div className="panel">
-          <h2>Bus Specifications <button className="edit"><Pencil size={15} /> Edit</button></h2>
+          <h2>Bus Specifications <button className="edit" type="button" onClick={() => onEdit(2)}><Pencil size={15} /> Edit</button></h2>
           <p><strong>{selectedBusType}</strong> • {selectedChassis} • {selectedWheelbase}</p>
           <p>Qty {draft.specs.quantity} • Seating {draft.specs.seatingCapacity} • Wheelchair {draft.specs.wheelchairCapacity}</p>
         </div>
       </section>
 
       <section className="panel">
-        <h2>Seats <button className="edit"><Pencil size={15} /> Edit</button></h2>
+        <h2>Seats <button className="edit" type="button" onClick={() => onEdit(3)}><Pencil size={15} /> Edit</button></h2>
         <div className="reviewFeatureGrid">
           <div>
             <strong>Seat Package</strong>
             <ul>
-              <li>Layout: {draft.seatPackage.layoutId}</li>
+              <li>Layout: {selectedSeatLayout}</li>
               <li>Material: {draft.seatPackage.material}</li>
               <li>Color: {draft.seatPackage.color}</li>
               <li>Estimated Seats: {draft.seatPackage.estimatedPassengerSeats}</li>
@@ -61,13 +64,13 @@ export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selected
       </section>
 
       <section className="panel">
-        <h2>Selected Features <button className="edit"><Pencil size={15} /> Edit</button></h2>
+        <h2>Selected Features <button className="edit" type="button" onClick={() => onEdit(3)}><Pencil size={15} /> Edit</button></h2>
         <div className="reviewFeatureGrid">
-          {draft.features.slice(0, 6).map((feature) => (
+          {draft.features.slice(0, 12).map((feature) => (
             <div key={`${feature.category}-${feature.label}`}>
               <strong>{feature.category}</strong>
               <ul>
-                <li>{feature.label}: {feature.value}</li>
+                <li>{feature.label}</li>
               </ul>
             </div>
           ))}
