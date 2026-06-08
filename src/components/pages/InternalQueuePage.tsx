@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { mockRequests, type MockRequest, type RequestStatus } from '../../data/mockRequests';
-import { fetchRfqRequests, updateRfqRequest } from '../../services/rfqApi';
+import { fetchRfqRequests, fetchRfqRows, updateRfqRequest, type RfqApiRow } from '../../services/rfqApi';
+import { RfqDetailDrawer } from './RfqDetailDrawer';
 
 const owners = ['Unassigned', 'Sales Ops', 'Jason Watson', 'Melissa Nadeau', 'Estimating Team'];
 const statuses: RequestStatus[] = ['Submitted', 'In Review', 'Assigned', 'Quote In Progress', 'Quote Sent', 'Converted to Order'];
@@ -15,17 +16,20 @@ function priorityFromSla(slaAge: string) {
 
 export function InternalQueuePage() {
   const [requests, setRequests] = useState<MockRequest[]>(mockRequests);
+  const [rawRows, setRawRows] = useState<RfqApiRow[]>([]);
   const [selectedId, setSelectedId] = useState(mockRequests[0]?.id ?? '');
+  const [drawerRow, setDrawerRow] = useState<RfqApiRow | null>(null);
   const [loadStatus, setLoadStatus] = useState('Loading RFQ queue...');
   const [saveStatus, setSaveStatus] = useState('');
 
   useEffect(() => {
     let mounted = true;
-    fetchRfqRequests()
-      .then((items) => {
+    Promise.all([fetchRfqRequests(), fetchRfqRows()])
+      .then(([items, rows]) => {
         if (!mounted) return;
         const nextRequests = items.length > 0 ? items : mockRequests;
         setRequests(nextRequests);
+        setRawRows(rows);
         setSelectedId(nextRequests[0]?.id ?? '');
         setLoadStatus(items.length > 0 ? 'Live queue loaded from Neon.' : 'No live RFQs yet. Showing sample queue.');
       })
@@ -47,7 +51,8 @@ export function InternalQueuePage() {
   async function persistQueueChange(rfqId: string, updates: { status?: RequestStatus; assignedOwner?: string }) {
     setSaveStatus('Saving queue update...');
     try {
-      await updateRfqRequest({ rfqId, ...updates });
+      const result = await updateRfqRequest({ rfqId, ...updates });
+      setRawRows((current) => current.map((row) => row.id === rfqId ? { ...row, status: result.status, assigned_owner: result.assignedOwner } : row));
       setSaveStatus('Queue update saved to Neon and audit history.');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to save queue update.';
@@ -64,6 +69,12 @@ export function InternalQueuePage() {
   const updateStatus = (rfqId: string, status: RequestStatus) => {
     setRequests((current) => current.map((request) => request.id === rfqId ? { ...request, status, lastUpdate: `Status updated to ${status}` } : request));
     persistQueueChange(rfqId, { status });
+  };
+
+  const openDetails = (rfqId: string) => {
+    const row = rawRows.find((item) => item.id === rfqId);
+    if (row) setDrawerRow(row);
+    else setSaveStatus('Live RFQ detail is only available after the queue loads from Neon.');
   };
 
   return (
@@ -95,15 +106,15 @@ export function InternalQueuePage() {
             <div className={selectedId === request.id ? 'requestRow opsRow selectedQueueRow' : 'requestRow opsRow'} key={request.id} onClick={() => setSelectedId(request.id)}>
               <strong>{request.id}<small>{request.submittedDate}</small></strong>
               <span>{request.finalCustomer}<small>{request.busType}</small></span>
-              <select value={request.status} onChange={(event) => updateStatus(request.id, event.target.value as RequestStatus)}>
+              <select value={request.status} onClick={(event) => event.stopPropagation()} onChange={(event) => updateStatus(request.id, event.target.value as RequestStatus)}>
                 {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
               </select>
-              <select value={request.owner} onChange={(event) => updateOwner(request.id, event.target.value)}>
+              <select value={request.owner} onClick={(event) => event.stopPropagation()} onChange={(event) => updateOwner(request.id, event.target.value)}>
                 {owners.map((owner) => <option key={owner} value={owner}>{owner}</option>)}
               </select>
               <em>{priorityFromSla(request.slaAge)}</em>
               <span>{request.slaAge}</span>
-              <button type="button">Open</button>
+              <button type="button" onClick={(event) => { event.stopPropagation(); openDetails(request.id); }}>Open</button>
             </div>
           ))}
         </div>
@@ -127,6 +138,7 @@ export function InternalQueuePage() {
           </div>
         </section>
       )}
+      <RfqDetailDrawer row={drawerRow} onClose={() => setDrawerRow(null)} />
     </section>
   );
 }
