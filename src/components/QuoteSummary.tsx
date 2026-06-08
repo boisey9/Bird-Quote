@@ -10,14 +10,15 @@ type QuoteSummaryProps = {
   selectedWheelbase: string;
   selectedBusType: string;
   features: FeatureSelection[];
+  onEdit: (step: RfqStep) => void;
 };
 
-export function QuoteSummary({ draft, progress, step, selectedChassis, selectedWheelbase, selectedBusType, features }: QuoteSummaryProps) {
+export function QuoteSummary({ draft, progress, step, selectedChassis, selectedWheelbase, selectedBusType, features, onEdit }: QuoteSummaryProps) {
   const selectedSeatLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId)?.title ?? draft.seatPackage.layoutId;
 
   return (
     <aside className="summary">
-      <h3>Quote Summary <button>Edit <Pencil size={14} /></button></h3>
+      <h3>Quote Summary <button type="button" onClick={() => onEdit(step)}><Pencil size={14} /> Edit</button></h3>
       <hr />
       <small>COMPANY</small>
       <strong>{draft.company.dealerName}</strong>
@@ -55,7 +56,7 @@ export function QuoteSummary({ draft, progress, step, selectedChassis, selectedW
           <hr />
           <small>SELECTED FEATURES</small>
           {features.map((feature) => (
-            <p className="featureSummary" key={feature.label}>{feature.label}<strong>{feature.value}</strong></p>
+            <p className="featureSummary" key={`${feature.category}-${feature.label}`}>{feature.label}<strong>{feature.category}</strong></p>
           ))}
         </>
       )}
