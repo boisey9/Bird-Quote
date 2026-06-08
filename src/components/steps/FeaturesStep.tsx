@@ -1,6 +1,7 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { ChevronDown, ChevronUp, Eye, Info, Plus, Trash2, Copy, CheckCircle2 } from 'lucide-react';
 import { getAvailableFeatureOptions, getAvailableSeatLayouts, getVisibleFeatureCategories, seatCmsConfig } from '../../data/featureOptionMatrix';
-import type { RfqDraft, SeatGroup } from '../../types/rfq';
+import type { FeatureOptionItem, RfqDraft, SeatGroup } from '../../types/rfq';
 import './SeatsModule.css';
 
 type FeaturesStepProps = {
@@ -8,40 +9,68 @@ type FeaturesStepProps = {
   setDraft: Dispatch<SetStateAction<RfqDraft>>;
 };
 
-function SelectField({ value, options, onChange }: { value: string; options: string[]; onChange: (value: string) => void }) {
+type SelectFieldProps = {
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+  label?: string;
+};
+
+function SelectField({ value, options, onChange, label }: SelectFieldProps) {
   return (
-    <select value={value} onChange={(event) => onChange(event.target.value)}>
-      {options.map((option) => <option key={option} value={option}>{option}</option>)}
-    </select>
+    <label className="controlField">
+      {label && <span>{label}</span>}
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </label>
   );
 }
 
-function NumberStepper({ value, onChange, min = 0 }: { value: number; onChange: (value: number) => void; min?: number }) {
+function NumberStepper({ value, onChange, min = 0, max }: { value: number; onChange: (value: number) => void; min?: number; max?: number }) {
+  const next = (candidate: number) => {
+    const withMin = Math.max(min, candidate);
+    onChange(typeof max === 'number' ? Math.min(max, withMin) : withMin);
+  };
+
   return (
     <div className="miniCounter">
-      <button type="button" onClick={() => onChange(Math.max(min, value - 1))}>-</button>
+      <button type="button" onClick={() => next(value - 1)}>-</button>
       <strong>{value}</strong>
-      <button type="button" onClick={() => onChange(value + 1)}>+</button>
+      <button type="button" onClick={() => next(value + 1)}>+</button>
+    </div>
+  );
+}
+
+function LayoutThumbnail({ layoutType }: { layoutType: string }) {
+  const seatCount = layoutType === 'school' ? 12 : layoutType === 'perimeter' ? 10 : layoutType === 'accessible' ? 8 : 8;
+  return (
+    <div className={`layoutThumb layout-${layoutType}`}>
+      {Array.from({ length: seatCount }).map((_, index) => <span key={index} />)}
+      <b />
     </div>
   );
 }
 
 function SeatPreview({ draft }: { draft: RfqDraft }) {
   const selectedLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId);
-  const seatCells = Array.from({ length: Math.min(18, Math.max(6, draft.seatPackage.estimatedPassengerSeats)) });
+  const seatCells = Array.from({ length: Math.min(24, Math.max(6, draft.seatPackage.estimatedPassengerSeats)) });
 
   return (
-    <aside className="seatPreviewCard">
-      <h3>Reference Preview / Summary</h3>
+    <aside className="seatPreviewCard refinedPreview">
+      <div className="previewHeader">
+        <Eye size={18} />
+        <h3>Reference Preview / Summary</h3>
+      </div>
       <div className="seatSummaryList">
         <p><strong>Selected Layout</strong><span>{selectedLayout?.title ?? 'Not selected'}</span></p>
         <p><strong>Seat Material</strong><span>{draft.seatPackage.material}</span></p>
         <p><strong>Seat Color</strong><span>{draft.seatPackage.color}</span></p>
         <p><strong>Estimated Capacity</strong><span>{draft.seatPackage.estimatedPassengerSeats} passenger seats</span></p>
         <p><strong>Wheelchair Positions</strong><span>{draft.seatPackage.wheelchairPositions}</span></p>
-        <p><strong>Seat Types</strong><span>{draft.seatGroups.length}</span></p>
+        <p><strong>Seat Type Rows</strong><span>{draft.seatGroups.length}</span></p>
       </div>
-      <div className="busPreviewShell">
+      <div className="busPreviewShell refinedBus">
         <div className="busLabel top">FRONT</div>
         <div className="busCab" />
         <div className="busSeatMap">
@@ -59,9 +88,24 @@ function SeatPreview({ draft }: { draft: RfqDraft }) {
   );
 }
 
+function FeatureOptionCard({ option, selected, onClick }: { option: FeatureOptionItem; selected: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className={selected ? 'featureOptionCard selected' : 'featureOptionCard'} onClick={onClick}>
+      <span className="optionIcon">{selected ? <CheckCircle2 size={16} /> : <Plus size={16} />}</span>
+      <strong>{option.title}</strong>
+      <small>{option.description}</small>
+    </button>
+  );
+}
+
 export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
   const categories = getVisibleFeatureCategories(draft.specs);
   const seatLayouts = getAvailableSeatLayouts(draft.specs);
+  const [openCategories, setOpenCategories] = useState<Record<number, boolean>>(() => Object.fromEntries(categories.map((category) => [category.id, category.title === 'Seats' || category.sortOrder <= 4])));
+  const [showQuickSummary, setShowQuickSummary] = useState(false);
+
+  const totalSeatGroupQty = useMemo(() => draft.seatGroups.reduce((sum, group) => sum + group.quantity, 0), [draft.seatGroups]);
+  const selectedFeatureKeys = useMemo(() => new Set(draft.features.map((feature) => `${feature.category}-${feature.label}`)), [draft.features]);
 
   const updateSeatPackage = (updates: Partial<RfqDraft['seatPackage']>) => {
     setDraft((current) => ({ ...current, seatPackage: { ...current.seatPackage, ...updates } }));
@@ -72,6 +116,23 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
       ...current,
       seatGroups: current.seatGroups.map((group) => group.id === id ? { ...group, ...updates } : group)
     }));
+  };
+
+  const toggleCategory = (categoryId: number) => {
+    setOpenCategories((current) => ({ ...current, [categoryId]: !current[categoryId] }));
+  };
+
+  const toggleFeature = (categoryTitle: string, option: FeatureOptionItem) => {
+    const key = `${categoryTitle}-${option.title}`;
+    setDraft((current) => {
+      const alreadySelected = current.features.some((feature) => `${feature.category}-${feature.label}` === key);
+      return {
+        ...current,
+        features: alreadySelected
+          ? current.features.filter((feature) => `${feature.category}-${feature.label}` !== key)
+          : [...current.features, { category: categoryTitle, label: option.title, value: option.description }]
+      };
+    });
   };
 
   const addSeatGroup = () => {
@@ -101,29 +162,35 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
   };
 
   const removeSeatGroup = (id: string) => {
-    setDraft((current) => ({ ...current, seatGroups: current.seatGroups.filter((group) => group.id !== id) }));
+    setDraft((current) => ({ ...current, seatGroups: current.seatGroups.length <= 1 ? current.seatGroups : current.seatGroups.filter((group) => group.id !== id) }));
   };
 
   return (
-    <div className="sectionStack">
+    <div className="sectionStack featuresPage">
       {categories.map((category) => {
         if (category.title === 'Seats') {
-          const totalSeatGroupQty = draft.seatGroups.reduce((sum, group) => sum + group.quantity, 0);
           const totalWarning = totalSeatGroupQty !== draft.seatPackage.estimatedPassengerSeats;
-
           return (
-            <section className="panel compact seatsModule" key={category.id}>
-              <h2>{category.title}<span className="pill">CMS-managed per model</span></h2>
-              <p className="muted">Configure seat layout, material, color, and seat type details. Final configuration will be validated internally.</p>
-
-              <div className="seatsLayout">
+            <section className="panel compact seatsModule refinedSeatsModule" key={category.id}>
+              <div className="featureSectionHeader">
                 <div>
+                  <h2>{category.title}</h2>
+                  <p>Configure layout intent, material, color, and seat type details.</p>
+                </div>
+                <span className="pill">CMS-managed per model</span>
+              </div>
+
+              <div className="seatsLayout refinedSeatsLayout">
+                <div className="seatLeftColumn">
                   <div className="seatBlockTitle"><span>1</span><strong>Seat Package</strong></div>
-                  <h3>Seating Layout</h3>
-                  <div className="seatLayoutGrid">
+                  <div className="seatSubHeader">
+                    <h3>Seating Layout</h3>
+                    <small>Filtered by selected chassis, wheelbase, and bus type.</small>
+                  </div>
+                  <div className="seatLayoutGrid refinedLayoutGrid">
                     {seatLayouts.map((layout) => (
                       <button key={layout.id} type="button" className={draft.seatPackage.layoutId === layout.id ? 'seatLayoutCard selected' : 'seatLayoutCard'} onClick={() => updateSeatPackage({ layoutId: layout.id, estimatedPassengerSeats: Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats) })}>
-                        <div className="layoutThumb"><span /><span /><span /><span /><span /><span /></div>
+                        <LayoutThumbnail layoutType={layout.layoutType} />
                         <strong>{layout.title}</strong>
                         <small>{layout.description}</small>
                         <em>Capacity hint: up to {layout.maxSeats}</em>
@@ -131,37 +198,40 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
                     ))}
                   </div>
 
-                  <div className="seatPackageControls">
-                    <label className="field"><span>Seat Material</span><SelectField value={draft.seatPackage.material} options={seatCmsConfig.materials} onChange={(value) => updateSeatPackage({ material: value })} /></label>
-                    <label className="field"><span>Seat Color</span><SelectField value={draft.seatPackage.color} options={seatCmsConfig.colors} onChange={(value) => updateSeatPackage({ color: value })} /></label>
-                    <div className="field"><span>Estimated Passenger Seats</span><NumberStepper value={draft.seatPackage.estimatedPassengerSeats} min={1} onChange={(value) => updateSeatPackage({ estimatedPassengerSeats: value })} /></div>
-                    <div className="field"><span>Wheelchair Positions</span><NumberStepper value={draft.seatPackage.wheelchairPositions} onChange={(value) => updateSeatPackage({ wheelchairPositions: value })} /></div>
+                  <div className="seatPackageControls refinedSeatControls">
+                    <SelectField label="Seat Material" value={draft.seatPackage.material} options={seatCmsConfig.materials} onChange={(value) => updateSeatPackage({ material: value })} />
+                    <SelectField label="Seat Color" value={draft.seatPackage.color} options={seatCmsConfig.colors} onChange={(value) => updateSeatPackage({ color: value })} />
+                    <div className="controlField"><span>Estimated Passenger Seats</span><NumberStepper value={draft.seatPackage.estimatedPassengerSeats} min={1} max={48} onChange={(value) => updateSeatPackage({ estimatedPassengerSeats: value })} /></div>
+                    <div className="controlField"><span>Wheelchair Positions</span><NumberStepper value={draft.seatPackage.wheelchairPositions} min={0} max={8} onChange={(value) => updateSeatPackage({ wheelchairPositions: value })} /></div>
                   </div>
 
-                  <div className="seatTypeHeader">
-                    <div className="seatBlockTitle"><span>2</span><strong>Seat Type Details</strong><small>Define the different types of seats used in this bus.</small></div>
-                    <button type="button" onClick={addSeatGroup}>+ Add Seat Type</button>
+                  <div className="seatTypeHeader refinedSeatTypeHeader">
+                    <div className="seatBlockTitle"><span>2</span><strong>Seat Type Details</strong><small>Use rows to explain seat groups without engineering the final layout.</small></div>
+                    <button type="button" onClick={addSeatGroup}><Plus size={16} /> Add Seat Type</button>
                   </div>
 
-                  <div className="seatTypeTable">
+                  <div className="seatTypeTable refinedSeatTypeTable">
                     <div className="seatTypeHead">
-                      <span>Seat Group Name</span><span>Quantity</span><span>Seat Style</span><span>Restraint</span><span>Armrest / Grab</span><span>Grab Type</span><span>Seat Branding</span><span />
+                      <span>Group</span><span>Qty</span><span>Style</span><span>Restraint</span><span>Armrest</span><span>Grab</span><span>Branding</span><span>Actions</span>
                     </div>
                     {draft.seatGroups.map((group, index) => (
                       <div className="seatTypeRow" key={group.id}>
                         <strong className="rowNumber">{index + 1}</strong>
                         <input value={group.name} onChange={(event) => updateSeatGroup(group.id, { name: event.target.value })} />
-                        <NumberStepper value={group.quantity} min={0} onChange={(value) => updateSeatGroup(group.id, { quantity: value })} />
+                        <NumberStepper value={group.quantity} min={0} max={48} onChange={(value) => updateSeatGroup(group.id, { quantity: value })} />
                         <SelectField value={group.seatStyle} options={seatCmsConfig.seatTypes} onChange={(value) => updateSeatGroup(group.id, { seatStyle: value })} />
                         <SelectField value={group.restraintType} options={seatCmsConfig.restraintTypes} onChange={(value) => updateSeatGroup(group.id, { restraintType: value })} />
                         <SelectField value={group.armrest} options={seatCmsConfig.armrests} onChange={(value) => updateSeatGroup(group.id, { armrest: value })} />
                         <SelectField value={group.grabType} options={seatCmsConfig.grabTypes} onChange={(value) => updateSeatGroup(group.id, { grabType: value })} />
                         <SelectField value={group.branding} options={seatCmsConfig.brandingOptions} onChange={(value) => updateSeatGroup(group.id, { branding: value })} />
-                        <div className="seatRowActions"><button type="button" onClick={() => duplicateSeatGroup(group)}>Copy</button><button type="button" onClick={() => removeSeatGroup(group.id)}>Remove</button></div>
+                        <div className="seatRowActions">
+                          <button type="button" onClick={() => duplicateSeatGroup(group)}><Copy size={14} /> Copy</button>
+                          <button type="button" onClick={() => removeSeatGroup(group.id)}><Trash2 size={14} /> Remove</button>
+                        </div>
                       </div>
                     ))}
                   </div>
-                  {totalWarning && <p className="warningNote">Ensure the total seat quantity matches the estimated passenger seats. Current seat type total: {totalSeatGroupQty}.</p>}
+                  {totalWarning && <p className="warningNote">Seat type quantity total is {totalSeatGroupQty}. Estimated passenger seats is {draft.seatPackage.estimatedPassengerSeats}. Micro Bird will validate the final layout.</p>}
                 </div>
                 <SeatPreview draft={draft} />
               </div>
@@ -170,26 +240,49 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
         }
 
         const options = getAvailableFeatureOptions(category.id, draft.specs);
+        const isOpen = openCategories[category.id] ?? false;
+        const selectedCount = options.filter((option) => selectedFeatureKeys.has(`${category.title}-${option.title}`)).length;
+
         return (
-          <section className="panel compact" key={category.id}>
-            <h2>{category.title}<span className="pill">{options.length} available options</span></h2>
-            {category.description && <p className="muted">{category.description}</p>}
-            <div className="featureGrid">
-              {options.map((option) => (
-                <div className="featureChip" key={option.id}>
-                  <strong>{option.title}</strong>
-                  <span>{option.description}</span>
-                </div>
-              ))}
-            </div>
+          <section className={isOpen ? 'panel compact optionAccordion open' : 'panel compact optionAccordion'} key={category.id}>
+            <button type="button" className="accordionHeader" onClick={() => toggleCategory(category.id)}>
+              <div>
+                <strong>{category.title}</strong>
+                <small>{category.description}</small>
+              </div>
+              <span className="pill">{selectedCount} selected / {options.length} available</span>
+              {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
+            {isOpen && (
+              <div className="featureOptionGrid">
+                {options.map((option) => (
+                  <FeatureOptionCard key={option.id} option={option} selected={selectedFeatureKeys.has(`${category.title}-${option.title}`)} onClick={() => toggleFeature(category.title, option)} />
+                ))}
+              </div>
+            )}
           </section>
         );
       })}
 
-      <section className="panel">
+      <section className="panel quickSummaryPanel">
+        <div className="quickSummaryHeader">
+          <div><CheckCircle2 size={24} /><strong>Your Selected Options</strong><span>Quick summary of current selections</span></div>
+          <button type="button" onClick={() => setShowQuickSummary((current) => !current)}><Eye size={16} /> {showQuickSummary ? 'Hide Summary' : 'View Summary'}</button>
+        </div>
+        <div className="summaryChips">
+          <span>{draft.specs.chassis}</span><span>{draft.specs.wheelbase}</span><span>{draft.specs.busType}</span><span>{draft.seatPackage.estimatedPassengerSeats} seats</span><span>{draft.seatPackage.wheelchairPositions} wheelchair positions</span><span>{draft.features.length} options</span>
+        </div>
+        {showQuickSummary && (
+          <div className="expandedOptionSummary">
+            {draft.features.length === 0 ? <p>No extra options selected yet.</p> : draft.features.map((feature) => <p key={`${feature.category}-${feature.label}`}><strong>{feature.category}</strong><span>{feature.label}</span></p>)}
+          </div>
+        )}
+      </section>
+
+      <section className="panel additionalRequirementsPanel">
         <label className="field">
-          <span>Additional Features or Special Requirements</span>
-          <textarea placeholder="Describe any extra features, notes, or special instructions for our team..." />
+          <span><Info size={16} /> Additional Features or Special Requirements</span>
+          <textarea placeholder="Describe any extra features, bid notes, deadlines, or special instructions for our team..." />
         </label>
       </section>
     </div>
