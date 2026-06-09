@@ -1,5 +1,6 @@
 import { CheckCircle2 } from 'lucide-react';
 import { getAvailableSeatLayouts, seatCmsConfig } from '../../data/featureOptionMatrix';
+import { seatShellImage } from '../../assets/seatShellImage';
 import type { RfqDraft, SeatLayoutTemplate } from '../../types/rfq';
 
 type SeatFrameProps = {
@@ -23,19 +24,13 @@ export function BusFramePreview({ layoutType, estimatedSeats, wheelchairPosition
   const hasRearLift = wheelchairPositions > 0;
 
   return (
-    <div className={compact ? 'busFramePreview compactFrame' : 'busFramePreview'}>
-      <div className="busNose" />
-      <div className="driverZone"><span /></div>
-      <div className="entryDoor" />
-      <div className="busBodyFrame">
-        <div className="windowRail topRail" />
-        <div className="windowRail bottomRail" />
-        <div className={`seatOverlay layout-${layoutType}`}>
-          {seatCells.map((_, index) => <span key={index} />)}
-        </div>
-        {hasRearLift && <div className="rearLiftArea"><i /><strong>Lift</strong></div>}
+    <div className={compact ? 'realBusPreview compactFrame' : 'realBusPreview'}>
+      <img src={seatShellImage} alt="Top-down Micro Bird bus shell reference" />
+      <div className={`realSeatOverlay layout-${layoutType}`}>
+        {seatCells.map((_, index) => <span key={index} />)}
       </div>
-      <div className="rearCap" />
+      {hasRearLift && <div className="realRearLiftArea"><strong>Lift / WC</strong></div>}
+      <div className="realEntryMarker">Entry</div>
     </div>
   );
 }
@@ -70,7 +65,7 @@ export function SeatReferencePreview({ draft }: { draft: RfqDraft }) {
         <p><strong>Rear Lift / Wheelchair</strong><span>{draft.seatPackage.wheelchairPositions > 0 ? 'Required' : 'Not required'}</span></p>
       </div>
       <div className="largeFrameWrap">
-        <div className="directionLabel">FRONT</div>
+        <div className="directionLabel">FRONT / ENTRY REFERENCE</div>
         <BusFramePreview layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={draft.seatPackage.estimatedPassengerSeats} wheelchairPositions={draft.seatPackage.wheelchairPositions} />
       </div>
       <div className="seatLegend">
