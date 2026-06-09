@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, X } from 'lucide-react';
 import { busSpecMatrixData } from './data/busSpecMatrix';
 import { initialDraft } from './data/initialDraft';
-import { Header, type AppPage } from './components/Header';
+import { Header, type AppPage, type UserRole } from './components/Header';
 import { RecentRequests } from './components/RecentRequests';
 import { Hero, Stepper } from './components/RfqShell';
 import { QuoteSummary } from './components/QuoteSummary';
@@ -19,12 +19,57 @@ import { ReviewStep } from './components/steps/ReviewStep';
 import { buildRfqSubmissionPayload, getDraftValidationIssues } from './utils/rfqSubmission';
 import type { RfqDraft, RfqStep } from './types/rfq';
 
+const defaultPageByRole: Record<UserRole, AppPage> = {
+  dealer: 'new-quote',
+  internal: 'rfq-queue',
+  admin: 'admin-config'
+};
+
+const permittedPages: Record<UserRole, AppPage[]> = {
+  dealer: ['new-quote', 'my-requests', 'quote-status'],
+  internal: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue'],
+  admin: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'admin-config']
+};
+
+function HelpModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="drawerBackdrop helpBackdrop" role="presentation">
+      <aside className="helpModal" aria-label="RFQ help">
+        <header className="drawerHeader">
+          <div>
+            <small>RFQ V2 Help</small>
+            <h2>How the workflow works</h2>
+            <p>Dealer intake and internal workflow layer — not the final configurator.</p>
+          </div>
+          <button type="button" onClick={onClose}><X size={20} /></button>
+        </header>
+        <div className="drawerContent">
+          <section>
+            <h3>Dealer flow</h3>
+            <p>Submit structured RFQs, add documents, review warnings, and track status from My Requests or Quote Status.</p>
+          </section>
+          <section>
+            <h3>Internal flow</h3>
+            <p>Use RFQ Queue to review incoming RFQs, assign owners, update statuses, view documents, and audit history.</p>
+          </section>
+          <section>
+            <h3>Admin/config flow</h3>
+            <p>Use Config to review V2 seed configuration for vehicle matrix, options, seats, routing, SLA, and role baselines.</p>
+          </section>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 export function App() {
   const [page, setPage] = useState<AppPage>('new-quote');
+  const [role, setRole] = useState<UserRole>('admin');
   const [step, setStep] = useState<RfqStep>(1);
   const [draft, setDraft] = useState<RfqDraft>(initialDraft);
   const [submitStatus, setSubmitStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const selectedChassis = busSpecMatrixData.chassis.find((item) => item.id === draft.specs.chassis);
   const selectedWheelbase = busSpecMatrixData.wheelbases.find((item) => item.id === draft.specs.wheelbase);
@@ -32,8 +77,26 @@ export function App() {
   const summaryFeatures = useMemo(() => draft.features.slice(0, 6), [draft.features]);
   const progress = step * 25;
 
+  const navigate = (targetPage: AppPage) => {
+    if (!permittedPages[role].includes(targetPage)) {
+      setPage(defaultPageByRole[role]);
+      return;
+    }
+    setPage(targetPage);
+  };
+
+  const handleRoleChange = (nextRole: UserRole) => {
+    setRole(nextRole);
+    if (!permittedPages[nextRole].includes(page)) setPage(defaultPageByRole[nextRole]);
+  };
+
   const goNext = () => setStep((current) => Math.min(4, current + 1) as RfqStep);
   const goBack = () => setStep((current) => Math.max(1, current - 1) as RfqStep);
+  const saveAndExit = () => {
+    localStorage.setItem('birdQuoteDraft', JSON.stringify(draft));
+    setSubmitStatus('Draft saved locally. You can continue editing from this browser session.');
+    setPage('my-requests');
+  };
   const jumpToStep = (targetStep: RfqStep) => {
     setPage('new-quote');
     setStep(targetStep);
@@ -79,7 +142,7 @@ export function App() {
 
   return (
     <div className="appShell">
-      <Header page={page} onNavigate={setPage} />
+      <Header page={page} role={role} onNavigate={navigate} onRoleChange={handleRoleChange} onHelp={() => setShowHelp(true)} />
       {page === 'new-quote' && (
         <main className="quoteFormLayout">
           <RecentRequests />
@@ -92,7 +155,7 @@ export function App() {
             {step === 4 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}
             {submitStatus && <div className="submitStatus">{submitStatus}</div>}
             <div className="actions">
-              <button className="secondary" onClick={goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
+              <button className="secondary" type="button" onClick={step === 1 ? saveAndExit : goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
               <button className="primary" disabled={isSubmitting} onClick={step === 4 ? submitRfq : goNext}>
                 {isSubmitting ? 'Submitting...' : step === 4 ? 'Submit Quote Request' : step === 1 ? 'Next: Bus Specifications' : step === 2 ? 'Next: Features & Options' : 'Next: Review & Submit'} <ArrowRight size={18} />
               </button>
@@ -105,6 +168,7 @@ export function App() {
       {page === 'quote-status' && <main className="pageLayout"><QuoteStatusPage /></main>}
       {page === 'rfq-queue' && <main className="pageLayout"><InternalQueuePage /></main>}
       {page === 'admin-config' && <main className="pageLayout"><AdminConfigPage /></main>}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </div>
   );
 }
