@@ -1,18 +1,11 @@
 import { useEffect, useState } from 'react';
 import { mockRequests, type MockRequest, type RequestStatus } from '../../data/mockRequests';
 import { fetchRfqRequests, fetchRfqRows, updateRfqRequest, type RfqApiRow } from '../../services/rfqApi';
+import { canMoveToStatus, getSlaPriority, getSlaStatus } from '../../utils/rfqSla';
 import { RfqDetailDrawer } from './RfqDetailDrawer';
 
 const owners = ['Unassigned', 'Sales Ops', 'Jason Watson', 'Melissa Nadeau', 'Estimating Team'];
 const statuses: RequestStatus[] = ['Submitted', 'In Review', 'Assigned', 'Quote In Progress', 'Quote Sent', 'Converted to Order'];
-
-function priorityFromSla(slaAge: string) {
-  const days = Number.parseFloat(slaAge);
-  if (Number.isNaN(days)) return 'Normal';
-  if (days >= 3) return 'High';
-  if (days >= 2) return 'Watch';
-  return 'Normal';
-}
 
 export function InternalQueuePage() {
   const [requests, setRequests] = useState<MockRequest[]>(mockRequests);
@@ -46,7 +39,7 @@ export function InternalQueuePage() {
   const selectedRequest = requests.find((request) => request.id === selectedId) ?? requests[0];
   const unassignedCount = requests.filter((request) => request.owner === 'Unassigned').length;
   const activeCount = requests.filter((request) => ['Submitted', 'In Review', 'Assigned', 'Quote In Progress'].includes(request.status)).length;
-  const slaWatchCount = requests.filter((request) => priorityFromSla(request.slaAge) !== 'Normal').length;
+  const slaWatchCount = requests.filter((request) => ['At Risk', 'Past Due'].includes(getSlaStatus(request))).length;
 
   async function persistQueueChange(rfqId: string, updates: { status?: RequestStatus; assignedOwner?: string }) {
     setSaveStatus('Saving queue update...');
@@ -67,6 +60,13 @@ export function InternalQueuePage() {
   };
 
   const updateStatus = (rfqId: string, status: RequestStatus) => {
+    const currentRequest = requests.find((request) => request.id === rfqId);
+    if (!currentRequest) return;
+    const guardMessage = canMoveToStatus(currentRequest, status);
+    if (guardMessage) {
+      setSaveStatus(guardMessage);
+      return;
+    }
     setRequests((current) => current.map((request) => request.id === rfqId ? { ...request, status, lastUpdate: `Status updated to ${status}` } : request));
     persistQueueChange(rfqId, { status });
   };
@@ -112,9 +112,9 @@ export function InternalQueuePage() {
               <select value={request.owner} onClick={(event) => event.stopPropagation()} onChange={(event) => updateOwner(request.id, event.target.value)}>
                 {owners.map((owner) => <option key={owner} value={owner}>{owner}</option>)}
               </select>
-              <em>{priorityFromSla(request.slaAge)}</em>
-              <span>{request.slaAge}</span>
-              <button type="button" onClick={(event) => { event.stopPropagation(); openDetails(request.id); }}>Open</button>
+              <em className={`priority-${getSlaPriority(request).toLowerCase()}`}>{getSlaPriority(request)}</em>
+              <span className={`slaBadge sla-${getSlaStatus(request).toLowerCase().replaceAll(' ', '-')}`}>{getSlaStatus(request)}<small>{request.slaAge}</small></span>
+              <button className="btn btn-ghost btn-sm" type="button" onClick={(event) => { event.stopPropagation(); openDetails(request.id); }}>Open</button>
             </div>
           ))}
         </div>
@@ -133,7 +133,7 @@ export function InternalQueuePage() {
             <h2>Queue Controls</h2>
             <p><strong>Current Owner:</strong> {selectedRequest.owner}</p>
             <p><strong>Current Status:</strong> {selectedRequest.status}</p>
-            <p><strong>SLA Age:</strong> {selectedRequest.slaAge}</p>
+            <p><strong>SLA:</strong> {getSlaStatus(selectedRequest)} • {selectedRequest.slaAge}</p>
             <div className="infoBox">Owner and status changes now persist to Neon with status history audit rows.</div>
           </div>
         </section>
