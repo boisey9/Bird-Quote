@@ -53,6 +53,22 @@ export const initialDraft: RfqDraft = {
   features: featureCategories.flatMap((category) =>
     category.options.slice(0, category.id === 'seats' ? 4 : 2)
   ),
+  documents: [
+    {
+      id: 'doc-rfp',
+      fileName: 'RFP_Document.pdf',
+      fileType: 'PDF',
+      fileSize: '1.4 MB',
+      documentType: 'bid'
+    },
+    {
+      id: 'doc-floorplan',
+      fileName: 'Site_Floor_Plan.xlsx',
+      fileType: 'XLSX',
+      fileSize: '420 KB',
+      documentType: 'floorplan'
+    }
+  ],
   confirmedAccuracy: true,
   consentToContact: true
 };
