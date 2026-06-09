@@ -148,6 +148,11 @@ export interface SeatLayoutTemplate {
   description: string;
   maxSeats: number;
   layoutType: string;
+  contractIds?: string[];
+  market?: 'school' | 'commercial' | 'mfsab' | 'any';
+  modelTypes?: string[];
+  rearLiftCompatible?: boolean;
+  maxWheelchairPositions?: number;
 }
 
 export interface SeatLayoutRule {
@@ -155,11 +160,30 @@ export interface SeatLayoutRule {
   chassisIds: string[];
   busTypeIds: string[];
   wheelbaseIds: string[];
+  certificationIds?: string[];
+  contractIds?: string[];
+  modelTypes?: string[];
+}
+
+export type SeatPositionType = 'passenger-seat' | 'foldaway' | 'wheelchair-space' | 'empty' | 'aisle' | 'lounge' | 'perimeter-seat';
+
+export interface SeatLayoutRow {
+  id: string;
+  layoutId: string;
+  rowNumber: number;
+  zone: 'front' | 'mid' | 'rear' | 'curbside' | 'streetside';
+  leftPositionType: SeatPositionType;
+  rightPositionType: SeatPositionType;
+  seatCountLeft: number;
+  seatCountRight: number;
+  allowedSeatStyles: string[];
+  notes?: string;
 }
 
 export interface SeatCmsConfig {
   layouts: SeatLayoutTemplate[];
   rules: SeatLayoutRule[];
+  rows: SeatLayoutRow[];
   seatTypes: string[];
   materials: string[];
   colors: string[];
