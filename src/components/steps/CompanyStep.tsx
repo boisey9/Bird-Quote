@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
-import { ChevronRight, ClipboardList, Plus, Trash2, Upload, User } from 'lucide-react';
+import { ChevronRight, ClipboardList, FileCheck2, Plus, Trash2, Upload, User } from 'lucide-react';
+import { contractOptions, getContractById } from '../../data/contractConfig';
 import { FileRow, Input } from '../FormControls';
 import type { RfqDocument, RfqDraft } from '../../types/rfq';
 
@@ -17,9 +18,22 @@ function inferFileType(fileName: string) {
 
 export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
   const [showReferenceDetails, setShowReferenceDetails] = useState(false);
+  const selectedContract = getContractById(draft.company.contractId);
 
   const update = (key: keyof RfqDraft['company'], value: string) => {
     setDraft((current) => ({ ...current, company: { ...current.company, [key]: value } }));
+  };
+
+  const updateContract = (contractId: string) => {
+    const contract = getContractById(contractId);
+    setDraft((current) => ({
+      ...current,
+      company: {
+        ...current.company,
+        contractId: contract.id,
+        contractWorkflowType: contract.workflowType
+      }
+    }));
   };
 
   const addDocument = () => {
@@ -66,6 +80,29 @@ export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
           <Input label="Province / State *" value={draft.company.provinceState} onChange={(value) => update('provinceState', value)} />
           <Input label="Additional Information" value={draft.company.additionalInfo} onChange={(value) => update('additionalInfo', value)} textarea />
         </div>
+      </section>
+
+      <section className="panel contractPanel">
+        <h2><FileCheck2 /> Contract / Procurement Program</h2>
+        <div className="contractSelectorGrid">
+          <label className="field">
+            <span>Contract Selection</span>
+            <select value={draft.company.contractId} onChange={(event) => updateContract(event.target.value)}>
+              {contractOptions.map((contract) => <option key={contract.id} value={contract.id}>{contract.label}</option>)}
+            </select>
+          </label>
+          <div className={selectedContract.workflowType === 'contract-controlled' ? 'contractStatus controlled' : 'contractStatus'}>
+            <strong>{selectedContract.workflowType === 'contract-controlled' ? 'Contract-Controlled Workflow' : 'Standard Workflow'}</strong>
+            <span>{selectedContract.description}</span>
+          </div>
+        </div>
+        {selectedContract.workflowType === 'contract-controlled' && (
+          <div className="contractRulesSummary">
+            <p><strong>Vehicle Rules</strong><span>{selectedContract.allowedChassisIds.length} chassis • {selectedContract.allowedWheelbaseIds.length || 'Any'} wheelbases • {selectedContract.allowedBusTypeIds.length} bus types</span></p>
+            <p><strong>Seat Layout Rules</strong><span>{selectedContract.allowedSeatLayoutIds.length} approved seat layout templates</span></p>
+            <p><strong>Required Documents</strong><span>{selectedContract.requiredDocumentTypes.join(', ')}</span></p>
+          </div>
+        )}
       </section>
 
       <section className="panel">
