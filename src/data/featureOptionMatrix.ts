@@ -39,15 +39,15 @@ export const featureOptions: FeatureOptionItem[] = [
 
 export const seatCmsConfig: SeatCmsConfig = {
   layouts: [
-    { id: 'front-facing-2x2', title: '2x2 Front Facing', description: 'Standard paired seats with center aisle.', maxSeats: 24, layoutType: 'front_facing' },
-    { id: 'front-facing-2x1', title: '2x1 Front Facing', description: 'Single seats with center aisle.', maxSeats: 18, layoutType: 'front_facing' },
-    { id: 'perimeter', title: 'Perimeter Seating', description: 'Side-facing seating for shuttle use.', maxSeats: 18, layoutType: 'perimeter' },
-    { id: 'rear-lounge', title: 'Rear Lounge', description: 'Lounge-style seating at the rear.', maxSeats: 16, layoutType: 'lounge' },
-    { id: 'school-3x3', title: '3x3 School Seating', description: 'High-capacity school seating layout.', maxSeats: 36, layoutType: 'school' },
-    { id: 'school-3x2', title: '3x2 School Seating', description: 'High-capacity school seating layout.', maxSeats: 30, layoutType: 'school' },
-    { id: 'school-3x1', title: '3x1 School Seating', description: 'Traditional school seating layout.', maxSeats: 24, layoutType: 'school' },
-    { id: 'school-2x2', title: '2x2 School Seating', description: 'School layout with paired seats.', maxSeats: 20, layoutType: 'school' },
-    { id: 'wheelchair-foldaway', title: 'Wheelchair / Foldaway', description: 'Space for wheelchair or foldaway seats.', maxSeats: 16, layoutType: 'accessible' }
+    { id: 'front-facing-2x2', title: '2x2 Front Facing', description: 'Standard paired seats with center aisle.', maxSeats: 24, layoutType: 'front_facing', market: 'commercial', rearLiftCompatible: true, maxWheelchairPositions: 2 },
+    { id: 'front-facing-2x1', title: '2x1 Front Facing', description: 'Single seats with center aisle.', maxSeats: 18, layoutType: 'front_facing', market: 'commercial', rearLiftCompatible: true, maxWheelchairPositions: 2 },
+    { id: 'perimeter', title: 'Perimeter Seating', description: 'Side-facing seating for shuttle use.', maxSeats: 18, layoutType: 'perimeter', market: 'commercial', rearLiftCompatible: false, maxWheelchairPositions: 0 },
+    { id: 'rear-lounge', title: 'Rear Lounge', description: 'Lounge-style seating at the rear.', maxSeats: 16, layoutType: 'lounge', market: 'commercial', rearLiftCompatible: false, maxWheelchairPositions: 0 },
+    { id: 'school-3x3', title: '3x3 School Seating', description: 'High-capacity school seating layout.', maxSeats: 36, layoutType: 'school', market: 'school', rearLiftCompatible: false, maxWheelchairPositions: 0 },
+    { id: 'school-3x2', title: '3x2 School Seating', description: 'High-capacity school seating layout.', maxSeats: 30, layoutType: 'school', market: 'school', rearLiftCompatible: false, maxWheelchairPositions: 0 },
+    { id: 'school-3x1', title: '3x1 School Seating', description: 'Traditional school seating layout.', maxSeats: 24, layoutType: 'school', market: 'school', rearLiftCompatible: false, maxWheelchairPositions: 0 },
+    { id: 'school-2x2', title: '2x2 School Seating', description: 'School layout with paired seats.', maxSeats: 20, layoutType: 'school', market: 'school', rearLiftCompatible: false, maxWheelchairPositions: 0 },
+    { id: 'wheelchair-foldaway', title: 'Wheelchair / Foldaway', description: 'Space for wheelchair or foldaway seats.', maxSeats: 16, layoutType: 'accessible', market: 'commercial', rearLiftCompatible: true, maxWheelchairPositions: 4 }
   ],
   rules: [
     { layoutId: 'front-facing-2x2', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['commercial', 'hotel', 'airport', 'church', 'commercial-special-needs', 'assisted-living'], wheelbaseIds: [] },
@@ -59,6 +59,23 @@ export const seatCmsConfig: SeatCmsConfig = {
     { layoutId: 'school-3x1', chassisIds: ['gm', 'ford'], busTypeIds: ['church', 'commercial'], wheelbaseIds: [] },
     { layoutId: 'school-2x2', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['church', 'commercial'], wheelbaseIds: [] },
     { layoutId: 'wheelchair-foldaway', chassisIds: ['gm', 'ford', 'ford-transit'], busTypeIds: ['commercial-special-needs', 'assisted-living', 'commercial', 'hotel'], wheelbaseIds: [] }
+  ],
+  rows: [
+    { id: 'ff22-r1', layoutId: 'front-facing-2x2', rowNumber: 1, zone: 'front', leftPositionType: 'passenger-seat', rightPositionType: 'passenger-seat', seatCountLeft: 2, seatCountRight: 2, allowedSeatStyles: ['High Back Standard', 'High Back Premium'] },
+    { id: 'ff22-r2', layoutId: 'front-facing-2x2', rowNumber: 2, zone: 'mid', leftPositionType: 'passenger-seat', rightPositionType: 'passenger-seat', seatCountLeft: 2, seatCountRight: 2, allowedSeatStyles: ['High Back Standard', 'High Back Premium'] },
+    { id: 'ff22-r3', layoutId: 'front-facing-2x2', rowNumber: 3, zone: 'mid', leftPositionType: 'passenger-seat', rightPositionType: 'passenger-seat', seatCountLeft: 2, seatCountRight: 2, allowedSeatStyles: ['High Back Standard', 'High Back Premium'] },
+    { id: 'ff22-r4', layoutId: 'front-facing-2x2', rowNumber: 4, zone: 'rear', leftPositionType: 'passenger-seat', rightPositionType: 'passenger-seat', seatCountLeft: 2, seatCountRight: 2, allowedSeatStyles: ['High Back Standard', 'Foldaway Seat'] },
+    { id: 'ff21-r1', layoutId: 'front-facing-2x1', rowNumber: 1, zone: 'front', leftPositionType: 'passenger-seat', rightPositionType: 'empty', seatCountLeft: 2, seatCountRight: 0, allowedSeatStyles: ['High Back Standard'] },
+    { id: 'ff21-r2', layoutId: 'front-facing-2x1', rowNumber: 2, zone: 'mid', leftPositionType: 'passenger-seat', rightPositionType: 'empty', seatCountLeft: 2, seatCountRight: 0, allowedSeatStyles: ['High Back Standard'] },
+    { id: 'ff21-r3', layoutId: 'front-facing-2x1', rowNumber: 3, zone: 'rear', leftPositionType: 'passenger-seat', rightPositionType: 'wheelchair-space', seatCountLeft: 2, seatCountRight: 0, allowedSeatStyles: ['High Back Standard', 'Foldaway Seat'] },
+    { id: 'per-r1', layoutId: 'perimeter', rowNumber: 1, zone: 'curbside', leftPositionType: 'perimeter-seat', rightPositionType: 'empty', seatCountLeft: 4, seatCountRight: 0, allowedSeatStyles: ['Perimeter / Lounge Seat'] },
+    { id: 'per-r2', layoutId: 'perimeter', rowNumber: 2, zone: 'streetside', leftPositionType: 'empty', rightPositionType: 'perimeter-seat', seatCountLeft: 0, seatCountRight: 4, allowedSeatStyles: ['Perimeter / Lounge Seat'] },
+    { id: 'lou-r1', layoutId: 'rear-lounge', rowNumber: 1, zone: 'rear', leftPositionType: 'lounge', rightPositionType: 'lounge', seatCountLeft: 3, seatCountRight: 3, allowedSeatStyles: ['Perimeter / Lounge Seat'] },
+    { id: 'wc-r1', layoutId: 'wheelchair-foldaway', rowNumber: 1, zone: 'mid', leftPositionType: 'foldaway', rightPositionType: 'wheelchair-space', seatCountLeft: 2, seatCountRight: 0, allowedSeatStyles: ['Foldaway Seat'] },
+    { id: 'wc-r2', layoutId: 'wheelchair-foldaway', rowNumber: 2, zone: 'rear', leftPositionType: 'foldaway', rightPositionType: 'wheelchair-space', seatCountLeft: 2, seatCountRight: 0, allowedSeatStyles: ['Foldaway Seat'] },
+    { id: 'sch-r1', layoutId: 'school-3x2', rowNumber: 1, zone: 'front', leftPositionType: 'passenger-seat', rightPositionType: 'passenger-seat', seatCountLeft: 3, seatCountRight: 2, allowedSeatStyles: ['Low Back Standard', 'High Back Standard'] },
+    { id: 'sch-r2', layoutId: 'school-3x2', rowNumber: 2, zone: 'mid', leftPositionType: 'passenger-seat', rightPositionType: 'passenger-seat', seatCountLeft: 3, seatCountRight: 2, allowedSeatStyles: ['Low Back Standard', 'High Back Standard'] },
+    { id: 'sch-r3', layoutId: 'school-3x2', rowNumber: 3, zone: 'rear', leftPositionType: 'passenger-seat', rightPositionType: 'passenger-seat', seatCountLeft: 3, seatCountRight: 2, allowedSeatStyles: ['Low Back Standard', 'High Back Standard'] }
   ],
   seatTypes: ['High Back Standard', 'High Back Premium', 'Low Back Standard', 'Foldaway Seat', 'Perimeter / Lounge Seat'],
   materials: ['Vinyl', 'Cloth', 'Freedman Level 4 Vinyl'],
@@ -99,6 +116,11 @@ export function getAvailableSeatLayouts(specs: BusSpecs) {
     const chassisOk = rule.chassisIds.length === 0 || rule.chassisIds.includes(specs.chassis);
     const busTypeOk = rule.busTypeIds.length === 0 || rule.busTypeIds.includes(specs.busType);
     const wheelbaseOk = rule.wheelbaseIds.length === 0 || rule.wheelbaseIds.includes(specs.wheelbase);
-    return chassisOk && busTypeOk && wheelbaseOk;
+    const certificationOk = !rule.certificationIds || rule.certificationIds.length === 0 || rule.certificationIds.includes(specs.certification);
+    return chassisOk && busTypeOk && wheelbaseOk && certificationOk;
   });
+}
+
+export function getSeatLayoutRows(layoutId: string) {
+  return seatCmsConfig.rows.filter((row) => row.layoutId === layoutId).sort((a, b) => a.rowNumber - b.rowNumber);
 }
