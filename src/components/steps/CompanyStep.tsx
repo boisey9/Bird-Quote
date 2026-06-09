@@ -1,16 +1,55 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { ChevronRight, ClipboardList, Upload, User } from 'lucide-react';
+import { ChevronRight, ClipboardList, Plus, Trash2, Upload, User } from 'lucide-react';
 import { FileRow, Input } from '../FormControls';
-import type { RfqDraft } from '../../types/rfq';
+import type { RfqDocument, RfqDraft } from '../../types/rfq';
 
 type CompanyStepProps = {
   draft: RfqDraft;
   setDraft: Dispatch<SetStateAction<RfqDraft>>;
 };
 
+const documentTypes: RfqDocument['documentType'][] = ['bid', 'floorplan', 'spec-sheet', 'supporting', 'site-photos', 'other'];
+
+function inferFileType(fileName: string) {
+  const ext = fileName.split('.').pop()?.toUpperCase();
+  return ext || 'FILE';
+}
+
 export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
   const update = (key: keyof RfqDraft['company'], value: string) => {
     setDraft((current) => ({ ...current, company: { ...current.company, [key]: value } }));
+  };
+
+  const addDocument = () => {
+    setDraft((current) => ({
+      ...current,
+      documents: [
+        ...current.documents,
+        {
+          id: `doc-${Date.now()}`,
+          fileName: 'New_Document.pdf',
+          fileType: 'PDF',
+          fileSize: '0 KB',
+          documentType: 'supporting'
+        }
+      ]
+    }));
+  };
+
+  const updateDocument = (id: string, updates: Partial<RfqDocument>) => {
+    setDraft((current) => ({
+      ...current,
+      documents: current.documents.map((document) => {
+        if (document.id !== id) return document;
+        const nextDocument = { ...document, ...updates };
+        if (updates.fileName) nextDocument.fileType = inferFileType(updates.fileName);
+        return nextDocument;
+      })
+    }));
+  };
+
+  const removeDocument = (id: string) => {
+    setDraft((current) => ({ ...current, documents: current.documents.filter((document) => document.id !== id) }));
   };
 
   return (
@@ -39,7 +78,7 @@ export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
             <strong>{draft.company.pastQuoteOrOrderNumber}</strong>
             <p>Ford • 158” WB DRW • 16 Passenger</p>
           </div>
-          <button className="linkBtn">View details <ChevronRight size={16} /></button>
+          <button className="linkBtn" type="button">View details <ChevronRight size={16} /></button>
         </div>
       </section>
 
@@ -49,12 +88,21 @@ export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
           <div className="dropzone">
             <Upload />
             <strong>Upload Bid Document</strong>
-            <span>Drag and drop your file here or tap to browse</span>
-            <button>Choose File</button>
+            <span>For V2, document metadata is captured. File storage can connect later.</span>
+            <button type="button" onClick={addDocument}><Plus size={16} /> Add Document Metadata</button>
           </div>
-          <div className="fileList">
-            <FileRow name="RFP_Document.pdf" size="1.4 MB" />
-            <FileRow name="Site_Floor_Plan.xlsx" size="420 KB" />
+          <div className="fileList documentMetaList">
+            {draft.documents.map((document) => (
+              <div className="documentMetaRow" key={document.id}>
+                <select value={document.documentType} onChange={(event) => updateDocument(document.id, { documentType: event.target.value as RfqDocument['documentType'] })}>
+                  {documentTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+                <input value={document.fileName} onChange={(event) => updateDocument(document.id, { fileName: event.target.value })} />
+                <input value={document.fileSize} onChange={(event) => updateDocument(document.id, { fileSize: event.target.value })} />
+                <button type="button" onClick={() => removeDocument(document.id)}><Trash2 size={15} /></button>
+              </div>
+            ))}
+            {draft.documents.length === 0 && <FileRow name="No documents added" size="Optional" />}
             <small>Accepted file types: PDF, DOCX, XLSX, DWG, JPG, PNG, ZIP. Max file size: 25 MB per file.</small>
           </div>
         </div>
