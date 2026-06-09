@@ -9,6 +9,8 @@ export interface CompanyInfo {
   finalCustomerPhone: string;
   provinceState: string;
   additionalInfo: string;
+  contractId: string;
+  contractWorkflowType: 'standard' | 'contract-controlled';
   referenceMode: 'new' | 'pastOrder';
   pastQuoteOrOrderNumber: string;
 }
