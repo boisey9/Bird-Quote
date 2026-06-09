@@ -7,6 +7,10 @@ import { RfqDetailDrawer } from './RfqDetailDrawer';
 const owners = ['Unassigned', 'Sales Ops', 'Jason Watson', 'Melissa Nadeau', 'Estimating Team'];
 const statuses: RequestStatus[] = ['Submitted', 'In Review', 'Assigned', 'Quote In Progress', 'Quote Sent', 'Converted to Order'];
 
+function toClassName(value: string) {
+  return value.toLowerCase().replace(/\s+/g, '-');
+}
+
 export function InternalQueuePage() {
   const [requests, setRequests] = useState<MockRequest[]>(mockRequests);
   const [rawRows, setRawRows] = useState<RfqApiRow[]>([]);
@@ -102,21 +106,25 @@ export function InternalQueuePage() {
           <div className="requestHead opsHead">
             <span>RFQ</span><span>Customer</span><span>Status</span><span>Owner</span><span>Priority</span><span>SLA</span><span>Action</span>
           </div>
-          {requests.map((request) => (
-            <div className={selectedId === request.id ? 'requestRow opsRow selectedQueueRow' : 'requestRow opsRow'} key={request.id} onClick={() => setSelectedId(request.id)}>
-              <strong>{request.id}<small>{request.submittedDate}</small></strong>
-              <span>{request.finalCustomer}<small>{request.busType}</small></span>
-              <select value={request.status} onClick={(event) => event.stopPropagation()} onChange={(event) => updateStatus(request.id, event.target.value as RequestStatus)}>
-                {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
-              </select>
-              <select value={request.owner} onClick={(event) => event.stopPropagation()} onChange={(event) => updateOwner(request.id, event.target.value)}>
-                {owners.map((owner) => <option key={owner} value={owner}>{owner}</option>)}
-              </select>
-              <em className={`priority-${getSlaPriority(request).toLowerCase()}`}>{getSlaPriority(request)}</em>
-              <span className={`slaBadge sla-${getSlaStatus(request).toLowerCase().replaceAll(' ', '-')}`}>{getSlaStatus(request)}<small>{request.slaAge}</small></span>
-              <button className="btn btn-ghost btn-sm" type="button" onClick={(event) => { event.stopPropagation(); openDetails(request.id); }}>Open</button>
-            </div>
-          ))}
+          {requests.map((request) => {
+            const slaStatus = getSlaStatus(request);
+            const priority = getSlaPriority(request);
+            return (
+              <div className={selectedId === request.id ? 'requestRow opsRow selectedQueueRow' : 'requestRow opsRow'} key={request.id} onClick={() => setSelectedId(request.id)}>
+                <strong>{request.id}<small>{request.submittedDate}</small></strong>
+                <span>{request.finalCustomer}<small>{request.busType}</small></span>
+                <select value={request.status} onClick={(event) => event.stopPropagation()} onChange={(event) => updateStatus(request.id, event.target.value as RequestStatus)}>
+                  {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                </select>
+                <select value={request.owner} onClick={(event) => event.stopPropagation()} onChange={(event) => updateOwner(request.id, event.target.value)}>
+                  {owners.map((owner) => <option key={owner} value={owner}>{owner}</option>)}
+                </select>
+                <em className={`priority-${toClassName(priority)}`}>{priority}</em>
+                <span className={`slaBadge sla-${toClassName(slaStatus)}`}>{slaStatus}<small>{request.slaAge}</small></span>
+                <button className="btn btn-ghost btn-sm" type="button" onClick={(event) => { event.stopPropagation(); openDetails(request.id); }}>Open</button>
+              </div>
+            );
+          })}
         </div>
       </section>
 
