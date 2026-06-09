@@ -1,33 +1,70 @@
 import { CheckCircle2 } from 'lucide-react';
-import { getAvailableSeatLayouts, seatCmsConfig } from '../../data/featureOptionMatrix';
+import { getAvailableSeatLayouts, getSeatLayoutRows, seatCmsConfig } from '../../data/featureOptionMatrix';
 import { seatShellImage } from '../../assets/seatShellImage';
-import type { RfqDraft, SeatLayoutTemplate } from '../../types/rfq';
+import type { RfqDraft, SeatLayoutRow, SeatLayoutTemplate, SeatPositionType } from '../../types/rfq';
 
 type SeatFrameProps = {
   layoutType: string;
+  layoutId?: string;
   estimatedSeats: number;
   wheelchairPositions: number;
   compact?: boolean;
 };
 
-function seatCountForPreview(layoutType: string, estimatedSeats: number, compact?: boolean) {
-  const limit = compact ? 10 : 24;
-  if (layoutType === 'school') return Math.min(limit, Math.max(8, estimatedSeats));
-  if (layoutType === 'perimeter') return Math.min(limit, Math.max(8, estimatedSeats));
-  if (layoutType === 'accessible') return Math.min(limit, Math.max(6, estimatedSeats));
-  if (layoutType === 'lounge') return Math.min(limit, Math.max(6, estimatedSeats));
-  return Math.min(limit, Math.max(6, estimatedSeats));
+function cssSafe(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
 
-export function BusFramePreview({ layoutType, estimatedSeats, wheelchairPositions, compact = false }: SeatFrameProps) {
-  const seatCells = Array.from({ length: seatCountForPreview(layoutType, estimatedSeats, compact) });
+function fallbackRows(layoutType: string, estimatedSeats: number): SeatLayoutRow[] {
+  const baseCount = Math.min(4, Math.max(2, Math.ceil(estimatedSeats / 4)));
+  return Array.from({ length: baseCount }).map((_, index) => ({
+    id: `fallback-${layoutType}-${index}`,
+    layoutId: layoutType,
+    rowNumber: index + 1,
+    zone: index === 0 ? 'front' : index === baseCount - 1 ? 'rear' : 'mid',
+    leftPositionType: layoutType === 'perimeter' ? 'perimeter-seat' : layoutType === 'lounge' ? 'lounge' : 'passenger-seat',
+    rightPositionType: layoutType === 'accessible' && index === baseCount - 1 ? 'wheelchair-space' : layoutType === 'perimeter' ? 'perimeter-seat' : layoutType === 'lounge' ? 'lounge' : 'passenger-seat',
+    seatCountLeft: layoutType === 'school' ? 3 : 2,
+    seatCountRight: layoutType === 'school' ? 2 : 2,
+    allowedSeatStyles: []
+  }));
+}
+
+function markersForSide(row: SeatLayoutRow, side: 'left' | 'right', compact: boolean) {
+  const positionType = side === 'left' ? row.leftPositionType : row.rightPositionType;
+  const count = side === 'left' ? row.seatCountLeft : row.seatCountRight;
+
+  if (positionType === 'empty' || positionType === 'aisle') return [];
+  if (positionType === 'wheelchair-space') return [{ type: positionType, label: 'WC' }];
+
+  const maxMarkers = compact ? 2 : Math.min(3, count);
+  return Array.from({ length: Math.max(1, maxMarkers) }).map(() => ({ type: positionType, label: '' }));
+}
+
+function getRows(layoutId: string | undefined, layoutType: string, estimatedSeats: number) {
+  const configuredRows = layoutId ? getSeatLayoutRows(layoutId) : [];
+  return configuredRows.length > 0 ? configuredRows : fallbackRows(layoutType, estimatedSeats);
+}
+
+export function BusFramePreview({ layoutType, layoutId, estimatedSeats, wheelchairPositions, compact = false }: SeatFrameProps) {
   const hasRearLift = wheelchairPositions > 0;
+  const rows = getRows(layoutId, layoutType, estimatedSeats);
 
   return (
     <div className={compact ? 'realBusPreview compactFrame' : 'realBusPreview'}>
       <img src={seatShellImage} alt="Top-down Micro Bird bus shell reference" />
-      <div className={`realSeatOverlay layout-${layoutType}`}>
-        {seatCells.map((_, index) => <span key={index} />)}
+      <div className={`cmsSeatGrid layout-${cssSafe(layoutType)}`}>
+        {rows.map((row) => (
+          <div className={`cmsSeatRow zone-${row.zone}`} key={row.id}>
+            <div className="seatSide leftSide">
+              {markersForSide(row, 'left', compact).map((marker, index) => <span className={`seatMarker type-${cssSafe(marker.type)}`} key={`left-${index}`}>{marker.label}</span>)}
+            </div>
+            <div className="aisleMarker" />
+            <div className="seatSide rightSide">
+              {markersForSide(row, 'right', compact).map((marker, index) => <span className={`seatMarker type-${cssSafe(marker.type)}`} key={`right-${index}`}>{marker.label}</span>)}
+            </div>
+          </div>
+        ))}
       </div>
       {hasRearLift && <div className="realRearLiftArea"><strong>Lift / WC</strong></div>}
       <div className="realEntryMarker">Entry</div>
@@ -36,13 +73,16 @@ export function BusFramePreview({ layoutType, estimatedSeats, wheelchairPosition
 }
 
 export function SeatLayoutCard({ layout, selected, onSelect, draft }: { layout: SeatLayoutTemplate; selected: boolean; onSelect: () => void; draft: RfqDraft }) {
+  const rows = getSeatLayoutRows(layout.id);
+  const wheelchairPreview = layout.layoutType === 'accessible' ? Math.max(1, draft.seatPackage.wheelchairPositions) : draft.seatPackage.wheelchairPositions;
+
   return (
     <button type="button" className={selected ? 'seatLayoutCard frameCard selected' : 'seatLayoutCard frameCard'} onClick={onSelect}>
       {selected && <CheckCircle2 className="selectedBadge" size={20} />}
-      <BusFramePreview layoutType={layout.layoutType} estimatedSeats={Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats)} wheelchairPositions={layout.layoutType === 'accessible' ? Math.max(1, draft.seatPackage.wheelchairPositions) : draft.seatPackage.wheelchairPositions} compact />
+      <BusFramePreview layoutId={layout.id} layoutType={layout.layoutType} estimatedSeats={Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats)} wheelchairPositions={wheelchairPreview} compact />
       <strong>{layout.title}</strong>
       <small>{layout.description}</small>
-      <em>Capacity hint: up to {layout.maxSeats}</em>
+      <em>Capacity hint: up to {layout.maxSeats} • {rows.length} CMS rows</em>
     </button>
   );
 }
@@ -50,6 +90,7 @@ export function SeatLayoutCard({ layout, selected, onSelect, draft }: { layout: 
 export function SeatReferencePreview({ draft }: { draft: RfqDraft }) {
   const selectedLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId);
   const totalSeatGroupQty = draft.seatGroups.reduce((sum, group) => sum + group.quantity, 0);
+  const rows = selectedLayout ? getSeatLayoutRows(selectedLayout.id) : [];
 
   return (
     <aside className="seatPreviewCard framePreviewCard">
@@ -58,6 +99,7 @@ export function SeatReferencePreview({ draft }: { draft: RfqDraft }) {
       </div>
       <div className="seatSummaryList">
         <p><strong>Selected Layout</strong><span>{selectedLayout?.title ?? 'Not selected'}</span></p>
+        <p><strong>CMS Rows</strong><span>{rows.length} configured rows/zones</span></p>
         <p><strong>Seat Material</strong><span>{draft.seatPackage.material}</span></p>
         <p><strong>Seat Color</strong><span>{draft.seatPackage.color}</span></p>
         <p><strong>Estimated Capacity</strong><span>{draft.seatPackage.estimatedPassengerSeats} passenger seats</span></p>
@@ -66,7 +108,7 @@ export function SeatReferencePreview({ draft }: { draft: RfqDraft }) {
       </div>
       <div className="largeFrameWrap">
         <div className="directionLabel">FRONT / ENTRY REFERENCE</div>
-        <BusFramePreview layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={draft.seatPackage.estimatedPassengerSeats} wheelchairPositions={draft.seatPackage.wheelchairPositions} />
+        <BusFramePreview layoutId={selectedLayout?.id} layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={draft.seatPackage.estimatedPassengerSeats} wheelchairPositions={draft.seatPackage.wheelchairPositions} />
       </div>
       <div className="seatLegend">
         <span><i className="seatBox" />Passenger Seats</span>
