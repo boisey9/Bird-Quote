@@ -27,6 +27,7 @@ export function getDraftValidationIssues(draft: RfqDraft): ValidationIssue[] {
   if (!draft.company.dealerContact.trim()) issues.push({ section: 'Company', message: 'Dealer contact is required.', severity: 'error' });
   if (!draft.company.finalCustomerName.trim()) issues.push({ section: 'Company', message: 'Final customer name is required.', severity: 'error' });
   if (!draft.company.provinceState.trim()) issues.push({ section: 'Company', message: 'Province or state is required.', severity: 'error' });
+  if (draft.company.referenceMode === 'pastOrder' && !draft.company.pastQuoteOrOrderNumber.trim()) issues.push({ section: 'Reference', message: 'Past quote or order number is required when using a past order reference.', severity: 'error' });
   if (!draft.specs.chassis) issues.push({ section: 'Bus Specifications', message: 'Chassis selection is required.', severity: 'error' });
   if (!draft.specs.wheelbase) issues.push({ section: 'Bus Specifications', message: 'Wheelbase selection is required.', severity: 'error' });
   if (!draft.specs.busType) issues.push({ section: 'Bus Specifications', message: 'Bus type selection is required.', severity: 'error' });
@@ -40,6 +41,9 @@ export function getDraftValidationIssues(draft: RfqDraft): ValidationIssue[] {
   }
   if (draft.seatPackage.wheelchairPositions > draft.specs.wheelchairCapacity) {
     issues.push({ section: 'Seats', message: 'Wheelchair positions exceed the wheelchair capacity entered in bus specifications.', severity: 'warning' });
+  }
+  if (draft.documents.length === 0) {
+    issues.push({ section: 'Documents', message: 'No documents were added. This may be acceptable, but bid/floorplan documents help reduce quote rework.', severity: 'warning' });
   }
 
   return issues;
@@ -67,6 +71,7 @@ export function buildRfqSubmissionPayload(draft: RfqDraft) {
       validationMessage: 'Reference only - final seating layout will be reviewed and validated by Micro Bird.'
     },
     features: draft.features,
+    documents: draft.documents,
     review: {
       confirmedAccuracy: draft.confirmedAccuracy,
       consentToContact: draft.consentToContact,
