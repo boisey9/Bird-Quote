@@ -9,6 +9,7 @@ import { QuoteSummary } from './components/QuoteSummary';
 import { MyRequestsPage } from './components/pages/MyRequestsPage';
 import { QuoteStatusPage } from './components/pages/QuoteStatusPage';
 import { InternalQueuePage } from './components/pages/InternalQueuePage';
+import { AdminConfigPage } from './components/pages/AdminConfigPage';
 import './components/pages/PageStyles.css';
 import './components/pages/LayoutFixes.css';
 import { CompanyStep } from './components/steps/CompanyStep';
@@ -103,6 +104,7 @@ export function App() {
       {page === 'my-requests' && <main className="pageLayout"><MyRequestsPage onStartNew={startNewRfq} /></main>}
       {page === 'quote-status' && <main className="pageLayout"><QuoteStatusPage /></main>}
       {page === 'rfq-queue' && <main className="pageLayout"><InternalQueuePage /></main>}
+      {page === 'admin-config' && <main className="pageLayout"><AdminConfigPage /></main>}
     </div>
   );
 }
