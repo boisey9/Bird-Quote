@@ -13,6 +13,13 @@ type VercelResponse = {
 
 const allowedStatuses = new Set(['Draft', 'Submitted', 'In Review', 'Assigned', 'Quote In Progress', 'Quote Sent', 'Converted to Order', 'Cancelled']);
 
+type SubmittedDocument = {
+  fileName?: string;
+  fileType?: string;
+  fileSize?: string;
+  documentType?: string;
+};
+
 function generateRfqId() {
   const date = new Date();
   const year = date.getFullYear();
@@ -24,7 +31,7 @@ function generateRfqId() {
 
 function getPayload(body: unknown) {
   if (typeof body === 'string') return JSON.parse(body);
-  return body as Record<string, any>;
+  return body as Record<string, unknown>;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -120,7 +127,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const payload = getPayload(req.body);
     const rfqId = generateRfqId();
-    const company = payload.company ?? {};
+    const company = (payload.company ?? {}) as Record<string, string>;
+    const documents = Array.isArray(payload.documents) ? payload.documents as SubmittedDocument[] : [];
 
     await sql`
       INSERT INTO rfq_requests (
@@ -150,10 +158,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       )
     `;
 
+    for (const document of documents) {
+      await sql`
+        INSERT INTO rfq_documents (rfq_id, file_name, file_type, file_size, document_type)
+        VALUES (
+          ${rfqId},
+          ${document.fileName ?? ''},
+          ${document.fileType ?? ''},
+          ${document.fileSize ?? ''},
+          ${document.documentType ?? 'supporting'}
+        )
+      `;
+    }
+
     await sql`
       INSERT INTO rfq_status_history (rfq_id, status, note, actor)
       VALUES (${rfqId}, 'Submitted', 'RFQ submitted by dealer portal', 'dealer')
     `;
+
+    if (documents.length > 0) {
+      await sql`
+        INSERT INTO rfq_status_history (rfq_id, status, note, actor)
+        VALUES (${rfqId}, 'Submitted', ${`${documents.length} document metadata record(s) attached`}, 'dealer')
+      `;
+    }
 
     return res.status(201).json({ ok: true, rfqId, status: 'Submitted' });
   } catch (error) {
