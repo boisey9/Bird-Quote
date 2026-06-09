@@ -9,6 +9,8 @@ export const initialDraft: RfqDraft = {
     finalCustomerPhone: '(819) 555-1234',
     provinceState: 'CANADA',
     additionalInfo: 'Delivery to main resort entrance.',
+    contractId: 'none',
+    contractWorkflowType: 'standard',
     referenceMode: 'pastOrder',
     pastQuoteOrOrderNumber: 'MB-2024-08215'
   },
