@@ -1,3 +1,4 @@
+import { getContractById } from './contractConfig';
 import type { BusSpecs, FeatureOptionCategory, FeatureOptionItem, SeatCmsConfig } from '../types/rfq';
 
 export const featureOptionCategories: FeatureOptionCategory[] = [
@@ -109,7 +110,8 @@ export function getAvailableFeatureOptions(categoryId: number, specs: BusSpecs):
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-export function getAvailableSeatLayouts(specs: BusSpecs) {
+export function getAvailableSeatLayouts(specs: BusSpecs, contractId = 'none') {
+  const contract = getContractById(contractId);
   return seatCmsConfig.layouts.filter((layout) => {
     const rule = seatCmsConfig.rules.find((item) => item.layoutId === layout.id);
     if (!rule) return false;
@@ -117,7 +119,8 @@ export function getAvailableSeatLayouts(specs: BusSpecs) {
     const busTypeOk = rule.busTypeIds.length === 0 || rule.busTypeIds.includes(specs.busType);
     const wheelbaseOk = rule.wheelbaseIds.length === 0 || rule.wheelbaseIds.includes(specs.wheelbase);
     const certificationOk = !rule.certificationIds || rule.certificationIds.length === 0 || rule.certificationIds.includes(specs.certification);
-    return chassisOk && busTypeOk && wheelbaseOk && certificationOk;
+    const contractOk = contract.workflowType === 'standard' || contract.allowedSeatLayoutIds.includes(layout.id);
+    return chassisOk && busTypeOk && wheelbaseOk && certificationOk && contractOk;
   });
 }
 
