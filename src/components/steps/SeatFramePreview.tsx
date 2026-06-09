@@ -1,7 +1,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import { getAvailableSeatLayouts, getSeatLayoutRows, seatCmsConfig } from '../../data/featureOptionMatrix';
 import { seatShellImage } from '../../assets/seatShellImage';
-import type { RfqDraft, SeatLayoutRow, SeatLayoutTemplate, SeatPositionType } from '../../types/rfq';
+import type { RfqDraft, SeatLayoutRow, SeatLayoutTemplate } from '../../types/rfq';
 
 type SeatFrameProps = {
   layoutType: string;
@@ -121,5 +121,5 @@ export function SeatReferencePreview({ draft }: { draft: RfqDraft }) {
 }
 
 export function useAvailableSeatLayouts(draft: RfqDraft) {
-  return getAvailableSeatLayouts(draft.specs);
+  return getAvailableSeatLayouts(draft.specs, draft.company.contractId);
 }
