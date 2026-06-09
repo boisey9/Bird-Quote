@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { ChevronRight, ClipboardList, Plus, Trash2, Upload, User } from 'lucide-react';
 import { FileRow, Input } from '../FormControls';
 import type { RfqDocument, RfqDraft } from '../../types/rfq';
@@ -16,6 +16,8 @@ function inferFileType(fileName: string) {
 }
 
 export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
+  const [showReferenceDetails, setShowReferenceDetails] = useState(false);
+
   const update = (key: keyof RfqDraft['company'], value: string) => {
     setDraft((current) => ({ ...current, company: { ...current.company, [key]: value } }));
   };
@@ -75,11 +77,18 @@ export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
         <div className="referenceCard">
           <div>
             <small>Selected Reference</small>
-            <strong>{draft.company.pastQuoteOrOrderNumber}</strong>
+            <strong>{draft.company.pastQuoteOrOrderNumber || 'No reference selected'}</strong>
             <p>Ford • 158” WB DRW • 16 Passenger</p>
           </div>
-          <button className="linkBtn" type="button">View details <ChevronRight size={16} /></button>
+          <button className="linkBtn" type="button" onClick={() => setShowReferenceDetails((current) => !current)}>{showReferenceDetails ? 'Hide details' : 'View details'} <ChevronRight size={16} /></button>
         </div>
+        {showReferenceDetails && (
+          <div className="referenceDetailsPanel">
+            <p><strong>Reference Type</strong><span>{draft.company.referenceMode === 'pastOrder' ? 'Past quote / past order' : 'New quote request'}</span></p>
+            <p><strong>Reference Number</strong><span>{draft.company.pastQuoteOrOrderNumber || 'Not provided'}</span></p>
+            <p><strong>Reuse Intent</strong><span>Use this as context only. Micro Bird will validate current model, pricing, and availability.</span></p>
+          </div>
+        )}
       </section>
 
       <section className="panel">
