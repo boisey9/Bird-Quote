@@ -48,12 +48,21 @@ export interface FeatureSelection {
   value: string;
 }
 
+export interface RfqDocument {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize: string;
+  documentType: 'bid' | 'floorplan' | 'spec-sheet' | 'supporting' | 'site-photos' | 'other';
+}
+
 export interface RfqDraft {
   company: CompanyInfo;
   specs: BusSpecs;
   seatPackage: SeatPackage;
   seatGroups: SeatGroup[];
   features: FeatureSelection[];
+  documents: RfqDocument[];
   confirmedAccuracy: boolean;
   consentToContact: boolean;
 }
