@@ -1,5 +1,4 @@
 import { neon } from '@neondatabase/serverless';
-import { seatCmsConfig } from '../src/data/featureOptionMatrix';
 import type { SeatLayoutRow, SeatLayoutTemplate, SeatLayoutZone, SeatShell } from '../src/types/rfq';
 
 type VercelRequest = {
@@ -21,17 +20,35 @@ type CmsPayload = {
 };
 
 function getPayload(body: unknown) {
+  if (!body) return {} as CmsPayload;
   if (typeof body === 'string') return JSON.parse(body) as CmsPayload;
   return body as CmsPayload;
 }
 
+function toJsonb(value: unknown) {
+  return JSON.stringify(value ?? []);
+}
+
 function normalizeJsonArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.map(String) : [];
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 function normalizeZones(value: unknown, fallbackLayoutId = ''): SeatLayoutZone[] {
-  if (!Array.isArray(value)) return [];
-  return value.map((zone, index) => {
+  let source = value;
+  if (typeof value === 'string') {
+    try { source = JSON.parse(value); } catch { source = []; }
+  }
+  if (!Array.isArray(source)) return [];
+  return source.map((zone, index) => {
     const record = zone as Record<string, unknown>;
     return {
       id: String(record.id ?? `${fallbackLayoutId}-zone-${index}`),
@@ -135,35 +152,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
-      const shellRows = await sql`
-        SELECT id, name, shell_type, image_key, description, has_rear_lift, has_mid_door, door_position, default_blocked_zones, default_reference_zones, is_active
-        FROM cms_seat_shells
-        WHERE is_active = true
-        ORDER BY name
-      `;
-      const layoutRows = await sql`
-        SELECT id, title, description, shell_id, max_seats, layout_type, layout_family, market, rear_lift_compatible, max_wheelchair_positions, contract_ids, model_types, allowed_chassis_ids, allowed_wheelbase_ids, allowed_bus_type_ids, allowed_contract_ids, default_capacity, default_wheelchair_positions
-        FROM cms_seat_layout_templates
-        WHERE is_active = true
-        ORDER BY title
-      `;
-      const seatRows = await sql`
-        SELECT id, layout_id, row_number, zone, left_position_type, right_position_type, seat_count_left, seat_count_right, allowed_seat_styles, notes, x_position, y_position, row_width, row_label, is_blocked, position_group
-        FROM cms_seat_layout_rows
-        ORDER BY layout_id, row_number
-      `;
-      const zoneRows = await sql`
-        SELECT id, layout_id, zone_type, label, x, y, w, h, is_required_clearance, notes
-        FROM cms_seat_layout_zones
-        ORDER BY layout_id, zone_type, label
-      `;
+      const shellRows = await sql`SELECT id, name, shell_type, image_key, description, has_rear_lift, has_mid_door, door_position, default_blocked_zones, default_reference_zones, is_active FROM cms_seat_shells WHERE is_active = true ORDER BY name`;
+      const layoutRows = await sql`SELECT id, title, description, shell_id, max_seats, layout_type, layout_family, market, rear_lift_compatible, max_wheelchair_positions, contract_ids, model_types, allowed_chassis_ids, allowed_wheelbase_ids, allowed_bus_type_ids, allowed_contract_ids, default_capacity, default_wheelchair_positions FROM cms_seat_layout_templates WHERE is_active = true ORDER BY title`;
+      const seatRows = await sql`SELECT id, layout_id, row_number, zone, left_position_type, right_position_type, seat_count_left, seat_count_right, allowed_seat_styles, notes, x_position, y_position, row_width, row_label, is_blocked, position_group FROM cms_seat_layout_rows ORDER BY layout_id, row_number`;
+      const zoneRows = await sql`SELECT id, layout_id, zone_type, label, x, y, w, h, is_required_clearance, notes FROM cms_seat_layout_zones ORDER BY layout_id, zone_type, label`;
 
       return res.status(200).json({
         ok: true,
         source: 'neon',
         shells: shellRows.map((row) => mapShell(row as Record<string, unknown>)),
-        layouts: layoutRows.length ? layoutRows.map((row) => mapLayout(row as Record<string, unknown>)) : seatCmsConfig.layouts,
-        rows: seatRows.length ? seatRows.map((row) => mapSeatRow(row as Record<string, unknown>)) : seatCmsConfig.rows,
+        layouts: layoutRows.map((row) => mapLayout(row as Record<string, unknown>)),
+        rows: seatRows.map((row) => mapSeatRow(row as Record<string, unknown>)),
         zones: zoneRows.map((row) => mapZone(row as Record<string, unknown>))
       });
     } catch (error) {
@@ -181,52 +180,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const zones = payload.zones ?? [];
 
       for (const shell of shells) {
-        await sql`
-          INSERT INTO cms_seat_shells (id, name, shell_type, image_key, description, has_rear_lift, has_mid_door, door_position, default_blocked_zones, default_reference_zones, is_active, updated_at)
-          VALUES (${shell.id}, ${shell.name}, ${shell.shellType}, ${shell.imageKey}, ${shell.description}, ${shell.hasRearLift}, ${shell.hasMidDoor}, ${shell.doorPosition}, ${JSON.stringify(shell.defaultBlockedZones ?? [])}::jsonb, ${JSON.stringify(shell.defaultReferenceZones ?? [])}::jsonb, ${shell.isActive}, now())
-          ON CONFLICT (id) DO UPDATE SET
-            name = EXCLUDED.name,
-            shell_type = EXCLUDED.shell_type,
-            image_key = EXCLUDED.image_key,
-            description = EXCLUDED.description,
-            has_rear_lift = EXCLUDED.has_rear_lift,
-            has_mid_door = EXCLUDED.has_mid_door,
-            door_position = EXCLUDED.door_position,
-            default_blocked_zones = EXCLUDED.default_blocked_zones,
-            default_reference_zones = EXCLUDED.default_reference_zones,
-            is_active = EXCLUDED.is_active,
-            updated_at = now()
-        `;
+        await sql`INSERT INTO cms_seat_shells (id, name, shell_type, image_key, description, has_rear_lift, has_mid_door, door_position, default_blocked_zones, default_reference_zones, is_active, updated_at) VALUES (${shell.id}, ${shell.name}, ${shell.shellType}, ${shell.imageKey}, ${shell.description}, ${shell.hasRearLift}, ${shell.hasMidDoor}, ${shell.doorPosition}, ${toJsonb(shell.defaultBlockedZones)}::jsonb, ${toJsonb(shell.defaultReferenceZones)}::jsonb, ${shell.isActive}, now()) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, shell_type = EXCLUDED.shell_type, image_key = EXCLUDED.image_key, description = EXCLUDED.description, has_rear_lift = EXCLUDED.has_rear_lift, has_mid_door = EXCLUDED.has_mid_door, door_position = EXCLUDED.door_position, default_blocked_zones = EXCLUDED.default_blocked_zones, default_reference_zones = EXCLUDED.default_reference_zones, is_active = EXCLUDED.is_active, updated_at = now()`;
       }
 
       for (const layout of layouts) {
-        await sql`
-          INSERT INTO cms_seat_layout_templates (
-            id, title, description, shell_id, max_seats, layout_type, layout_family, market, rear_lift_compatible, max_wheelchair_positions, contract_ids, model_types, allowed_chassis_ids, allowed_wheelbase_ids, allowed_bus_type_ids, allowed_contract_ids, default_capacity, default_wheelchair_positions, is_active, updated_at
-          ) VALUES (
-            ${layout.id}, ${layout.title}, ${layout.description}, ${layout.shellId ?? 'shell-standard'}, ${layout.maxSeats}, ${layout.layoutType}, ${layout.layoutFamily ?? layout.layoutType}, ${layout.market ?? 'any'}, ${Boolean(layout.rearLiftCompatible)}, ${Number(layout.maxWheelchairPositions ?? 0)}, ${JSON.stringify(layout.contractIds ?? [])}::jsonb, ${JSON.stringify(layout.modelTypes ?? [])}::jsonb, ${JSON.stringify(layout.allowedChassisIds ?? [])}::jsonb, ${JSON.stringify(layout.allowedWheelbaseIds ?? [])}::jsonb, ${JSON.stringify(layout.allowedBusTypeIds ?? [])}::jsonb, ${JSON.stringify(layout.allowedContractIds ?? [])}::jsonb, ${Number(layout.defaultCapacity ?? layout.maxSeats)}, ${Number(layout.defaultWheelchairPositions ?? 0)}, true, now()
-          )
-          ON CONFLICT (id) DO UPDATE SET
-            title = EXCLUDED.title,
-            description = EXCLUDED.description,
-            shell_id = EXCLUDED.shell_id,
-            max_seats = EXCLUDED.max_seats,
-            layout_type = EXCLUDED.layout_type,
-            layout_family = EXCLUDED.layout_family,
-            market = EXCLUDED.market,
-            rear_lift_compatible = EXCLUDED.rear_lift_compatible,
-            max_wheelchair_positions = EXCLUDED.max_wheelchair_positions,
-            contract_ids = EXCLUDED.contract_ids,
-            model_types = EXCLUDED.model_types,
-            allowed_chassis_ids = EXCLUDED.allowed_chassis_ids,
-            allowed_wheelbase_ids = EXCLUDED.allowed_wheelbase_ids,
-            allowed_bus_type_ids = EXCLUDED.allowed_bus_type_ids,
-            allowed_contract_ids = EXCLUDED.allowed_contract_ids,
-            default_capacity = EXCLUDED.default_capacity,
-            default_wheelchair_positions = EXCLUDED.default_wheelchair_positions,
-            is_active = true,
-            updated_at = now()
-        `;
+        await sql`INSERT INTO cms_seat_layout_templates (id, title, description, shell_id, max_seats, layout_type, layout_family, market, rear_lift_compatible, max_wheelchair_positions, contract_ids, model_types, allowed_chassis_ids, allowed_wheelbase_ids, allowed_bus_type_ids, allowed_contract_ids, default_capacity, default_wheelchair_positions, is_active, updated_at) VALUES (${layout.id}, ${layout.title}, ${layout.description}, ${layout.shellId ?? 'shell-standard'}, ${layout.maxSeats}, ${layout.layoutType}, ${layout.layoutFamily ?? layout.layoutType}, ${layout.market ?? 'any'}, ${Boolean(layout.rearLiftCompatible)}, ${Number(layout.maxWheelchairPositions ?? 0)}, ${toJsonb(layout.contractIds)}, ${toJsonb(layout.modelTypes)}, ${toJsonb(layout.allowedChassisIds)}, ${toJsonb(layout.allowedWheelbaseIds)}, ${toJsonb(layout.allowedBusTypeIds)}, ${toJsonb(layout.allowedContractIds)}, ${Number(layout.defaultCapacity ?? layout.maxSeats)}, ${Number(layout.defaultWheelchairPositions ?? 0)}, true, now()) ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, description = EXCLUDED.description, shell_id = EXCLUDED.shell_id, max_seats = EXCLUDED.max_seats, layout_type = EXCLUDED.layout_type, layout_family = EXCLUDED.layout_family, market = EXCLUDED.market, rear_lift_compatible = EXCLUDED.rear_lift_compatible, max_wheelchair_positions = EXCLUDED.max_wheelchair_positions, contract_ids = EXCLUDED.contract_ids, model_types = EXCLUDED.model_types, allowed_chassis_ids = EXCLUDED.allowed_chassis_ids, allowed_wheelbase_ids = EXCLUDED.allowed_wheelbase_ids, allowed_bus_type_ids = EXCLUDED.allowed_bus_type_ids, allowed_contract_ids = EXCLUDED.allowed_contract_ids, default_capacity = EXCLUDED.default_capacity, default_wheelchair_positions = EXCLUDED.default_wheelchair_positions, is_active = true, updated_at = now()`;
       }
 
       const layoutIds = layouts.map((layout) => layout.id);
@@ -236,43 +194,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       for (const row of rows) {
-        await sql`
-          INSERT INTO cms_seat_layout_rows (id, layout_id, row_number, zone, left_position_type, right_position_type, seat_count_left, seat_count_right, allowed_seat_styles, notes, x_position, y_position, row_width, row_label, is_blocked, position_group, updated_at)
-          VALUES (${row.id}, ${row.layoutId}, ${row.rowNumber}, ${row.zone}, ${row.leftPositionType}, ${row.rightPositionType}, ${row.seatCountLeft}, ${row.seatCountRight}, ${JSON.stringify(row.allowedSeatStyles ?? [])}::jsonb, ${row.notes ?? ''}, ${Number(row.xPosition ?? 0)}, ${Number(row.yPosition ?? 0)}, ${Number(row.rowWidth ?? 100)}, ${row.rowLabel ?? ''}, ${Boolean(row.isBlocked)}, ${row.positionGroup ?? 'main'}, now())
-          ON CONFLICT (id) DO UPDATE SET
-            row_number = EXCLUDED.row_number,
-            zone = EXCLUDED.zone,
-            left_position_type = EXCLUDED.left_position_type,
-            right_position_type = EXCLUDED.right_position_type,
-            seat_count_left = EXCLUDED.seat_count_left,
-            seat_count_right = EXCLUDED.seat_count_right,
-            allowed_seat_styles = EXCLUDED.allowed_seat_styles,
-            notes = EXCLUDED.notes,
-            x_position = EXCLUDED.x_position,
-            y_position = EXCLUDED.y_position,
-            row_width = EXCLUDED.row_width,
-            row_label = EXCLUDED.row_label,
-            is_blocked = EXCLUDED.is_blocked,
-            position_group = EXCLUDED.position_group,
-            updated_at = now()
-        `;
+        await sql`INSERT INTO cms_seat_layout_rows (id, layout_id, row_number, zone, left_position_type, right_position_type, seat_count_left, seat_count_right, allowed_seat_styles, notes, x_position, y_position, row_width, row_label, is_blocked, position_group, updated_at) VALUES (${row.id}, ${row.layoutId}, ${row.rowNumber}, ${row.zone}, ${row.leftPositionType}, ${row.rightPositionType}, ${row.seatCountLeft}, ${row.seatCountRight}, ${toJsonb(row.allowedSeatStyles)}, ${row.notes ?? ''}, ${Number(row.xPosition ?? 0)}, ${Number(row.yPosition ?? 0)}, ${Number(row.rowWidth ?? 100)}, ${row.rowLabel ?? ''}, ${Boolean(row.isBlocked)}, ${row.positionGroup ?? 'main'}, now()) ON CONFLICT (id) DO UPDATE SET row_number = EXCLUDED.row_number, zone = EXCLUDED.zone, left_position_type = EXCLUDED.left_position_type, right_position_type = EXCLUDED.right_position_type, seat_count_left = EXCLUDED.seat_count_left, seat_count_right = EXCLUDED.seat_count_right, allowed_seat_styles = EXCLUDED.allowed_seat_styles, notes = EXCLUDED.notes, x_position = EXCLUDED.x_position, y_position = EXCLUDED.y_position, row_width = EXCLUDED.row_width, row_label = EXCLUDED.row_label, is_blocked = EXCLUDED.is_blocked, position_group = EXCLUDED.position_group, updated_at = now()`;
       }
 
       for (const zone of zones) {
-        await sql`
-          INSERT INTO cms_seat_layout_zones (id, layout_id, zone_type, label, x, y, w, h, is_required_clearance, notes, updated_at)
-          VALUES (${zone.id}, ${zone.layoutId}, ${zone.zoneType}, ${zone.label}, ${zone.x}, ${zone.y}, ${zone.w}, ${zone.h}, ${zone.isRequiredClearance}, ${zone.notes ?? ''}, now())
-          ON CONFLICT (id) DO UPDATE SET
-            zone_type = EXCLUDED.zone_type,
-            label = EXCLUDED.label,
-            x = EXCLUDED.x,
-            y = EXCLUDED.y,
-            w = EXCLUDED.w,
-            h = EXCLUDED.h,
-            is_required_clearance = EXCLUDED.is_required_clearance,
-            notes = EXCLUDED.notes,
-            updated_at = now()
-        `;
+        await sql`INSERT INTO cms_seat_layout_zones (id, layout_id, zone_type, label, x, y, w, h, is_required_clearance, notes, updated_at) VALUES (${zone.id}, ${zone.layoutId}, ${zone.zoneType}, ${zone.label}, ${zone.x}, ${zone.y}, ${zone.w}, ${zone.h}, ${zone.isRequiredClearance}, ${zone.notes ?? ''}, now()) ON CONFLICT (id) DO UPDATE SET zone_type = EXCLUDED.zone_type, label = EXCLUDED.label, x = EXCLUDED.x, y = EXCLUDED.y, w = EXCLUDED.w, h = EXCLUDED.h, is_required_clearance = EXCLUDED.is_required_clearance, notes = EXCLUDED.notes, updated_at = now()`;
       }
 
       return res.status(200).json({ ok: true, shellCount: shells.length, layoutCount: layouts.length, rowCount: rows.length, zoneCount: zones.length });
