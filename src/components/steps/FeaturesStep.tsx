@@ -1,7 +1,8 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { ChevronDown, ChevronUp, Eye, Info, Plus, Trash2, Copy, CheckCircle2 } from 'lucide-react';
 import { getAvailableFeatureOptions, getVisibleFeatureCategories, seatCmsConfig } from '../../data/featureOptionMatrix';
-import { SeatLayoutCard, SeatReferencePreview, useAvailableSeatLayouts } from './SeatFramePreview';
+import { useAvailableSeatLayouts } from '../../hooks/useSeatCmsData';
+import { SeatLayoutCard, SeatReferencePreview } from './SeatFramePreview';
 import type { FeatureOptionItem, RfqDraft, SeatGroup } from '../../types/rfq';
 import './SeatsModule.css';
 import './SeatFramePreview.css';
@@ -56,7 +57,8 @@ function FeatureOptionCard({ option, selected, onClick }: { option: FeatureOptio
 
 export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
   const categories = getVisibleFeatureCategories(draft.specs);
-  const seatLayouts = useAvailableSeatLayouts(draft);
+  const seatCmsData = useAvailableSeatLayouts(draft);
+  const seatLayouts = seatCmsData.availableLayouts;
   const [openCategories, setOpenCategories] = useState<Record<number, boolean>>(() => Object.fromEntries(categories.map((category) => [category.id, category.title === 'Seats' || category.sortOrder <= 4])));
   const [showQuickSummary, setShowQuickSummary] = useState(false);
 
@@ -133,15 +135,18 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
                   <h2>{category.title}</h2>
                   <p>Configure customer seating intent. Final floorplan validation remains with Micro Bird.</p>
                 </div>
-                <span className="pill">CMS-managed per model</span>
+                <span className="pill">{seatCmsData.sourceLabel}</span>
               </div>
+
+              {seatCmsData.loadState === 'loading' && <div className="infoBox">Loading CMS seat layouts...</div>}
+              {seatCmsData.error && <div className="warningNote">CMS fallback active: {seatCmsData.error}</div>}
 
               <div className="seatsLayout refinedSeatsLayout productionSeatsLayout">
                 <div className="seatLeftColumn">
                   <div className="seatBlockTitle"><span>1</span><strong>Seat Package</strong></div>
                   <div className="seatSubHeader">
                     <h3>Seating Layout</h3>
-                    <small>Filtered by selected chassis, wheelbase, and bus type.</small>
+                    <small>Filtered by selected contract, chassis, wheelbase, certification, and bus type.</small>
                   </div>
                   <div className="seatLayoutGrid refinedLayoutGrid productionLayoutGrid">
                     {seatLayouts.map((layout) => (
@@ -150,9 +155,15 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
                         layout={layout}
                         selected={draft.seatPackage.layoutId === layout.id}
                         draft={draft}
-                        onSelect={() => updateSeatPackage({ layoutId: layout.id, estimatedPassengerSeats: Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats) })}
+                        cmsRows={seatCmsData.rows}
+                        onSelect={() => updateSeatPackage({
+                          layoutId: layout.id,
+                          estimatedPassengerSeats: Math.min(draft.seatPackage.estimatedPassengerSeats, layout.defaultCapacity ?? layout.maxSeats),
+                          wheelchairPositions: Math.min(draft.seatPackage.wheelchairPositions, layout.maxWheelchairPositions ?? draft.seatPackage.wheelchairPositions)
+                        })}
                       />
                     ))}
+                    {seatLayouts.length === 0 && <div className="infoBox fullWidthNotice">No CMS seat layouts match the selected vehicle and contract combination.</div>}
                   </div>
 
                   <div className="seatPackageControls refinedSeatControls">
@@ -163,34 +174,37 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
                   </div>
 
                   <div className="seatTypeHeader refinedSeatTypeHeader">
-                    <div className="seatBlockTitle"><span>2</span><strong>Seat Type Details</strong><small>Use rows to explain seat groups without engineering the final layout.</small></div>
+                    <div className="seatBlockTitle"><span>2</span><strong>Seat Type Details</strong><small>Use cards to explain seat groups without engineering the final layout.</small></div>
                     <button type="button" onClick={addSeatGroup}><Plus size={16} /> Add Seat Type</button>
                   </div>
 
-                  <div className="seatTypeTable refinedSeatTypeTable">
-                    <div className="seatTypeHead">
-                      <span>Group</span><span>Qty</span><span>Style</span><span>Restraint</span><span>Armrest</span><span>Grab</span><span>Branding</span><span>Actions</span>
-                    </div>
+                  <div className="seatTypeCards refinedSeatTypeCards">
                     {draft.seatGroups.map((group, index) => (
-                      <div className="seatTypeRow" key={group.id}>
-                        <strong className="rowNumber">{index + 1}</strong>
-                        <input value={group.name} onChange={(event) => updateSeatGroup(group.id, { name: event.target.value })} />
-                        <NumberStepper value={group.quantity} min={0} max={48} onChange={(value) => updateSeatGroup(group.id, { quantity: value })} />
-                        <SelectField value={group.seatStyle} options={seatCmsConfig.seatTypes} onChange={(value) => updateSeatGroup(group.id, { seatStyle: value })} />
-                        <SelectField value={group.restraintType} options={seatCmsConfig.restraintTypes} onChange={(value) => updateSeatGroup(group.id, { restraintType: value })} />
-                        <SelectField value={group.armrest} options={seatCmsConfig.armrests} onChange={(value) => updateSeatGroup(group.id, { armrest: value })} />
-                        <SelectField value={group.grabType} options={seatCmsConfig.grabTypes} onChange={(value) => updateSeatGroup(group.id, { grabType: value })} />
-                        <SelectField value={group.branding} options={seatCmsConfig.brandingOptions} onChange={(value) => updateSeatGroup(group.id, { branding: value })} />
+                      <article className="seatTypeCard" key={group.id}>
+                        <header>
+                          <div>
+                            <strong>Seat Type {index + 1}</strong>
+                            <input aria-label="Seat group name" value={group.name} onChange={(event) => updateSeatGroup(group.id, { name: event.target.value })} />
+                          </div>
+                          <NumberStepper value={group.quantity} min={0} max={48} onChange={(value) => updateSeatGroup(group.id, { quantity: value })} />
+                        </header>
+                        <div className="seatTypeCardGrid">
+                          <SelectField label="Seat Style" value={group.seatStyle} options={seatCmsConfig.seatTypes} onChange={(value) => updateSeatGroup(group.id, { seatStyle: value })} />
+                          <SelectField label="Restraint" value={group.restraintType} options={seatCmsConfig.restraintTypes} onChange={(value) => updateSeatGroup(group.id, { restraintType: value })} />
+                          <SelectField label="Armrest" value={group.armrest} options={seatCmsConfig.armrests} onChange={(value) => updateSeatGroup(group.id, { armrest: value })} />
+                          <SelectField label="Grab Type" value={group.grabType} options={seatCmsConfig.grabTypes} onChange={(value) => updateSeatGroup(group.id, { grabType: value })} />
+                          <SelectField label="Branding" value={group.branding} options={seatCmsConfig.brandingOptions} onChange={(value) => updateSeatGroup(group.id, { branding: value })} />
+                        </div>
                         <div className="seatRowActions">
                           <button type="button" onClick={() => duplicateSeatGroup(group)}><Copy size={14} /> Copy</button>
                           <button type="button" onClick={() => removeSeatGroup(group.id)}><Trash2 size={14} /> Remove</button>
                         </div>
-                      </div>
+                      </article>
                     ))}
                   </div>
                   {totalWarning && <p className="warningNote">Seat type quantity total is {totalSeatGroupQty}. Estimated passenger seats is {draft.seatPackage.estimatedPassengerSeats}. Micro Bird will validate the final layout.</p>}
                 </div>
-                <SeatReferencePreview draft={draft} />
+                <SeatReferencePreview draft={draft} cmsData={seatCmsData} />
               </div>
             </section>
           );
