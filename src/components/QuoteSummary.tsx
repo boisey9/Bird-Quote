@@ -18,11 +18,14 @@ const stepNames: Record<RfqStep, string> = {
   2: 'Vehicle',
   3: 'Options',
   4: 'Seats',
-  5: 'Review'
+  5: 'Documents',
+  6: 'Review'
 };
 
 export function QuoteSummary({ draft, progress, step, selectedChassis, selectedWheelbase, selectedBusType, features, onEdit }: QuoteSummaryProps) {
   const selectedSeatLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId)?.title ?? draft.seatPackage.layoutId;
+  const bidCount = draft.documents.filter((document) => document.documentType === 'bid').length;
+  const floorplanCount = draft.documents.filter((document) => document.documentType === 'floorplan').length;
 
   return (
     <aside className="summary productionSummary">
@@ -73,11 +76,23 @@ export function QuoteSummary({ draft, progress, step, selectedChassis, selectedW
           <strong>{draft.seatPackage.wheelchairPositions}</strong>
         </>
       )}
+      {step >= 5 && (
+        <>
+          <hr />
+          <small>DOCUMENTS</small>
+          <span>Total Documents</span>
+          <strong>{draft.documents.length}</strong>
+          <span>Bid Package</span>
+          <strong>{bidCount ? 'Added' : 'Not added'}</strong>
+          <span>Floorplan Reference</span>
+          <strong>{floorplanCount ? 'Added' : 'Not added'}</strong>
+        </>
+      )}
       <hr />
       <small>PROGRESS</small>
       <div className="progress">
         <div>{progress}%</div>
-        <span>Step {step} of 5<br /><strong>{stepNames[step]}</strong></span>
+        <span>Step {step} of 6<br /><strong>{stepNames[step]}</strong></span>
       </div>
     </aside>
   );
