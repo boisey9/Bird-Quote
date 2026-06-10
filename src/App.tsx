@@ -15,6 +15,7 @@ import './components/pages/LayoutFixes.css';
 import { CompanyStep } from './components/steps/CompanyStep';
 import { SpecsStep } from './components/steps/SpecsStep';
 import { FeaturesStep } from './components/steps/FeaturesStep';
+import { SeatsStep } from './components/steps/SeatsStep';
 import { ReviewStep } from './components/steps/ReviewStep';
 import { buildRfqSubmissionPayload, getDraftValidationIssues } from './utils/rfqSubmission';
 import type { RfqDraft, RfqStep } from './types/rfq';
@@ -29,6 +30,14 @@ const permittedPages: Record<UserRole, AppPage[]> = {
   dealer: ['new-quote', 'my-requests', 'quote-status'],
   internal: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue'],
   admin: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'admin-config']
+};
+
+const nextButtonLabels: Record<RfqStep, string> = {
+  1: 'Next: Vehicle',
+  2: 'Next: Options',
+  3: 'Next: Seats',
+  4: 'Next: Review',
+  5: 'Submit Quote Request'
 };
 
 function HelpModal({ onClose }: { onClose: () => void }) {
@@ -49,12 +58,12 @@ function HelpModal({ onClose }: { onClose: () => void }) {
             <p>Submit structured RFQs, add documents, review warnings, and track status from My Requests or Quote Status.</p>
           </section>
           <section>
-            <h3>Internal flow</h3>
-            <p>Use RFQ Queue to review incoming RFQs, assign owners, update statuses, view documents, and audit history.</p>
+            <h3>Seats and layouts</h3>
+            <p>Seat previews are reference only. Micro Bird validates final seating, engineering feasibility, and quote details.</p>
           </section>
           <section>
-            <h3>Admin/config flow</h3>
-            <p>Use Config to review V2 seed configuration for vehicle matrix, options, seats, routing, SLA, and role baselines.</p>
+            <h3>Internal flow</h3>
+            <p>Use RFQ Queue to review incoming RFQs, assign owners, update statuses, view documents, and audit history.</p>
           </section>
         </div>
       </aside>
@@ -64,7 +73,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
 
 export function App() {
   const [page, setPage] = useState<AppPage>('new-quote');
-  const [role, setRole] = useState<UserRole>('admin');
+  const [role, setRole] = useState<UserRole>('dealer');
   const [step, setStep] = useState<RfqStep>(1);
   const [draft, setDraft] = useState<RfqDraft>(initialDraft);
   const [submitStatus, setSubmitStatus] = useState('');
@@ -75,7 +84,7 @@ export function App() {
   const selectedWheelbase = busSpecMatrixData.wheelbases.find((item) => item.id === draft.specs.wheelbase);
   const selectedBusType = busSpecMatrixData.busTypes.find((item) => item.id === draft.specs.busType);
   const summaryFeatures = useMemo(() => draft.features.slice(0, 6), [draft.features]);
-  const progress = step * 25;
+  const progress = step * 20;
 
   const navigate = (targetPage: AppPage) => {
     if (!permittedPages[role].includes(targetPage)) {
@@ -90,7 +99,7 @@ export function App() {
     if (!permittedPages[nextRole].includes(page)) setPage(defaultPageByRole[nextRole]);
   };
 
-  const goNext = () => setStep((current) => Math.min(4, current + 1) as RfqStep);
+  const goNext = () => setStep((current) => Math.min(5, current + 1) as RfqStep);
   const goBack = () => setStep((current) => Math.max(1, current - 1) as RfqStep);
   const saveAndExit = () => {
     localStorage.setItem('birdQuoteDraft', JSON.stringify(draft));
@@ -144,7 +153,7 @@ export function App() {
     <div className="appShell">
       <Header page={page} role={role} onNavigate={navigate} onRoleChange={handleRoleChange} onHelp={() => setShowHelp(true)} />
       {page === 'new-quote' && (
-        <main className="quoteFormLayout">
+        <main className="quoteFormLayout productionQuoteLayout">
           <RecentRequests />
           <section className="contentCard quoteFormCard">
             <Hero step={step} />
@@ -152,12 +161,13 @@ export function App() {
             {step === 1 && <CompanyStep draft={draft} setDraft={setDraft} />}
             {step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}
             {step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}
-            {step === 4 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}
+            {step === 4 && <SeatsStep draft={draft} setDraft={setDraft} />}
+            {step === 5 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}
             {submitStatus && <div className="submitStatus">{submitStatus}</div>}
-            <div className="actions">
+            <div className="actions productionActions">
               <button className="secondary" type="button" onClick={step === 1 ? saveAndExit : goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
-              <button className="primary" disabled={isSubmitting} onClick={step === 4 ? submitRfq : goNext}>
-                {isSubmitting ? 'Submitting...' : step === 4 ? 'Submit Quote Request' : step === 1 ? 'Next: Bus Specifications' : step === 2 ? 'Next: Features & Options' : 'Next: Review & Submit'} <ArrowRight size={18} />
+              <button className="primary" disabled={isSubmitting} onClick={step === 5 ? submitRfq : goNext}>
+                {isSubmitting ? 'Submitting...' : nextButtonLabels[step]} <ArrowRight size={18} />
               </button>
             </div>
           </section>
