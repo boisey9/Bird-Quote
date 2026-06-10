@@ -40,6 +40,12 @@ const nextButtonLabels: Record<RfqStep, string> = {
   5: 'Submit Quote Request'
 };
 
+function getInitialRole(): UserRole {
+  if (typeof window === 'undefined') return 'dealer';
+  const roleParam = new URLSearchParams(window.location.search).get('role');
+  return roleParam === 'admin' || roleParam === 'internal' || roleParam === 'dealer' ? roleParam : 'dealer';
+}
+
 function HelpModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="drawerBackdrop helpBackdrop" role="presentation">
@@ -72,8 +78,8 @@ function HelpModal({ onClose }: { onClose: () => void }) {
 }
 
 export function App() {
-  const [page, setPage] = useState<AppPage>('new-quote');
-  const [role, setRole] = useState<UserRole>('dealer');
+  const [role, setRole] = useState<UserRole>(() => getInitialRole());
+  const [page, setPage] = useState<AppPage>(() => defaultPageByRole[getInitialRole()]);
   const [step, setStep] = useState<RfqStep>(1);
   const [draft, setDraft] = useState<RfqDraft>(initialDraft);
   const [submitStatus, setSubmitStatus] = useState('');
