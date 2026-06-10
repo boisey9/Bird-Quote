@@ -16,8 +16,6 @@ import './components/pages/LayoutFixes.css';
 import { CompanyStep } from './components/steps/CompanyStep';
 import { SpecsStep } from './components/steps/SpecsStep';
 import { FeaturesStep } from './components/steps/FeaturesStep';
-import { SeatsStep } from './components/steps/SeatsStep';
-import { DocumentsStep } from './components/steps/DocumentsStep';
 import { ReviewStep } from './components/steps/ReviewStep';
 import { buildRfqSubmissionPayload, getDraftValidationIssues } from './utils/rfqSubmission';
 import type { RfqDraft, RfqStep } from './types/rfq';
@@ -35,12 +33,10 @@ const permittedPages: Record<UserRole, AppPage[]> = {
 };
 
 const nextButtonLabels: Record<RfqStep, string> = {
-  1: 'Next: Vehicle',
-  2: 'Next: Options',
-  3: 'Next: Seats',
-  4: 'Next: Documents',
-  5: 'Next: Review',
-  6: 'Submit Quote Request'
+  1: 'Next: Bus Selection',
+  2: 'Next: Seats & Options',
+  3: 'Next: Review',
+  4: 'Submit Quote Request'
 };
 
 function getInitialRole(): UserRole {
@@ -64,7 +60,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
         <div className="drawerContent">
           <section>
             <h3>Dealer flow</h3>
-            <p>Submit structured RFQs, add documents, review warnings, and track status from My Requests or Quote Status.</p>
+            <p>Submit structured RFQs in four steps: request info, bus selection, seats/options, and review.</p>
           </section>
           <section>
             <h3>Seats and layouts</h3>
@@ -72,7 +68,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
           </section>
           <section>
             <h3>Documents</h3>
-            <p>V2 captures document metadata first. Real file storage can connect later without changing the dealer flow.</p>
+            <p>Document metadata can still be captured later, but it is no longer a dedicated dealer step.</p>
           </section>
         </div>
       </aside>
@@ -95,7 +91,7 @@ export function App() {
   const selectedWheelbase = busSpecMatrixData.wheelbases.find((item) => item.id === draft.specs.wheelbase);
   const selectedBusType = busSpecMatrixData.busTypes.find((item) => item.id === draft.specs.busType);
   const summaryFeatures = useMemo(() => draft.features.slice(0, 6), [draft.features]);
-  const progress = Math.round((step / 6) * 100);
+  const progress = Math.round((step / 4) * 100);
 
   const navigate = (targetPage: AppPage) => {
     if (!permittedPages[role].includes(targetPage)) {
@@ -110,7 +106,7 @@ export function App() {
     if (!permittedPages[nextRole].includes(page)) setPage(defaultPageByRole[nextRole]);
   };
 
-  const goNext = () => setStep((current) => Math.min(6, current + 1) as RfqStep);
+  const goNext = () => setStep((current) => Math.min(4, current + 1) as RfqStep);
   const goBack = () => setStep((current) => Math.max(1, current - 1) as RfqStep);
   const saveAndExit = () => {
     localStorage.setItem('birdQuoteDraft', JSON.stringify(draft));
@@ -176,13 +172,11 @@ export function App() {
             {step === 1 && <CompanyStep draft={draft} setDraft={setDraft} />}
             {step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}
             {step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}
-            {step === 4 && <SeatsStep draft={draft} setDraft={setDraft} />}
-            {step === 5 && <DocumentsStep draft={draft} setDraft={setDraft} />}
-            {step === 6 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}
+            {step === 4 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}
             {submitStatus && <div className="submitStatus">{submitStatus}</div>}
             <div className="actions productionActions">
               <button className="secondary" type="button" onClick={step === 1 ? saveAndExit : goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
-              <button className="primary" disabled={isSubmitting} onClick={step === 6 ? submitRfq : goNext}>
+              <button className="primary" disabled={isSubmitting} onClick={step === 4 ? submitRfq : goNext}>
                 {isSubmitting ? 'Submitting...' : nextButtonLabels[step]} <ArrowRight size={18} />
               </button>
             </div>
