@@ -1,7 +1,7 @@
 import { Clock, FileText, HelpCircle, Menu, Plus, Settings } from 'lucide-react';
 import { microBirdLogo } from '../assets/microBirdLogo';
 
-export type AppPage = 'new-quote' | 'my-requests' | 'quote-status' | 'rfq-queue' | 'admin-config';
+export type AppPage = 'new-quote' | 'my-requests' | 'quote-status' | 'rfq-queue' | 'admin-config' | 'confirmation';
 export type UserRole = 'dealer' | 'internal' | 'admin';
 
 type HeaderProps = {
@@ -13,9 +13,9 @@ type HeaderProps = {
 };
 
 const rolePages: Record<UserRole, AppPage[]> = {
-  dealer: ['new-quote', 'my-requests', 'quote-status'],
-  internal: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue'],
-  admin: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'admin-config']
+  dealer: ['new-quote', 'my-requests', 'quote-status', 'confirmation'],
+  internal: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'confirmation'],
+  admin: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'admin-config', 'confirmation']
 };
 
 export function Header({ page, role, onNavigate, onRoleChange, onHelp }: HeaderProps) {
