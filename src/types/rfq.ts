@@ -1,4 +1,4 @@
-export type RfqStep = 1 | 2 | 3 | 4 | 5 | 6;
+export type RfqStep = 1 | 2 | 3 | 4;
 
 export type Priority = 'MUST' | 'SHOULD' | 'COULD';
 
