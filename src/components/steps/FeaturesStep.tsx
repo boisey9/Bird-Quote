@@ -2,6 +2,7 @@ import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { ChevronDown, ChevronUp, Eye, Info, Plus, CheckCircle2 } from 'lucide-react';
 import { getAvailableFeatureOptions, getVisibleFeatureCategories } from '../../data/featureOptionMatrix';
 import type { FeatureOptionItem, RfqDraft } from '../../types/rfq';
+import { SeatsStep } from './SeatsStep';
 import './SeatsModule.css';
 
 type FeaturesStepProps = {
@@ -44,8 +45,20 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
   };
 
   return (
-    <div className="sectionStack featuresPage optionsOnlyPage">
-      <section className="panel compact optionsIntroPanel">
+    <div className="sectionStack featuresPage seatsAndOptionsPage">
+      <section className="panel compact seatsOptionsIntroPanel">
+        <div className="featureSectionHeader dealerSectionHeader">
+          <div>
+            <h2>Seats & Options</h2>
+            <p>Start with the seating intent, then add options and packages. This is RFQ intake only — Micro Bird validates the final layout and quote details.</p>
+          </div>
+          <span className="pill">Reference intake</span>
+        </div>
+      </section>
+
+      <SeatsStep draft={draft} setDraft={setDraft} />
+
+      <section className="panel compact optionsIntroPanel mergedOptionsIntro">
         <div className="featureSectionHeader dealerSectionHeader">
           <div>
             <h2>Options & Packages</h2>
@@ -98,8 +111,8 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
 
       <section className="panel additionalRequirementsPanel">
         <label className="field">
-          <span><Info size={16} /> Additional Option Requirements</span>
-          <textarea placeholder="Describe any extra features, bid notes, deadlines, or special option instructions for our team..." />
+          <span><Info size={16} /> Additional Option / Seating Requirements</span>
+          <textarea placeholder="Describe any extra seating needs, bid notes, deadlines, document references, or special option instructions for our team..." />
         </label>
       </section>
     </div>
