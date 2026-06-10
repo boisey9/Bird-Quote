@@ -40,6 +40,7 @@ export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selected
             <strong>Seat Package</strong>
             <ul>
               <li>Layout: {selectedSeatLayout}</li>
+              <li>CMS Template ID: {draft.seatPackage.layoutId}</li>
               <li>Material: {draft.seatPackage.material}</li>
               <li>Color: {draft.seatPackage.color}</li>
               <li>Estimated Seats: {draft.seatPackage.estimatedPassengerSeats}</li>
