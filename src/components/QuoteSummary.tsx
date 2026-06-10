@@ -13,21 +13,29 @@ type QuoteSummaryProps = {
   onEdit: (step: RfqStep) => void;
 };
 
+const stepNames: Record<RfqStep, string> = {
+  1: 'Dealer / Customer',
+  2: 'Vehicle',
+  3: 'Options',
+  4: 'Seats',
+  5: 'Review'
+};
+
 export function QuoteSummary({ draft, progress, step, selectedChassis, selectedWheelbase, selectedBusType, features, onEdit }: QuoteSummaryProps) {
   const selectedSeatLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId)?.title ?? draft.seatPackage.layoutId;
 
   return (
-    <aside className="summary">
+    <aside className="summary productionSummary">
       <h3>Quote Summary <button type="button" onClick={() => onEdit(step)}><Pencil size={14} /> Edit</button></h3>
       <hr />
-      <small>COMPANY</small>
+      <small>DEALER / CUSTOMER</small>
       <strong>{draft.company.dealerName}</strong>
       <span>Contact</span>
       <strong>{draft.company.dealerContact}</strong>
       <span>Province / State</span>
       <strong>{draft.company.provinceState}</strong>
       <hr />
-      <small>BUS SPECIFICATIONS</small>
+      <small>VEHICLE INTENT</small>
       <div className="summaryBus" />
       <span>Bus Type</span>
       <strong>{selectedBusType}</strong>
@@ -44,6 +52,16 @@ export function QuoteSummary({ draft, progress, step, selectedChassis, selectedW
       {step >= 3 && (
         <>
           <hr />
+          <small>OPTIONS</small>
+          <strong>{draft.features.length} selected options</strong>
+          {features.map((feature) => (
+            <p className="featureSummary" key={`${feature.category}-${feature.label}`}>{feature.label}<strong>{feature.category}</strong></p>
+          ))}
+        </>
+      )}
+      {step >= 4 && (
+        <>
+          <hr />
           <small>SEATS</small>
           <span>Selected Layout</span>
           <strong>{selectedSeatLayout}</strong>
@@ -53,18 +71,13 @@ export function QuoteSummary({ draft, progress, step, selectedChassis, selectedW
           <strong>{draft.seatGroups.length}</strong>
           <span>Wheelchair Positions</span>
           <strong>{draft.seatPackage.wheelchairPositions}</strong>
-          <hr />
-          <small>SELECTED FEATURES</small>
-          {features.map((feature) => (
-            <p className="featureSummary" key={`${feature.category}-${feature.label}`}>{feature.label}<strong>{feature.category}</strong></p>
-          ))}
         </>
       )}
       <hr />
       <small>PROGRESS</small>
       <div className="progress">
         <div>{progress}%</div>
-        <span>Step {step} of 4<br /><strong>{['Company Information', 'Bus Specifications', 'Features & Options', 'Review & Submit'][step - 1]}</strong></span>
+        <span>Step {step} of 5<br /><strong>{stepNames[step]}</strong></span>
       </div>
     </aside>
   );
