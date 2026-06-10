@@ -11,6 +11,10 @@ type ReviewStepProps = {
   onEdit: (step: RfqStep) => void;
 };
 
+function formatDocumentType(type: string) {
+  return type.replace('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selectedBusType, onEdit }: ReviewStepProps) {
   const validationIssues = getDraftValidationIssues(draft);
   const warningCount = validationIssues.filter((issue) => issue.severity === 'warning').length;
@@ -75,6 +79,21 @@ export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selected
           ))}
         </div>
         <div className="infoBox">Reference only - final seating layout will be reviewed and validated by Micro Bird.</div>
+      </section>
+
+      <section className="panel">
+        <h2>Documents <button className="edit" type="button" onClick={() => onEdit(5)}><Pencil size={15} /> Edit</button></h2>
+        <div className="reviewFeatureGrid documentReviewGrid">
+          {draft.documents.length === 0 ? <p>No documents added.</p> : draft.documents.map((document) => (
+            <div key={document.id}>
+              <strong>{formatDocumentType(document.documentType)}</strong>
+              <ul>
+                <li>{document.fileName}</li>
+                <li>{document.fileType} • {document.fileSize}</li>
+              </ul>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="panel">
