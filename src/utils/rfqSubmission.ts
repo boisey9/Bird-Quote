@@ -64,8 +64,10 @@ export function buildRfqSubmissionPayload(draft: RfqDraft) {
     seats: {
       package: {
         ...draft.seatPackage,
+        seatLayoutTemplateId: draft.seatPackage.layoutId,
         layoutLabel: labels.seatLayout
       },
+      selectedSeatLayoutTemplateId: draft.seatPackage.layoutId,
       groups: draft.seatGroups,
       referenceOnly: true,
       validationMessage: 'Reference only - final seating layout will be reviewed and validated by Micro Bird.'
