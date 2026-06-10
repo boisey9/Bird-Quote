@@ -29,9 +29,9 @@ const defaultPageByRole: Record<UserRole, AppPage> = {
 };
 
 const permittedPages: Record<UserRole, AppPage[]> = {
-  dealer: ['new-quote', 'my-requests', 'quote-status'],
-  internal: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue'],
-  admin: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'admin-config']
+  dealer: ['new-quote', 'my-requests', 'quote-status', 'confirmation'],
+  internal: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'confirmation'],
+  admin: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'admin-config', 'confirmation']
 };
 
 const nextButtonLabels: Record<RfqStep, string> = {
