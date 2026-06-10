@@ -36,7 +36,9 @@ function getLayoutShellId(layout?: SeatLayoutTemplate) {
 }
 
 function formatShellLabel(shellId: string) {
-  return shellId.replace('shell-', '').replace('-', ' ');
+  if (shellId === 'shell-rear-lift') return 'Rear lift ready';
+  if (shellId === 'shell-mid-door') return 'Mid-door layout';
+  return 'Standard body';
 }
 
 function fallbackRows(layoutType: string, estimatedSeats: number): SeatLayoutRow[] {
@@ -99,7 +101,6 @@ export function BusFramePreview({ layoutType, layoutId, shellId, estimatedSeats,
 }
 
 export function SeatLayoutCard({ layout, selected, onSelect, draft, cmsRows }: { layout: SeatLayoutTemplate; selected: boolean; onSelect: () => void; draft: RfqDraft; cmsRows: SeatLayoutRow[] }) {
-  const rows = getSeatLayoutRowsFromCms(cmsRows, layout.id);
   const shellId = getLayoutShellId(layout);
   const wheelchairPreview = shellId === 'shell-rear-lift' || layout.layoutType === 'accessible' ? Math.max(1, draft.seatPackage.wheelchairPositions) : draft.seatPackage.wheelchairPositions;
   const capacity = layout.defaultCapacity ?? layout.maxSeats;
@@ -110,13 +111,11 @@ export function SeatLayoutCard({ layout, selected, onSelect, draft, cmsRows }: {
       <BusFramePreview layoutId={layout.id} shellId={shellId} layoutType={layout.layoutType} estimatedSeats={Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats)} wheelchairPositions={wheelchairPreview} rows={cmsRows} compact />
       <strong>{layout.title}</strong>
       <small>{layout.description}</small>
-      <div className="seatCardBadges">
-        <span>{formatShellLabel(shellId)} shell</span>
-        <span>up to {capacity}</span>
-        {layout.maxWheelchairPositions ? <span>{layout.maxWheelchairPositions} WC</span> : null}
-        {layout.allowedContractIds?.length ? <span>contract-controlled</span> : null}
+      <div className="seatCardBadges dealerSeatBadges">
+        <span>{formatShellLabel(shellId)}</span>
+        <span>Up to {capacity} passengers</span>
+        {layout.maxWheelchairPositions ? <span>Up to {layout.maxWheelchairPositions} wheelchair</span> : null}
       </div>
-      <em>{rows.length} CMS rows</em>
     </button>
   );
 }
@@ -125,26 +124,22 @@ export function SeatReferencePreview({ draft, cmsData }: { draft: RfqDraft; cmsD
   const selectedLayout = getSeatLayoutById(cmsData.layouts, draft.seatPackage.layoutId);
   const shellId = getLayoutShellId(selectedLayout);
   const totalSeatGroupQty = draft.seatGroups.reduce((sum, group) => sum + group.quantity, 0);
-  const rows = selectedLayout ? getSeatLayoutRowsFromCms(cmsData.rows, selectedLayout.id) : [];
 
   return (
-    <aside className="seatPreviewCard framePreviewCard">
+    <aside className="seatPreviewCard framePreviewCard dealerPreviewCard">
       <div className="previewHeader">
         <h3>Reference Preview / Summary</h3>
       </div>
       <div className="seatSummaryList">
         <p><strong>Selected Layout</strong><span>{selectedLayout?.title ?? 'Not selected'}</span></p>
-        <p><strong>Template ID</strong><span>{draft.seatPackage.layoutId || 'Not selected'}</span></p>
-        <p><strong>Shell Type</strong><span>{formatShellLabel(shellId)}</span></p>
-        <p><strong>CMS Source</strong><span>{cmsData.sourceLabel ?? 'CMS data'}</span></p>
-        <p><strong>CMS Rows</strong><span>{rows.length} configured rows/zones</span></p>
+        <p><strong>Body Reference</strong><span>{formatShellLabel(shellId)}</span></p>
         <p><strong>Seat Material</strong><span>{draft.seatPackage.material}</span></p>
         <p><strong>Seat Color</strong><span>{draft.seatPackage.color}</span></p>
         <p><strong>Estimated Capacity</strong><span>{draft.seatPackage.estimatedPassengerSeats} passenger seats</span></p>
         <p><strong>Seat Type Total</strong><span>{totalSeatGroupQty} seats</span></p>
-        <p><strong>Rear Lift / Wheelchair</strong><span>{draft.seatPackage.wheelchairPositions > 0 || shellId === 'shell-rear-lift' ? 'Required / Available' : 'Not required'}</span></p>
+        <p><strong>Wheelchair / Lift</strong><span>{draft.seatPackage.wheelchairPositions > 0 || shellId === 'shell-rear-lift' ? 'Requested / available' : 'Not requested'}</span></p>
       </div>
-      {cmsData.error && <p className="warningNote">CMS fallback active: {cmsData.error}</p>}
+      {cmsData.error && <p className="warningNote">Showing backup layout options. Micro Bird will review the final seating request.</p>}
       <div className="largeFrameWrap">
         <div className="directionLabel">FRONT / ENTRY REFERENCE</div>
         <BusFramePreview layoutId={selectedLayout?.id} shellId={shellId} layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={draft.seatPackage.estimatedPassengerSeats} wheelchairPositions={draft.seatPackage.wheelchairPositions} rows={cmsData.rows} />
