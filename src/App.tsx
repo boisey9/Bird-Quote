@@ -16,6 +16,7 @@ import { CompanyStep } from './components/steps/CompanyStep';
 import { SpecsStep } from './components/steps/SpecsStep';
 import { FeaturesStep } from './components/steps/FeaturesStep';
 import { SeatsStep } from './components/steps/SeatsStep';
+import { DocumentsStep } from './components/steps/DocumentsStep';
 import { ReviewStep } from './components/steps/ReviewStep';
 import { buildRfqSubmissionPayload, getDraftValidationIssues } from './utils/rfqSubmission';
 import type { RfqDraft, RfqStep } from './types/rfq';
@@ -36,8 +37,9 @@ const nextButtonLabels: Record<RfqStep, string> = {
   1: 'Next: Vehicle',
   2: 'Next: Options',
   3: 'Next: Seats',
-  4: 'Next: Review',
-  5: 'Submit Quote Request'
+  4: 'Next: Documents',
+  5: 'Next: Review',
+  6: 'Submit Quote Request'
 };
 
 function getInitialRole(): UserRole {
@@ -68,8 +70,8 @@ function HelpModal({ onClose }: { onClose: () => void }) {
             <p>Seat previews are reference only. Micro Bird validates final seating, engineering feasibility, and quote details.</p>
           </section>
           <section>
-            <h3>Internal flow</h3>
-            <p>Use RFQ Queue to review incoming RFQs, assign owners, update statuses, view documents, and audit history.</p>
+            <h3>Documents</h3>
+            <p>V2 captures document metadata first. Real file storage can connect later without changing the dealer flow.</p>
           </section>
         </div>
       </aside>
@@ -90,7 +92,7 @@ export function App() {
   const selectedWheelbase = busSpecMatrixData.wheelbases.find((item) => item.id === draft.specs.wheelbase);
   const selectedBusType = busSpecMatrixData.busTypes.find((item) => item.id === draft.specs.busType);
   const summaryFeatures = useMemo(() => draft.features.slice(0, 6), [draft.features]);
-  const progress = step * 20;
+  const progress = Math.round((step / 6) * 100);
 
   const navigate = (targetPage: AppPage) => {
     if (!permittedPages[role].includes(targetPage)) {
@@ -105,7 +107,7 @@ export function App() {
     if (!permittedPages[nextRole].includes(page)) setPage(defaultPageByRole[nextRole]);
   };
 
-  const goNext = () => setStep((current) => Math.min(5, current + 1) as RfqStep);
+  const goNext = () => setStep((current) => Math.min(6, current + 1) as RfqStep);
   const goBack = () => setStep((current) => Math.max(1, current - 1) as RfqStep);
   const saveAndExit = () => {
     localStorage.setItem('birdQuoteDraft', JSON.stringify(draft));
@@ -168,11 +170,12 @@ export function App() {
             {step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}
             {step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}
             {step === 4 && <SeatsStep draft={draft} setDraft={setDraft} />}
-            {step === 5 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}
+            {step === 5 && <DocumentsStep draft={draft} setDraft={setDraft} />}
+            {step === 6 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}
             {submitStatus && <div className="submitStatus">{submitStatus}</div>}
             <div className="actions productionActions">
               <button className="secondary" type="button" onClick={step === 1 ? saveAndExit : goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
-              <button className="primary" disabled={isSubmitting} onClick={step === 5 ? submitRfq : goNext}>
+              <button className="primary" disabled={isSubmitting} onClick={step === 6 ? submitRfq : goNext}>
                 {isSubmitting ? 'Submitting...' : nextButtonLabels[step]} <ArrowRight size={18} />
               </button>
             </div>
