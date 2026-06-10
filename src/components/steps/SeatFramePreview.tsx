@@ -19,6 +19,9 @@ type SeatPreviewCmsData = Pick<SeatCmsConfig, 'layouts' | 'rows'> & {
   error?: string;
 };
 
+type MarketHint = 'school' | 'commercial' | 'accessible' | 'custom';
+type LayoutFamilyHint = 'standard' | 'accessible' | 'perimeter' | 'lounge';
+
 function cssSafe(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
@@ -39,6 +42,20 @@ function formatShellLabel(shellId: string) {
   if (shellId === 'shell-rear-lift') return 'Rear lift ready';
   if (shellId === 'shell-mid-door') return 'Mid-door layout';
   return 'Standard body';
+}
+
+function formatMarketHint(marketHint?: MarketHint) {
+  if (marketHint === 'school') return 'Type-A School';
+  if (marketHint === 'accessible') return 'Accessible / Lift';
+  if (marketHint === 'custom') return 'Custom Review';
+  return 'Commercial';
+}
+
+function formatLayoutFamily(layoutFamily?: LayoutFamilyHint) {
+  if (layoutFamily === 'accessible') return 'Wheelchair / Lift';
+  if (layoutFamily === 'perimeter') return 'Perimeter';
+  if (layoutFamily === 'lounge') return 'Lounge / Mixed';
+  return 'Forward-Facing';
 }
 
 function fallbackRows(layoutType: string, estimatedSeats: number): SeatLayoutRow[] {
@@ -100,7 +117,7 @@ export function BusFramePreview({ layoutType, layoutId, shellId, estimatedSeats,
   );
 }
 
-export function SeatLayoutCard({ layout, selected, onSelect, draft, cmsRows }: { layout: SeatLayoutTemplate; selected: boolean; onSelect: () => void; draft: RfqDraft; cmsRows: SeatLayoutRow[] }) {
+export function SeatLayoutCard({ layout, selected, onSelect, draft, cmsRows, marketHint, layoutFamily }: { layout: SeatLayoutTemplate; selected: boolean; onSelect: () => void; draft: RfqDraft; cmsRows: SeatLayoutRow[]; marketHint?: MarketHint; layoutFamily?: LayoutFamilyHint }) {
   const shellId = getLayoutShellId(layout);
   const wheelchairPreview = shellId === 'shell-rear-lift' || layout.layoutType === 'accessible' ? Math.max(1, draft.seatPackage.wheelchairPositions) : draft.seatPackage.wheelchairPositions;
   const capacity = layout.defaultCapacity ?? layout.maxSeats;
@@ -109,9 +126,13 @@ export function SeatLayoutCard({ layout, selected, onSelect, draft, cmsRows }: {
     <button type="button" className={selected ? 'seatLayoutCard frameCard selected' : 'seatLayoutCard frameCard'} onClick={onSelect}>
       {selected && <CheckCircle2 className="selectedBadge" size={20} />}
       <BusFramePreview layoutId={layout.id} shellId={shellId} layoutType={layout.layoutType} estimatedSeats={Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats)} wheelchairPositions={wheelchairPreview} rows={cmsRows} compact />
-      <strong>{layout.title}</strong>
+      <div className="seatCardTitleLine">
+        <strong>{layout.title}</strong>
+        <em>{formatLayoutFamily(layoutFamily)}</em>
+      </div>
       <small>{layout.description}</small>
       <div className="seatCardBadges dealerSeatBadges">
+        <span>{formatMarketHint(marketHint)}</span>
         <span>{formatShellLabel(shellId)}</span>
         <span>Up to {capacity} passengers</span>
         {layout.maxWheelchairPositions ? <span>Up to {layout.maxWheelchairPositions} wheelchair</span> : null}
@@ -120,7 +141,7 @@ export function SeatLayoutCard({ layout, selected, onSelect, draft, cmsRows }: {
   );
 }
 
-export function SeatReferencePreview({ draft, cmsData }: { draft: RfqDraft; cmsData: SeatPreviewCmsData }) {
+export function SeatReferencePreview({ draft, cmsData, marketHint }: { draft: RfqDraft; cmsData: SeatPreviewCmsData; marketHint?: MarketHint }) {
   const selectedLayout = getSeatLayoutById(cmsData.layouts, draft.seatPackage.layoutId);
   const shellId = getLayoutShellId(selectedLayout);
   const totalSeatGroupQty = draft.seatGroups.reduce((sum, group) => sum + group.quantity, 0);
@@ -129,6 +150,7 @@ export function SeatReferencePreview({ draft, cmsData }: { draft: RfqDraft; cmsD
     <aside className="seatPreviewCard framePreviewCard dealerPreviewCard">
       <div className="previewHeader">
         <h3>Reference Preview / Summary</h3>
+        <span>{formatMarketHint(marketHint)}</span>
       </div>
       <div className="seatSummaryList">
         <p><strong>Selected Layout</strong><span>{selectedLayout?.title ?? 'Not selected'}</span></p>
