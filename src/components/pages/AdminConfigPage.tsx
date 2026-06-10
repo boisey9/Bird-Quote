@@ -37,10 +37,32 @@ const roles = [
 const positionTypes: SeatPositionType[] = ['passenger-seat', 'foldaway', 'wheelchair-space', 'empty', 'aisle', 'lounge', 'perimeter-seat'];
 const zoneTypes: SeatLayoutRow['zone'][] = ['front', 'mid', 'rear', 'curbside', 'streetside'];
 const positionLabels: Record<string, string> = {
-  'passenger-seat': 'Passenger Seat', foldaway: 'Foldaway', 'wheelchair-space': 'Wheelchair Space', empty: 'Empty', aisle: 'Aisle', lounge: 'Lounge', 'perimeter-seat': 'Perimeter Seat'
+  'passenger-seat': 'Passenger Seat',
+  foldaway: 'Foldaway',
+  'wheelchair-space': 'Wheelchair Space',
+  empty: 'Empty',
+  aisle: 'Aisle',
+  lounge: 'Lounge',
+  'perimeter-seat': 'Perimeter Seat'
 };
 
 type CmsSeatConfig = { shells: SeatShell[]; layouts: SeatLayoutTemplate[]; rows: SeatLayoutRow[]; zones: SeatLayoutZone[] };
+type CmsApiResult = { ok?: boolean; error?: string; source?: string; shellCount?: number; layoutCount?: number; rowCount?: number; zoneCount?: number; shells?: SeatShell[]; layouts?: SeatLayoutTemplate[]; rows?: SeatLayoutRow[]; zones?: SeatLayoutZone[] };
+
+async function parseCmsResponse(response: Response): Promise<CmsApiResult> {
+  const text = await response.text();
+  let payload: CmsApiResult;
+  try {
+    payload = text ? JSON.parse(text) as CmsApiResult : {};
+  } catch {
+    const preview = text.replace(/\s+/g, ' ').slice(0, 180);
+    throw new Error(`CMS API returned non-JSON (${response.status}). ${preview || response.statusText}`);
+  }
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error ?? `CMS API request failed (${response.status}).`);
+  }
+  return payload;
+}
 
 function shellImage(key: string) {
   return seatShellImages[(key as SeatShellImageKey) in seatShellImages ? key as SeatShellImageKey : 'shellStd'];
@@ -106,10 +128,13 @@ function SeatLayoutBuilder() {
   async function loadFromDatabase() {
     setSaveStatus('Loading CMS configuration from Neon...');
     try {
-      const response = await fetch('/api/cms-seat-layouts');
-      const result = await response.json();
-      if (!response.ok || !result.ok) throw new Error(result.error ?? 'Unable to load CMS configuration.');
-      const nextConfig = { shells: (result.shells?.length ? result.shells : fallbackShells) as SeatShell[], layouts: result.layouts as SeatLayoutTemplate[], rows: result.rows as SeatLayoutRow[], zones: (result.zones ?? []) as SeatLayoutZone[] };
+      const result = await parseCmsResponse(await fetch('/api/cms-seat-layouts'));
+      const nextConfig: CmsSeatConfig = {
+        shells: result.shells?.length ? result.shells : fallbackShells,
+        layouts: result.layouts?.length ? result.layouts : seatCmsConfig.layouts,
+        rows: result.rows?.length ? result.rows : seatCmsConfig.rows,
+        zones: result.zones ?? []
+      };
       setCmsConfig(nextConfig);
       setSelectedLayoutId((current) => nextConfig.layouts.some((layout) => layout.id === current) ? current : nextConfig.layouts[0]?.id ?? '');
       setSaveStatus(`CMS configuration loaded from ${result.source ?? 'API'}.`);
@@ -156,9 +181,7 @@ function SeatLayoutBuilder() {
   async function saveCmsConfig() {
     setSaveStatus('Saving CMS configuration to Neon...');
     try {
-      const response = await fetch('/api/cms-seat-layouts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cmsConfig) });
-      const result = await response.json();
-      if (!response.ok || !result.ok) throw new Error(result.error ?? 'Unable to save CMS configuration.');
+      const result = await parseCmsResponse(await fetch('/api/cms-seat-layouts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cmsConfig) }));
       setSaveStatus(`CMS saved to Neon. ${result.shellCount} shell(s), ${result.layoutCount} layout(s), ${result.rowCount} row(s), ${result.zoneCount} zone(s).`);
     } catch (error) {
       setSaveStatus(error instanceof Error ? error.message : 'Unable to save CMS configuration.');
@@ -196,7 +219,7 @@ export function AdminConfigPage() {
   return (
     <section className="contentCard pageCard adminConfigPage">
       <div className="pageHero adminHero"><div><h1>Admin Configuration</h1><p>V2 CMS foundation: database-backed CMS controls for shell-based seat layouts, contract programs, routing, SLA, and permissions.</p></div><div className="statusSearch">Shell CMS Active</div></div>
-      <div className="configNotice"><Lock size={18} /><p><strong>Bus shell CMS:</strong> seat templates can now be assigned to Standard, Rear Lift, or Mid Door shells. Database migration is prepared and waiting for approval before production schema changes are applied.</p></div>
+      <div className="configNotice"><Lock size={18} /><p><strong>Bus shell CMS is active:</strong> seat templates can now be assigned to Standard, Rear Lift, or Mid Door shells and saved to Neon.</p></div>
       <div className="configStatsGrid"><ConfigStat label="Chassis Platforms" value={busSpecMatrixData.chassis.length} /><ConfigStat label="Wheelbases" value={busSpecMatrixData.wheelbases.length} /><ConfigStat label="Bus Types" value={busSpecMatrixData.busTypes.length} /><ConfigStat label="Option Categories" value={featureOptionCategories.length} /><ConfigStat label="Feature Options" value={featureOptions.length} /><ConfigStat label="Seat Layouts" value={seatCmsConfig.layouts.length} /></div>
       <SeatShellLibrary shells={fallbackShells} />
       <ContractConfigSection />
