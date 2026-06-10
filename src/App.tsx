@@ -10,6 +10,7 @@ import { MyRequestsPage } from './components/pages/MyRequestsPage';
 import { QuoteStatusPage } from './components/pages/QuoteStatusPage';
 import { InternalQueuePage } from './components/pages/InternalQueuePage';
 import { AdminConfigPage } from './components/pages/AdminConfigPage';
+import { ConfirmationPage } from './components/pages/ConfirmationPage';
 import './components/pages/PageStyles.css';
 import './components/pages/LayoutFixes.css';
 import { CompanyStep } from './components/steps/CompanyStep';
@@ -84,6 +85,8 @@ export function App() {
   const [page, setPage] = useState<AppPage>(() => defaultPageByRole[getInitialRole()]);
   const [step, setStep] = useState<RfqStep>(1);
   const [draft, setDraft] = useState<RfqDraft>(initialDraft);
+  const [submittedDraft, setSubmittedDraft] = useState<RfqDraft | null>(null);
+  const [submittedRfqId, setSubmittedRfqId] = useState('');
   const [submitStatus, setSubmitStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -121,6 +124,8 @@ export function App() {
   };
   const startNewRfq = () => {
     setDraft(initialDraft);
+    setSubmittedDraft(null);
+    setSubmittedRfqId('');
     setStep(1);
     setSubmitStatus('');
     setPage('new-quote');
@@ -148,8 +153,10 @@ export function App() {
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error ?? 'Unable to submit RFQ.');
-      setSubmitStatus(`Submitted successfully: ${result.rfqId}`);
-      setPage('my-requests');
+      setSubmittedRfqId(result.rfqId ?? 'RFQ-SUBMITTED');
+      setSubmittedDraft(draft);
+      setSubmitStatus('');
+      setPage('confirmation');
     } catch (error) {
       setSubmitStatus(error instanceof Error ? error.message : 'Unable to submit RFQ.');
     } finally {
@@ -183,6 +190,7 @@ export function App() {
           <QuoteSummary draft={draft} progress={progress} step={step} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} features={summaryFeatures} onEdit={jumpToStep} />
         </main>
       )}
+      {page === 'confirmation' && submittedDraft && <ConfirmationPage rfqId={submittedRfqId} draft={submittedDraft} onStartNew={startNewRfq} onViewRequests={() => setPage('my-requests')} />}
       {page === 'my-requests' && <main className="pageLayout"><MyRequestsPage onStartNew={startNewRfq} /></main>}
       {page === 'quote-status' && <main className="pageLayout"><QuoteStatusPage /></main>}
       {page === 'rfq-queue' && <main className="pageLayout"><InternalQueuePage /></main>}
