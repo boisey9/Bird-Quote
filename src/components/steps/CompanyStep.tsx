@@ -1,20 +1,13 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
-import { ChevronRight, ClipboardList, FileCheck2, Plus, Trash2, Upload, User } from 'lucide-react';
+import { ChevronRight, ClipboardList, FileCheck2, User } from 'lucide-react';
 import { contractOptions, getContractById } from '../../data/contractConfig';
-import { FileRow, Input } from '../FormControls';
-import type { RfqDocument, RfqDraft } from '../../types/rfq';
+import { Input } from '../FormControls';
+import type { RfqDraft } from '../../types/rfq';
 
 type CompanyStepProps = {
   draft: RfqDraft;
   setDraft: Dispatch<SetStateAction<RfqDraft>>;
 };
-
-const documentTypes: RfqDocument['documentType'][] = ['bid', 'floorplan', 'spec-sheet', 'supporting', 'site-photos', 'other'];
-
-function inferFileType(fileName: string) {
-  const ext = fileName.split('.').pop()?.toUpperCase();
-  return ext || 'FILE';
-}
 
 export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
   const [showReferenceDetails, setShowReferenceDetails] = useState(false);
@@ -36,42 +29,10 @@ export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
     }));
   };
 
-  const addDocument = () => {
-    setDraft((current) => ({
-      ...current,
-      documents: [
-        ...current.documents,
-        {
-          id: `doc-${Date.now()}`,
-          fileName: 'New_Document.pdf',
-          fileType: 'PDF',
-          fileSize: '0 KB',
-          documentType: 'supporting'
-        }
-      ]
-    }));
-  };
-
-  const updateDocument = (id: string, updates: Partial<RfqDocument>) => {
-    setDraft((current) => ({
-      ...current,
-      documents: current.documents.map((document) => {
-        if (document.id !== id) return document;
-        const nextDocument = { ...document, ...updates };
-        if (updates.fileName) nextDocument.fileType = inferFileType(updates.fileName);
-        return nextDocument;
-      })
-    }));
-  };
-
-  const removeDocument = (id: string) => {
-    setDraft((current) => ({ ...current, documents: current.documents.filter((document) => document.id !== id) }));
-  };
-
   return (
     <div className="sectionStack">
       <section className="panel">
-        <h2><User /> Company Information / Request Details</h2>
+        <h2><User /> Dealer / Customer Information</h2>
         <div className="grid two">
           <Input label="Dealer Name *" value={draft.company.dealerName} onChange={(value) => update('dealerName', value)} />
           <Input label="Final Customer Name / End User *" value={draft.company.finalCustomerName} onChange={(value) => update('finalCustomerName', value)} />
@@ -99,8 +60,8 @@ export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
         {selectedContract.workflowType === 'contract-controlled' && (
           <div className="contractRulesSummary">
             <p><strong>Vehicle Rules</strong><span>{selectedContract.allowedChassisIds.length} chassis • {selectedContract.allowedWheelbaseIds.length || 'Any'} wheelbases • {selectedContract.allowedBusTypeIds.length} bus types</span></p>
-            <p><strong>Seat Layout Rules</strong><span>{selectedContract.allowedSeatLayoutIds.length} approved seat layout templates</span></p>
-            <p><strong>Required Documents</strong><span>{selectedContract.requiredDocumentTypes.join(', ')}</span></p>
+            <p><strong>Seat Layout Rules</strong><span>{selectedContract.allowedSeatLayoutIds.length} approved seating layouts</span></p>
+            <p><strong>Recommended Documents</strong><span>{selectedContract.requiredDocumentTypes.join(', ')}</span></p>
           </div>
         )}
       </section>
@@ -126,32 +87,6 @@ export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
             <p><strong>Reuse Intent</strong><span>Use this as context only. Micro Bird will validate current model, pricing, and availability.</span></p>
           </div>
         )}
-      </section>
-
-      <section className="panel">
-        <h2><Upload /> Upload Documents</h2>
-        <div className="uploadGrid">
-          <div className="dropzone">
-            <Upload />
-            <strong>Upload Bid Document</strong>
-            <span>For V2, document metadata is captured. File storage can connect later.</span>
-            <button type="button" onClick={addDocument}><Plus size={16} /> Add Document Metadata</button>
-          </div>
-          <div className="fileList documentMetaList">
-            {draft.documents.map((document) => (
-              <div className="documentMetaRow" key={document.id}>
-                <select value={document.documentType} onChange={(event) => updateDocument(document.id, { documentType: event.target.value as RfqDocument['documentType'] })}>
-                  {documentTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-                </select>
-                <input value={document.fileName} onChange={(event) => updateDocument(document.id, { fileName: event.target.value })} />
-                <input value={document.fileSize} onChange={(event) => updateDocument(document.id, { fileSize: event.target.value })} />
-                <button type="button" onClick={() => removeDocument(document.id)}><Trash2 size={15} /></button>
-              </div>
-            ))}
-            {draft.documents.length === 0 && <FileRow name="No documents added" size="Optional" />}
-            <small>Accepted file types: PDF, DOCX, XLSX, DWG, JPG, PNG, ZIP. Max file size: 25 MB per file.</small>
-          </div>
-        </div>
       </section>
     </div>
   );
