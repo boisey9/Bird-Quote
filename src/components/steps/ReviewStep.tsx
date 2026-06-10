@@ -18,29 +18,42 @@ export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selected
   const selectedSeatLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId)?.title ?? draft.seatPackage.layoutId;
 
   return (
-    <div className="sectionStack">
+    <div className="sectionStack reviewStepPage">
       <section className="reviewGrid">
         <div className="panel">
-          <h2>Company Information <button className="edit" type="button" onClick={() => onEdit(1)}><Pencil size={15} /> Edit</button></h2>
+          <h2>Dealer / Customer <button className="edit" type="button" onClick={() => onEdit(1)}><Pencil size={15} /> Edit</button></h2>
           <p><strong>{draft.company.dealerName}</strong> • {draft.company.dealerContact} • {draft.company.provinceState}</p>
           <p>{draft.company.finalCustomerName}</p>
           <p>{draft.company.additionalInfo}</p>
         </div>
         <div className="panel">
-          <h2>Bus Specifications <button className="edit" type="button" onClick={() => onEdit(2)}><Pencil size={15} /> Edit</button></h2>
+          <h2>Vehicle Intent <button className="edit" type="button" onClick={() => onEdit(2)}><Pencil size={15} /> Edit</button></h2>
           <p><strong>{selectedBusType}</strong> • {selectedChassis} • {selectedWheelbase}</p>
           <p>Qty {draft.specs.quantity} • Seating {draft.specs.seatingCapacity} • Wheelchair {draft.specs.wheelchairCapacity}</p>
         </div>
       </section>
 
       <section className="panel">
-        <h2>Seats <button className="edit" type="button" onClick={() => onEdit(3)}><Pencil size={15} /> Edit</button></h2>
+        <h2>Selected Options <button className="edit" type="button" onClick={() => onEdit(3)}><Pencil size={15} /> Edit</button></h2>
+        <div className="reviewFeatureGrid">
+          {draft.features.length === 0 ? <p>No additional options selected.</p> : draft.features.slice(0, 12).map((feature) => (
+            <div key={`${feature.category}-${feature.label}`}>
+              <strong>{feature.category}</strong>
+              <ul>
+                <li>{feature.label}</li>
+              </ul>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel">
+        <h2>Seats & Floorplan Intent <button className="edit" type="button" onClick={() => onEdit(4)}><Pencil size={15} /> Edit</button></h2>
         <div className="reviewFeatureGrid">
           <div>
             <strong>Seat Package</strong>
             <ul>
               <li>Layout: {selectedSeatLayout}</li>
-              <li>CMS Template ID: {draft.seatPackage.layoutId}</li>
               <li>Material: {draft.seatPackage.material}</li>
               <li>Color: {draft.seatPackage.color}</li>
               <li>Estimated Seats: {draft.seatPackage.estimatedPassengerSeats}</li>
@@ -65,20 +78,6 @@ export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selected
       </section>
 
       <section className="panel">
-        <h2>Selected Features <button className="edit" type="button" onClick={() => onEdit(3)}><Pencil size={15} /> Edit</button></h2>
-        <div className="reviewFeatureGrid">
-          {draft.features.slice(0, 12).map((feature) => (
-            <div key={`${feature.category}-${feature.label}`}>
-              <strong>{feature.category}</strong>
-              <ul>
-                <li>{feature.label}</li>
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
         <h2>Validation Review</h2>
         {validationIssues.length === 0 ? (
           <div className="infoBox">No validation issues found. Your request is ready to submit.</div>
@@ -95,6 +94,7 @@ export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selected
       <section className="panel">
         <h2>Submission Review</h2>
         <label className="check"><input type="checkbox" checked readOnly /> I confirm that the information provided is accurate and complete to the best of my knowledge.</label>
+        <label className="check"><input type="checkbox" checked readOnly /> I understand seating shown is reference only and will be reviewed by Micro Bird.</label>
         <label className="check"><input type="checkbox" checked readOnly /> I consent to be contacted by a Micro Bird dealer or representative regarding this quote request.</label>
         <div className="infoBox">Your request will be reviewed by our quote team. You will receive an email confirmation shortly.</div>
       </section>
