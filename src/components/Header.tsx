@@ -20,11 +20,13 @@ const rolePages: Record<UserRole, AppPage[]> = {
 
 export function Header({ page, role, onNavigate, onRoleChange, onHelp }: HeaderProps) {
   const canSee = (target: AppPage) => rolePages[role].includes(target);
+  const showInternalControls = role !== 'dealer';
 
   return (
-    <header className="topbar">
+    <header className="topbar productionTopbar">
       <div className="brand">
         <img src={microBirdLogo} alt="Micro Bird" className="brandLogo" />
+        <span className="brandFallback">Micro Bird</span>
       </div>
       <nav className="tabs">
         {canSee('new-quote') && <button className={page === 'new-quote' ? 'active' : ''} onClick={() => onNavigate('new-quote')}><Plus size={18} /> New Quote</button>}
@@ -40,11 +42,13 @@ export function Header({ page, role, onNavigate, onRoleChange, onHelp }: HeaderP
           <strong>Erik Boisvert</strong>
           <small>A. Girardin Inc.</small>
         </div>
-        <select className="roleSelect" value={role} onChange={(event) => onRoleChange(event.target.value as UserRole)} aria-label="Select current role">
-          <option value="dealer">Dealer</option>
-          <option value="internal">Internal</option>
-          <option value="admin">Admin</option>
-        </select>
+        {showInternalControls && (
+          <select className="roleSelect" value={role} onChange={(event) => onRoleChange(event.target.value as UserRole)} aria-label="Select current role">
+            <option value="dealer">Dealer</option>
+            <option value="internal">Internal</option>
+            <option value="admin">Admin</option>
+          </select>
+        )}
         <Menu className="mobileMenu" />
       </div>
     </header>
