@@ -11,10 +11,6 @@ type ReviewStepProps = {
   onEdit: (step: RfqStep) => void;
 };
 
-function formatDocumentType(type: string) {
-  return type.replace('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selectedBusType, onEdit }: ReviewStepProps) {
   const validationIssues = getDraftValidationIssues(draft);
   const warningCount = validationIssues.filter((issue) => issue.severity === 'warning').length;
@@ -25,34 +21,20 @@ export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selected
     <div className="sectionStack reviewStepPage">
       <section className="reviewGrid">
         <div className="panel">
-          <h2>Dealer / Customer <button className="edit" type="button" onClick={() => onEdit(1)}><Pencil size={15} /> Edit</button></h2>
+          <h2>Request Info <button className="edit" type="button" onClick={() => onEdit(1)}><Pencil size={15} /> Edit</button></h2>
           <p><strong>{draft.company.dealerName}</strong> • {draft.company.dealerContact} • {draft.company.provinceState}</p>
           <p>{draft.company.finalCustomerName}</p>
           <p>{draft.company.additionalInfo}</p>
         </div>
         <div className="panel">
-          <h2>Vehicle Intent <button className="edit" type="button" onClick={() => onEdit(2)}><Pencil size={15} /> Edit</button></h2>
+          <h2>Bus Selection <button className="edit" type="button" onClick={() => onEdit(2)}><Pencil size={15} /> Edit</button></h2>
           <p><strong>{selectedBusType}</strong> • {selectedChassis} • {selectedWheelbase}</p>
           <p>Qty {draft.specs.quantity} • Seating {draft.specs.seatingCapacity} • Wheelchair {draft.specs.wheelchairCapacity}</p>
         </div>
       </section>
 
       <section className="panel">
-        <h2>Selected Options <button className="edit" type="button" onClick={() => onEdit(3)}><Pencil size={15} /> Edit</button></h2>
-        <div className="reviewFeatureGrid">
-          {draft.features.length === 0 ? <p>No additional options selected.</p> : draft.features.slice(0, 12).map((feature) => (
-            <div key={`${feature.category}-${feature.label}`}>
-              <strong>{feature.category}</strong>
-              <ul>
-                <li>{feature.label}</li>
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2>Seats & Floorplan Intent <button className="edit" type="button" onClick={() => onEdit(4)}><Pencil size={15} /> Edit</button></h2>
+        <h2>Seats & Floorplan Intent <button className="edit" type="button" onClick={() => onEdit(3)}><Pencil size={15} /> Edit</button></h2>
         <div className="reviewFeatureGrid">
           <div>
             <strong>Seat Package</strong>
@@ -82,14 +64,13 @@ export function ReviewStep({ draft, selectedChassis, selectedWheelbase, selected
       </section>
 
       <section className="panel">
-        <h2>Documents <button className="edit" type="button" onClick={() => onEdit(5)}><Pencil size={15} /> Edit</button></h2>
-        <div className="reviewFeatureGrid documentReviewGrid">
-          {draft.documents.length === 0 ? <p>No documents added.</p> : draft.documents.map((document) => (
-            <div key={document.id}>
-              <strong>{formatDocumentType(document.documentType)}</strong>
+        <h2>Selected Options <button className="edit" type="button" onClick={() => onEdit(3)}><Pencil size={15} /> Edit</button></h2>
+        <div className="reviewFeatureGrid">
+          {draft.features.length === 0 ? <p>No additional options selected.</p> : draft.features.slice(0, 12).map((feature) => (
+            <div key={`${feature.category}-${feature.label}`}>
+              <strong>{feature.category}</strong>
               <ul>
-                <li>{document.fileName}</li>
-                <li>{document.fileType} • {document.fileSize}</li>
+                <li>{feature.label}</li>
               </ul>
             </div>
           ))}
