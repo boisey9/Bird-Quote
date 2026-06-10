@@ -1,11 +1,12 @@
 import { CheckCircle2 } from 'lucide-react';
 import { getAvailableSeatLayouts, getSeatLayoutRows, seatCmsConfig } from '../../data/featureOptionMatrix';
-import { seatShellImage } from '../../assets/seatShellImage';
+import { seatShellImages, type SeatShellImageKey } from '../../assets/seatShells';
 import type { RfqDraft, SeatLayoutRow, SeatLayoutTemplate } from '../../types/rfq';
 
 type SeatFrameProps = {
   layoutType: string;
   layoutId?: string;
+  shellId?: string;
   estimatedSeats: number;
   wheelchairPositions: number;
   compact?: boolean;
@@ -13,6 +14,18 @@ type SeatFrameProps = {
 
 function cssSafe(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+
+function getShellImageKey(shellId?: string): SeatShellImageKey {
+  if (shellId === 'shell-rear-lift') return 'shellLift';
+  if (shellId === 'shell-mid-door') return 'shellMidDoor';
+  return 'shellStd';
+}
+
+function getLayoutShellId(layout?: SeatLayoutTemplate) {
+  if (layout?.shellId) return layout.shellId;
+  if (layout?.id === 'wheelchair-foldaway' || layout?.rearLiftCompatible) return 'shell-rear-lift';
+  return 'shell-standard';
 }
 
 function fallbackRows(layoutType: string, estimatedSeats: number): SeatLayoutRow[] {
@@ -46,13 +59,14 @@ function getRows(layoutId: string | undefined, layoutType: string, estimatedSeat
   return configuredRows.length > 0 ? configuredRows : fallbackRows(layoutType, estimatedSeats);
 }
 
-export function BusFramePreview({ layoutType, layoutId, estimatedSeats, wheelchairPositions, compact = false }: SeatFrameProps) {
-  const hasRearLift = wheelchairPositions > 0;
+export function BusFramePreview({ layoutType, layoutId, shellId, estimatedSeats, wheelchairPositions, compact = false }: SeatFrameProps) {
+  const hasRearLift = wheelchairPositions > 0 || shellId === 'shell-rear-lift';
   const rows = getRows(layoutId, layoutType, estimatedSeats);
+  const shellImage = seatShellImages[getShellImageKey(shellId)];
 
   return (
     <div className={compact ? 'realBusPreview compactFrame' : 'realBusPreview'}>
-      <img src={seatShellImage} alt="Top-down Micro Bird bus shell reference" />
+      <img src={shellImage} alt="Top-down Micro Bird bus shell reference" />
       <div className={`cmsSeatGrid layout-${cssSafe(layoutType)}`}>
         {rows.map((row) => (
           <div className={`cmsSeatRow zone-${row.zone}`} key={row.id}>
@@ -67,6 +81,7 @@ export function BusFramePreview({ layoutType, layoutId, estimatedSeats, wheelcha
         ))}
       </div>
       {hasRearLift && <div className="realRearLiftArea"><strong>Lift / WC</strong></div>}
+      {shellId === 'shell-mid-door' && <div className="realMidDoorArea"><strong>Mid Door</strong></div>}
       <div className="realEntryMarker">Entry</div>
     </div>
   );
@@ -74,21 +89,23 @@ export function BusFramePreview({ layoutType, layoutId, estimatedSeats, wheelcha
 
 export function SeatLayoutCard({ layout, selected, onSelect, draft }: { layout: SeatLayoutTemplate; selected: boolean; onSelect: () => void; draft: RfqDraft }) {
   const rows = getSeatLayoutRows(layout.id);
-  const wheelchairPreview = layout.layoutType === 'accessible' ? Math.max(1, draft.seatPackage.wheelchairPositions) : draft.seatPackage.wheelchairPositions;
+  const shellId = getLayoutShellId(layout);
+  const wheelchairPreview = shellId === 'shell-rear-lift' || layout.layoutType === 'accessible' ? Math.max(1, draft.seatPackage.wheelchairPositions) : draft.seatPackage.wheelchairPositions;
 
   return (
     <button type="button" className={selected ? 'seatLayoutCard frameCard selected' : 'seatLayoutCard frameCard'} onClick={onSelect}>
       {selected && <CheckCircle2 className="selectedBadge" size={20} />}
-      <BusFramePreview layoutId={layout.id} layoutType={layout.layoutType} estimatedSeats={Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats)} wheelchairPositions={wheelchairPreview} compact />
+      <BusFramePreview layoutId={layout.id} shellId={shellId} layoutType={layout.layoutType} estimatedSeats={Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats)} wheelchairPositions={wheelchairPreview} compact />
       <strong>{layout.title}</strong>
       <small>{layout.description}</small>
-      <em>Capacity hint: up to {layout.maxSeats} • {rows.length} CMS rows</em>
+      <em>{shellId.replace('shell-', '').replace('-', ' ')} shell • up to {layout.maxSeats} • {rows.length} CMS rows</em>
     </button>
   );
 }
 
 export function SeatReferencePreview({ draft }: { draft: RfqDraft }) {
   const selectedLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId);
+  const shellId = getLayoutShellId(selectedLayout);
   const totalSeatGroupQty = draft.seatGroups.reduce((sum, group) => sum + group.quantity, 0);
   const rows = selectedLayout ? getSeatLayoutRows(selectedLayout.id) : [];
 
@@ -99,16 +116,17 @@ export function SeatReferencePreview({ draft }: { draft: RfqDraft }) {
       </div>
       <div className="seatSummaryList">
         <p><strong>Selected Layout</strong><span>{selectedLayout?.title ?? 'Not selected'}</span></p>
+        <p><strong>Shell Type</strong><span>{shellId.replace('shell-', '').replace('-', ' ')}</span></p>
         <p><strong>CMS Rows</strong><span>{rows.length} configured rows/zones</span></p>
         <p><strong>Seat Material</strong><span>{draft.seatPackage.material}</span></p>
         <p><strong>Seat Color</strong><span>{draft.seatPackage.color}</span></p>
         <p><strong>Estimated Capacity</strong><span>{draft.seatPackage.estimatedPassengerSeats} passenger seats</span></p>
         <p><strong>Seat Type Total</strong><span>{totalSeatGroupQty} seats</span></p>
-        <p><strong>Rear Lift / Wheelchair</strong><span>{draft.seatPackage.wheelchairPositions > 0 ? 'Required' : 'Not required'}</span></p>
+        <p><strong>Rear Lift / Wheelchair</strong><span>{draft.seatPackage.wheelchairPositions > 0 || shellId === 'shell-rear-lift' ? 'Required / Available' : 'Not required'}</span></p>
       </div>
       <div className="largeFrameWrap">
         <div className="directionLabel">FRONT / ENTRY REFERENCE</div>
-        <BusFramePreview layoutId={selectedLayout?.id} layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={draft.seatPackage.estimatedPassengerSeats} wheelchairPositions={draft.seatPackage.wheelchairPositions} />
+        <BusFramePreview layoutId={selectedLayout?.id} shellId={shellId} layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={draft.seatPackage.estimatedPassengerSeats} wheelchairPositions={draft.seatPackage.wheelchairPositions} />
       </div>
       <div className="seatLegend">
         <span><i className="seatBox" />Passenger Seats</span>
