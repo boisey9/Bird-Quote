@@ -26,11 +26,13 @@ function hasValues(values?: string[]) {
 }
 
 function valueAllowed(allowedValues: string[] | undefined, selectedValue: string) {
-  return !hasValues(allowedValues) || allowedValues.includes(selectedValue);
+  if (!hasValues(allowedValues)) return true;
+  return allowedValues!.includes(selectedValue);
 }
 
 function contractValueAllowed(allowedValues: string[] | undefined, selectedValue: string) {
-  return hasValues(allowedValues) && allowedValues.includes(selectedValue);
+  if (!hasValues(allowedValues)) return false;
+  return allowedValues!.includes(selectedValue);
 }
 
 function buildFallbackData(error?: string): SeatCmsRuntimeData {
