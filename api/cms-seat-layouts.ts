@@ -1,5 +1,4 @@
 import { neon } from '@neondatabase/serverless';
-import type { SeatLayoutRow, SeatLayoutTemplate, SeatLayoutZone, SeatShell } from '../src/types/rfq';
 
 type VercelRequest = {
   method?: string;
@@ -10,6 +9,73 @@ type VercelResponse = {
   status: (code: number) => VercelResponse;
   json: (body: unknown) => void;
   setHeader: (name: string, value: string) => void;
+};
+
+type SeatLayoutZone = {
+  id: string;
+  layoutId: string;
+  zoneType: string;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  isRequiredClearance: boolean;
+  notes?: string;
+};
+
+type SeatShell = {
+  id: string;
+  name: string;
+  shellType: string;
+  imageKey: string;
+  description: string;
+  hasRearLift: boolean;
+  hasMidDoor: boolean;
+  doorPosition: string;
+  defaultBlockedZones: SeatLayoutZone[];
+  defaultReferenceZones: SeatLayoutZone[];
+  isActive: boolean;
+};
+
+type SeatLayoutTemplate = {
+  id: string;
+  title: string;
+  description: string;
+  shellId?: string;
+  maxSeats: number;
+  layoutType: string;
+  layoutFamily?: string;
+  market?: string;
+  rearLiftCompatible?: boolean;
+  maxWheelchairPositions?: number;
+  allowedContractIds?: string[];
+  allowedChassisIds?: string[];
+  allowedWheelbaseIds?: string[];
+  allowedBusTypeIds?: string[];
+  contractIds?: string[];
+  modelTypes?: string[];
+  defaultCapacity?: number;
+  defaultWheelchairPositions?: number;
+};
+
+type SeatLayoutRow = {
+  id: string;
+  layoutId: string;
+  rowNumber: number;
+  rowLabel?: string;
+  zone: string;
+  leftPositionType: string;
+  rightPositionType: string;
+  seatCountLeft: number;
+  seatCountRight: number;
+  allowedSeatStyles: string[];
+  xPosition?: number;
+  yPosition?: number;
+  rowWidth?: number;
+  isBlocked?: boolean;
+  positionGroup?: string;
+  notes?: string;
 };
 
 type CmsPayload = {
@@ -53,7 +119,7 @@ function normalizeZones(value: unknown, fallbackLayoutId = ''): SeatLayoutZone[]
     return {
       id: String(record.id ?? `${fallbackLayoutId}-zone-${index}`),
       layoutId: String(record.layoutId ?? record.layout_id ?? fallbackLayoutId),
-      zoneType: String(record.zoneType ?? record.zone_type ?? record.type ?? 'blocked') as SeatLayoutZone['zoneType'],
+      zoneType: String(record.zoneType ?? record.zone_type ?? record.type ?? 'blocked'),
       label: String(record.label ?? ''),
       x: Number(record.x ?? 0),
       y: Number(record.y ?? 0),
@@ -69,12 +135,12 @@ function mapShell(row: Record<string, unknown>): SeatShell {
   return {
     id: String(row.id),
     name: String(row.name ?? ''),
-    shellType: String(row.shell_type ?? 'standard') as SeatShell['shellType'],
+    shellType: String(row.shell_type ?? 'standard'),
     imageKey: String(row.image_key ?? 'shellStd'),
     description: String(row.description ?? ''),
     hasRearLift: Boolean(row.has_rear_lift),
     hasMidDoor: Boolean(row.has_mid_door),
-    doorPosition: String(row.door_position ?? 'front') as SeatShell['doorPosition'],
+    doorPosition: String(row.door_position ?? 'front'),
     defaultBlockedZones: normalizeZones(row.default_blocked_zones),
     defaultReferenceZones: normalizeZones(row.default_reference_zones),
     isActive: Boolean(row.is_active ?? true)
@@ -90,7 +156,7 @@ function mapLayout(row: Record<string, unknown>): SeatLayoutTemplate {
     maxSeats: Number(row.max_seats ?? 0),
     layoutType: String(row.layout_type ?? 'front_facing'),
     layoutFamily: String(row.layout_family ?? row.layout_type ?? 'front_facing'),
-    market: String(row.market ?? 'any') as SeatLayoutTemplate['market'],
+    market: String(row.market ?? 'any'),
     rearLiftCompatible: Boolean(row.rear_lift_compatible),
     maxWheelchairPositions: Number(row.max_wheelchair_positions ?? 0),
     allowedContractIds: normalizeJsonArray(row.allowed_contract_ids),
@@ -110,9 +176,9 @@ function mapSeatRow(row: Record<string, unknown>): SeatLayoutRow {
     layoutId: String(row.layout_id),
     rowNumber: Number(row.row_number ?? 0),
     rowLabel: String(row.row_label ?? ''),
-    zone: String(row.zone ?? 'mid') as SeatLayoutRow['zone'],
-    leftPositionType: String(row.left_position_type ?? 'passenger-seat') as SeatLayoutRow['leftPositionType'],
-    rightPositionType: String(row.right_position_type ?? 'passenger-seat') as SeatLayoutRow['rightPositionType'],
+    zone: String(row.zone ?? 'mid'),
+    leftPositionType: String(row.left_position_type ?? 'passenger-seat'),
+    rightPositionType: String(row.right_position_type ?? 'passenger-seat'),
     seatCountLeft: Number(row.seat_count_left ?? 0),
     seatCountRight: Number(row.seat_count_right ?? 0),
     allowedSeatStyles: normalizeJsonArray(row.allowed_seat_styles),
@@ -129,7 +195,7 @@ function mapZone(row: Record<string, unknown>): SeatLayoutZone {
   return {
     id: String(row.id),
     layoutId: String(row.layout_id),
-    zoneType: String(row.zone_type ?? 'blocked') as SeatLayoutZone['zoneType'],
+    zoneType: String(row.zone_type ?? 'blocked'),
     label: String(row.label ?? ''),
     x: Number(row.x ?? 0),
     y: Number(row.y ?? 0),
