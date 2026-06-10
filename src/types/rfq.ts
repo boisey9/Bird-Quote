@@ -144,17 +144,56 @@ export interface FeatureOptionItem {
   imageExt: string;
 }
 
+export type SeatShellType = 'standard' | 'rear_lift' | 'mid_door';
+
+export type SeatLayoutZoneType = 'wheelchair' | 'lift-clearance' | 'door-clearance' | 'mid-door-clearance' | 'blocked' | 'storage' | 'driver-area' | 'aisle' | 'entry';
+
+export interface SeatLayoutZone {
+  id: string;
+  layoutId: string;
+  zoneType: SeatLayoutZoneType;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  isRequiredClearance: boolean;
+  notes?: string;
+}
+
+export interface SeatShell {
+  id: string;
+  name: string;
+  shellType: SeatShellType;
+  imageKey: string;
+  description: string;
+  hasRearLift: boolean;
+  hasMidDoor: boolean;
+  doorPosition: 'front' | 'mid' | 'rear';
+  defaultBlockedZones: SeatLayoutZone[];
+  defaultReferenceZones: SeatLayoutZone[];
+  isActive: boolean;
+}
+
 export interface SeatLayoutTemplate {
   id: string;
   title: string;
   description: string;
+  shellId?: string;
   maxSeats: number;
   layoutType: string;
+  layoutFamily?: string;
   contractIds?: string[];
+  allowedContractIds?: string[];
+  allowedChassisIds?: string[];
+  allowedWheelbaseIds?: string[];
+  allowedBusTypeIds?: string[];
   market?: 'school' | 'commercial' | 'mfsab' | 'any';
   modelTypes?: string[];
   rearLiftCompatible?: boolean;
   maxWheelchairPositions?: number;
+  defaultCapacity?: number;
+  defaultWheelchairPositions?: number;
 }
 
 export interface SeatLayoutRule {
@@ -173,12 +212,18 @@ export interface SeatLayoutRow {
   id: string;
   layoutId: string;
   rowNumber: number;
+  rowLabel?: string;
   zone: 'front' | 'mid' | 'rear' | 'curbside' | 'streetside';
   leftPositionType: SeatPositionType;
   rightPositionType: SeatPositionType;
   seatCountLeft: number;
   seatCountRight: number;
   allowedSeatStyles: string[];
+  xPosition?: number;
+  yPosition?: number;
+  rowWidth?: number;
+  isBlocked?: boolean;
+  positionGroup?: string;
   notes?: string;
 }
 
@@ -186,6 +231,8 @@ export interface SeatCmsConfig {
   layouts: SeatLayoutTemplate[];
   rules: SeatLayoutRule[];
   rows: SeatLayoutRow[];
+  shells?: SeatShell[];
+  zones?: SeatLayoutZone[];
   seatTypes: string[];
   materials: string[];
   colors: string[];
