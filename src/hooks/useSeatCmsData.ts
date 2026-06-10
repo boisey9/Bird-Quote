@@ -29,6 +29,10 @@ function valueAllowed(allowedValues: string[] | undefined, selectedValue: string
   return !hasValues(allowedValues) || allowedValues.includes(selectedValue);
 }
 
+function contractValueAllowed(allowedValues: string[] | undefined, selectedValue: string) {
+  return hasValues(allowedValues) && allowedValues.includes(selectedValue);
+}
+
 function buildFallbackData(error?: string): SeatCmsRuntimeData {
   return {
     ...seatCmsConfig,
@@ -120,7 +124,7 @@ export function filterSeatLayoutsForDraft(cmsData: SeatCmsRuntimeData, draft: Rf
     const certificationOk = valueAllowed(certificationIds, draft.specs.certification);
     const contractOk = contract.workflowType === 'standard'
       || contract.allowedSeatLayoutIds.includes(layout.id)
-      || valueAllowed(contractIds, draft.company.contractId);
+      || contractValueAllowed(contractIds, draft.company.contractId);
 
     return chassisOk && wheelbaseOk && busTypeOk && certificationOk && contractOk;
   });
