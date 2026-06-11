@@ -20,7 +20,6 @@ const rolePages: Record<UserRole, AppPage[]> = {
 
 export function Header({ page, role, onNavigate, onRoleChange, onHelp }: HeaderProps) {
   const canSee = (target: AppPage) => rolePages[role].includes(target);
-  const showInternalControls = role !== 'dealer';
 
   return (
     <header className="topbar productionTopbar">
@@ -42,13 +41,11 @@ export function Header({ page, role, onNavigate, onRoleChange, onHelp }: HeaderP
           <strong>Erik Boisvert</strong>
           <small>A. Girardin Inc.</small>
         </div>
-        {showInternalControls && (
-          <select className="roleSelect" value={role} onChange={(event) => onRoleChange(event.target.value as UserRole)} aria-label="Select current role">
-            <option value="dealer">Dealer</option>
-            <option value="internal">Internal</option>
-            <option value="admin">Admin</option>
-          </select>
-        )}
+        <select className="roleSelect" value={role} onChange={(event) => onRoleChange(event.target.value as UserRole)} aria-label="Select current role">
+          <option value="dealer">Dealer</option>
+          <option value="internal">Internal</option>
+          <option value="admin">Admin</option>
+        </select>
         <Menu className="mobileMenu" />
       </div>
     </header>
