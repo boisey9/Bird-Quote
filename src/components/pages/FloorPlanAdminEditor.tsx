@@ -14,6 +14,8 @@ import './FloorPlanAdminEditor.css';
 
 type FloorPlanFrameStyle = CSSProperties & { '--row-count': number };
 
+const defaultFloorPlan = floorPlanMaster[0]!;
+
 function FloorPlanStat({ label, value }: { label: string; value: number | string }) {
   return <div className="floorPlanStat"><strong>{value}</strong><span>{label}</span></div>;
 }
@@ -53,9 +55,9 @@ function FloorPlanCanvas({ floorPlan, zones }: { floorPlan: FloorPlanMaster; zon
 }
 
 export function FloorPlanAdminEditor() {
-  const [plans, setPlans] = useState(floorPlanMaster);
-  const [selectedFloorPlanId, setSelectedFloorPlanId] = useState(floorPlanMaster[0]?.floorPlanId ?? '');
-  const selectedPlan = plans.find((plan) => plan.floorPlanId === selectedFloorPlanId) ?? plans[0];
+  const [plans, setPlans] = useState<FloorPlanMaster[]>(floorPlanMaster);
+  const [selectedFloorPlanId, setSelectedFloorPlanId] = useState(defaultFloorPlan.floorPlanId);
+  const selectedPlan = plans.find((plan) => plan.floorPlanId === selectedFloorPlanId) ?? plans[0] ?? defaultFloorPlan;
   const zones = useMemo(() => getFloorPlanZones(selectedPlan.floorPlanId), [selectedPlan.floorPlanId]);
   const rules = floorPlanCompatibilityRules.filter((rule) => rule.floorPlanId === selectedPlan.floorPlanId);
   const seatZones = zones.filter((zone) => ['seat', 'foldaway'].includes(zone.zoneType));
@@ -69,7 +71,7 @@ export function FloorPlanAdminEditor() {
 
   function duplicatePlan() {
     const nextId = `${selectedPlan.floorPlanId}-copy-${Date.now()}`;
-    const copy = { ...selectedPlan, floorPlanId: nextId, floorPlanName: `${selectedPlan.floorPlanName} Copy`, status: 'draft' as const, dealerVisible: false };
+    const copy: FloorPlanMaster = { ...selectedPlan, floorPlanId: nextId, floorPlanName: `${selectedPlan.floorPlanName} Copy`, status: 'draft', dealerVisible: false };
     setPlans((current) => [...current, copy]);
     setSelectedFloorPlanId(nextId);
   }
