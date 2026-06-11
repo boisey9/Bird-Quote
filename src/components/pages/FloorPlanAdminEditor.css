@@ -1,0 +1,281 @@
+.floorPlanAdminEditor {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.floorPlanList {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.floorPlanList button {
+  border: 1px solid var(--border, #d7dee8);
+  background: #fff;
+  border-radius: 16px;
+  padding: 0.9rem;
+  text-align: left;
+  display: grid;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.floorPlanList button.active {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+}
+
+.floorPlanList strong,
+.floorPlanHeader strong {
+  color: #0f172a;
+}
+
+.floorPlanList em,
+.floorPlanList small,
+.floorPlanHeader small {
+  color: #64748b;
+  font-style: normal;
+}
+
+.floorPlanMain {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.floorPlanHeader,
+.floorPlanMetaGrid,
+.floorPlanStats,
+.floorPlanTables {
+  border: 1px solid var(--border, #d7dee8);
+  background: #fff;
+  border-radius: 18px;
+  padding: 1rem;
+}
+
+.floorPlanHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.floorPlanHeader p {
+  margin: 0.35rem 0 0;
+  color: #475569;
+}
+
+.floorPlanStatus {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.floorPlanMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.floorPlanMetaGrid label {
+  display: grid;
+  gap: 0.35rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.floorPlanMetaGrid input,
+.floorPlanMetaGrid select {
+  border: 1px solid #d7dee8;
+  border-radius: 12px;
+  padding: 0.65rem;
+  font: inherit;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.floorPlanStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.floorPlanStat {
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.floorPlanStat strong {
+  font-size: 1.4rem;
+  color: #0f172a;
+}
+
+.floorPlanStat span {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.floorPlanCanvas {
+  border: 1px solid #d7dee8;
+  border-radius: 22px;
+  background: linear-gradient(90deg, #f8fafc, #fff);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.floorPlanBusFrame {
+  min-width: 620px;
+  border: 3px solid #0f172a;
+  border-radius: 44px 20px 20px 44px;
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: 84px repeat(var(--row-count), minmax(52px, 1fr));
+  gap: 0.45rem;
+  position: relative;
+}
+
+.floorPlanCab {
+  border-radius: 28px 10px 10px 28px;
+  background: #e2e8f0;
+  color: #334155;
+  display: grid;
+  place-items: center;
+  min-height: 144px;
+  font-weight: 800;
+  writing-mode: vertical-rl;
+}
+
+.floorPlanColumn {
+  display: grid;
+  grid-template-rows: 1fr 24px 1fr;
+  gap: 0.4rem;
+  min-height: 144px;
+}
+
+.floorPlanCell {
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #475569;
+  min-height: 52px;
+  padding: 0.25rem;
+  text-align: center;
+}
+
+.floorPlanAisle {
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.floorPlanCell.seat { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
+.floorPlanCell.wheelchair { background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; }
+.floorPlanCell.foldaway { background: #dcfce7; border-color: #86efac; color: #166534; }
+.floorPlanCell.entrance,
+.floorPlanCell.mid-door { background: #ffedd5; border-color: #fdba74; color: #9a3412; }
+.floorPlanCell.rear-lift { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+.floorPlanCell.luggage { background: #f1f5f9; border-color: #94a3b8; color: #334155; }
+.floorPlanCell.driver,
+.floorPlanCell.clearance { background: #e2e8f0; border-color: #94a3b8; color: #334155; }
+
+.floorPlanTables {
+  display: grid;
+  gap: 1rem;
+}
+
+.floorPlanTable {
+  overflow-x: auto;
+}
+
+.floorPlanTable h4 {
+  margin: 0 0 0.6rem;
+}
+
+.floorPlanTableGrid {
+  display: grid;
+  min-width: 760px;
+  border: 1px solid #d7dee8;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.floorPlanTableGrid.zones {
+  grid-template-columns: 1.2fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.7fr;
+}
+
+.floorPlanTableGrid.compatibility {
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.8fr;
+}
+
+.floorPlanTableGrid > div {
+  display: contents;
+}
+
+.floorPlanTableGrid span,
+.floorPlanTableGrid strong,
+.floorPlanTableGrid em {
+  padding: 0.65rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+  font-style: normal;
+}
+
+.floorPlanTableGrid .head span {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.floorPlanAdminActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 980px) {
+  .floorPlanAdminEditor {
+    grid-template-columns: 1fr;
+  }
+
+  .floorPlanMetaGrid,
+  .floorPlanStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .floorPlanMetaGrid,
+  .floorPlanStats {
+    grid-template-columns: 1fr;
+  }
+
+  .floorPlanHeader {
+    display: grid;
+  }
+
+  .floorPlanAdminActions {
+    justify-content: start;
+  }
+}
