@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { Copy, Download, Grid3X3, Save } from 'lucide-react';
 import {
   floorPlanCompatibilityRules,
@@ -11,6 +11,8 @@ import {
   type FloorPlanZone
 } from '../../data/floorPlanGrid';
 import './FloorPlanAdminEditor.css';
+
+type FloorPlanFrameStyle = CSSProperties & { '--row-count': number };
 
 function FloorPlanStat({ label, value }: { label: string; value: number | string }) {
   return <div className="floorPlanStat"><strong>{value}</strong><span>{label}</span></div>;
@@ -28,10 +30,11 @@ function FloorPlanCell({ zone }: { zone?: FloorPlanZone }) {
 
 function FloorPlanCanvas({ floorPlan, zones }: { floorPlan: FloorPlanMaster; zones: FloorPlanZone[] }) {
   const rows = Array.from({ length: floorPlan.rowCount }, (_, index) => index + 1);
+  const frameStyle: FloorPlanFrameStyle = { '--row-count': floorPlan.rowCount };
 
   return (
     <div className="floorPlanCanvas">
-      <div className="floorPlanBusFrame" style={{ '--row-count': floorPlan.rowCount } as React.CSSProperties}>
+      <div className="floorPlanBusFrame" style={frameStyle}>
         <div className="floorPlanCab">FRONT</div>
         {rows.map((rowNumber) => {
           const curbZone = zoneForCell(zones, 'curb', rowNumber);
