@@ -6,6 +6,7 @@ import { featureOptionCategories, featureOptions, seatCmsConfig } from '../../da
 import { floorPlanMaster, floorPlanSeatTypes, floorPlanZones } from '../../data/floorPlanGrid';
 import { ContractProgramAdminEditor } from './ContractProgramAdminEditor';
 import { FloorPlanAdminEditor } from './FloorPlanAdminEditor';
+import { VehicleMatrixAdminEditor } from './VehicleMatrixAdminEditor';
 import './AdminCms.css';
 
 type CmsPageKey = 'contracts' | 'vehicle' | 'features' | 'floorplans' | 'routing' | 'roles';
@@ -20,7 +21,7 @@ type CmsPage = {
 
 const cmsPages: CmsPage[] = [
   { key: 'contracts', title: 'Contract Program Management', description: 'Manage contract keys, agency rules, required documents, and contract-controlled workflows.', icon: <Route size={20} />, status: 'Foundation' },
-  { key: 'vehicle', title: 'Vehicle / Chassis Matrix Management', description: 'Manage chassis, certifications, wheelbases, bus types, and contract eligibility rules.', icon: <Database size={20} />, status: 'Matrix' },
+  { key: 'vehicle', title: 'Vehicle / Chassis Matrix Management', description: 'Manage chassis, certifications, wheelbases, bus types, and contract eligibility rules.', icon: <Database size={20} />, status: 'Backend CMS' },
   { key: 'features', title: 'Features & Options Management', description: 'Manage customer-facing options and contract-specific option availability rules.', icon: <Settings size={20} />, status: 'Options' },
   { key: 'floorplans', title: 'Floorplan Management', description: 'Manage floorplan grids, contract rules, seat option lists, and customer-facing layout choices.', icon: <Grid3X3 size={20} />, status: 'Backend CMS' },
   { key: 'routing', title: 'Routing Rules & SLA Rules', description: 'Manage assignment, priority, approval routing, and turnaround targets.', icon: <Timer size={20} />, status: 'Workflow' },
@@ -68,7 +69,7 @@ function ContractProgramPage() {
       </ConfigSection>
       <ConfigSection icon={<Lock size={22} />} title="Contract Rule Coverage" description="Coverage index showing where each contract controls vehicle, options, floorplans, documents, and approvals." status="Sprint 1 foundation">
         <div className="configCardsGrid">
-          <RulePlaceholder title="Vehicle eligibility rules" description="Contract-to-chassis, certification, wheelbase, and bus type permissions. Full editor comes in Sprint 2." />
+          <RulePlaceholder title="Vehicle eligibility rules" description="Contract-to-chassis, certification, wheelbase, and bus type permissions. Full editor is now in Vehicle / Chassis Matrix Management." />
           <RulePlaceholder title="Feature option rules" description="Contract-specific available, required, recommended, or hidden options. Full editor comes in Sprint 3." />
           <RulePlaceholder title="Floorplan rules" description="Contract-specific seating layouts and floorplan eligibility. Already started in Floorplan Management." />
           <RulePlaceholder title="Document rules" description="Required bid, floorplan, signed contract, or agency documents. Contract documents are editable in the contract record now." />
@@ -79,21 +80,7 @@ function ContractProgramPage() {
 }
 
 function VehicleMatrixPage() {
-  return (
-    <div className="cmsPageStack">
-      <ConfigSection icon={<Database size={22} />} title="Vehicle / Chassis Matrix" description="Controlled dropdown source for chassis, certification, wheelbase, and bus type selection." status="Matrix source">
-        <div className="configTable matrixTable"><div className="configTableHead"><span>Type</span><span>Name</span><span>Description</span><span>Status</span></div>{busSpecMatrixData.chassis.map((item) => <div key={item.id}><strong>Chassis</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}{busSpecMatrixData.certifications.map((item) => <div key={item.id}><strong>Certification</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}{busSpecMatrixData.wheelbases.map((item) => <div key={item.id}><strong>Wheelbase</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}{busSpecMatrixData.busTypes.map((item) => <div key={item.id}><strong>Bus Type</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}</div>
-      </ConfigSection>
-      <ConfigSection icon={<ShieldCheck size={22} />} title="Contract Vehicle Rules" description="Contract-specific vehicle matrix rules will be managed here." status="Planned backend CRUD">
-        <div className="configCardsGrid">
-          <RulePlaceholder title="Allowed chassis by contract" description="Example: MnDOT may allow only selected chassis platforms." />
-          <RulePlaceholder title="Allowed wheelbases by contract" description="Control wheelbase dropdown visibility by contract key and chassis." />
-          <RulePlaceholder title="Certification restrictions" description="Limit certification packages by contract, chassis, and bus type." />
-          <RulePlaceholder title="Bus type restrictions" description="Control commercial, school, shuttle, airport, hotel, and specialty applications." />
-        </div>
-      </ConfigSection>
-    </div>
-  );
+  return <ConfigSection icon={<Database size={22} />} title="Vehicle / Chassis Matrix" description="Create, edit, delete, save, reload, and manage contract rules for vehicle selection data." status="Backend CMS"><VehicleMatrixAdminEditor /></ConfigSection>;
 }
 
 function FeaturesOptionsPage() {
@@ -131,9 +118,7 @@ function FloorplanManagementPage() {
 }
 
 function RoutingSlaPage() {
-  return (
-    <section className="configTwoColumn cmsPageStack"><ConfigSection icon={<Route size={22} />} title="Routing Rules" description="Baseline assignment and future approval rules prepared for V2 queue management." status="Workflow rules"><div className="configSimpleList">{routingRules.map((rule) => <p key={rule.name}><strong>{rule.name}</strong><span>{rule.rule}</span><em>{rule.owner} • {rule.status}</em></p>)}</div></ConfigSection><ConfigSection icon={<Timer size={22} />} title="SLA Rules" description="Simple SLA targets for V2 aging and management visibility." status="SLA rules"><div className="configSimpleList">{slaRules.map((rule) => <p key={rule.name}><strong>{rule.name}</strong><span>{rule.target}</span><em>{rule.status}</em></p>)}</div></ConfigSection></section>
-  );
+  return <section className="configTwoColumn cmsPageStack"><ConfigSection icon={<Route size={22} />} title="Routing Rules" description="Baseline assignment and future approval rules prepared for V2 queue management." status="Workflow rules"><div className="configSimpleList">{routingRules.map((rule) => <p key={rule.name}><strong>{rule.name}</strong><span>{rule.rule}</span><em>{rule.owner} • {rule.status}</em></p>)}</div></ConfigSection><ConfigSection icon={<Timer size={22} />} title="SLA Rules" description="Simple SLA targets for V2 aging and management visibility." status="SLA rules"><div className="configSimpleList">{slaRules.map((rule) => <p key={rule.name}><strong>{rule.name}</strong><span>{rule.target}</span><em>{rule.status}</em></p>)}</div></ConfigSection></section>;
 }
 
 function RolesPermissionsPage() {
