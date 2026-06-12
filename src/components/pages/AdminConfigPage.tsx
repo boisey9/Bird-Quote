@@ -4,6 +4,7 @@ import { busSpecMatrixData } from '../../data/busSpecMatrix';
 import { contractOptions } from '../../data/contractConfig';
 import { featureOptionCategories, featureOptions, seatCmsConfig } from '../../data/featureOptionMatrix';
 import { floorPlanMaster, floorPlanSeatTypes, floorPlanZones } from '../../data/floorPlanGrid';
+import { ContractProgramAdminEditor } from './ContractProgramAdminEditor';
 import { FloorPlanAdminEditor } from './FloorPlanAdminEditor';
 import './AdminCms.css';
 
@@ -62,25 +63,15 @@ function RulePlaceholder({ title, description }: { title: string; description: s
 function ContractProgramPage() {
   return (
     <div className="cmsPageStack">
-      <ConfigSection icon={<Route size={22} />} title="Contract Programs" description="Contract keys used across vehicle matrix, feature options, floorplans, routing, and document requirements." status="Contract source">
-        <div className="contractCmsGrid">
-          {contractOptions.map((contract) => (
-            <div className={contract.workflowType === 'contract-controlled' ? 'contractCmsCard controlled' : 'contractCmsCard'} key={contract.id}>
-              <strong>{contract.label}</strong>
-              <span>Key: {contract.id} • {contract.agency}</span>
-              <p>{contract.description}</p>
-              <em>{contract.workflowType}</em>
-              <small>Required docs: {contract.requiredDocumentTypes.join(', ') || 'none'}</small>
-            </div>
-          ))}
-        </div>
+      <ConfigSection icon={<Route size={22} />} title="Contract Programs" description="Create, edit, duplicate, delete, retire, and save contract keys used across the RFQ app." status="Backend CMS">
+        <ContractProgramAdminEditor />
       </ConfigSection>
-      <ConfigSection icon={<Lock size={22} />} title="Contract Rule Coverage" description="This will become the central rule index showing where each contract controls vehicle, options, floorplans, documents, and approvals." status="Planned backend CRUD">
+      <ConfigSection icon={<Lock size={22} />} title="Contract Rule Coverage" description="Coverage index showing where each contract controls vehicle, options, floorplans, documents, and approvals." status="Sprint 1 foundation">
         <div className="configCardsGrid">
-          <RulePlaceholder title="Vehicle eligibility rules" description="Contract-to-chassis, certification, wheelbase, and bus type permissions." />
-          <RulePlaceholder title="Feature option rules" description="Contract-specific available, required, recommended, or hidden options." />
-          <RulePlaceholder title="Floorplan rules" description="Contract-specific seating layouts and floorplan eligibility." />
-          <RulePlaceholder title="Document rules" description="Required bid, floorplan, signed contract, or agency documents." />
+          <RulePlaceholder title="Vehicle eligibility rules" description="Contract-to-chassis, certification, wheelbase, and bus type permissions. Full editor comes in Sprint 2." />
+          <RulePlaceholder title="Feature option rules" description="Contract-specific available, required, recommended, or hidden options. Full editor comes in Sprint 3." />
+          <RulePlaceholder title="Floorplan rules" description="Contract-specific seating layouts and floorplan eligibility. Already started in Floorplan Management." />
+          <RulePlaceholder title="Document rules" description="Required bid, floorplan, signed contract, or agency documents. Contract documents are editable in the contract record now." />
         </div>
       </ConfigSection>
     </div>
