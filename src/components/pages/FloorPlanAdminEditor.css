@@ -10,7 +10,14 @@
   align-content: start;
 }
 
-.floorPlanList button {
+.floorPlanListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.floorPlanList button:not(.btn) {
   border: 1px solid var(--border, #d7dee8);
   background: #fff;
   border-radius: 16px;
@@ -92,14 +99,22 @@
   text-transform: uppercase;
 }
 
+.floorPlanMetaGrid .wideField {
+  grid-column: span 4;
+}
+
 .floorPlanMetaGrid input,
-.floorPlanMetaGrid select {
+.floorPlanMetaGrid select,
+.floorPlanTableGrid input,
+.floorPlanTableGrid select {
   border: 1px solid #d7dee8;
   border-radius: 12px;
   padding: 0.65rem;
   font: inherit;
   color: #0f172a;
   background: #f8fafc;
+  width: 100%;
+  min-width: 0;
 }
 
 .floorPlanStats {
@@ -206,8 +221,19 @@
   overflow-x: auto;
 }
 
+.floorPlanTableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
 .floorPlanTable h4 {
-  margin: 0 0 0.6rem;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .floorPlanTableGrid {
@@ -219,15 +245,24 @@
 }
 
 .floorPlanTableGrid.zones {
-  grid-template-columns: 1.2fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.7fr;
+  grid-template-columns: 1.2fr 0.8fr 0.7fr 0.7fr 1fr 1fr 0.7fr 0.5fr;
 }
 
 .floorPlanTableGrid.compatibility {
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.8fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.8fr 0.5fr;
 }
 
 .floorPlanTableGrid > div {
   display: contents;
+}
+
+.floorPlanTableGrid span,
+.floorPlanTableGrid strong,
+.floorPlanTableGrid em,
+.floorPlanTableGrid input,
+.floorPlanTableGrid select,
+.floorPlanTableGrid button {
+  margin: 0.35rem;
 }
 
 .floorPlanTableGrid span,
@@ -245,6 +280,13 @@
   font-weight: 800;
   text-transform: uppercase;
   font-size: 0.72rem;
+  margin: 0;
+}
+
+.floorPlanTableGrid.editable > div:not(.head) input,
+.floorPlanTableGrid.editable > div:not(.head) select,
+.floorPlanTableGrid.editable > div:not(.head) button {
+  align-self: center;
 }
 
 .floorPlanAdminActions {
@@ -263,12 +305,20 @@
   .floorPlanStats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .floorPlanMetaGrid .wideField {
+    grid-column: span 2;
+  }
 }
 
 @media (max-width: 640px) {
   .floorPlanMetaGrid,
   .floorPlanStats {
     grid-template-columns: 1fr;
+  }
+
+  .floorPlanMetaGrid .wideField {
+    grid-column: span 1;
   }
 
   .floorPlanHeader {
