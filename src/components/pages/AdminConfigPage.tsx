@@ -7,6 +7,7 @@ import { floorPlanMaster, floorPlanSeatTypes, floorPlanZones } from '../../data/
 import { ContractProgramAdminEditor } from './ContractProgramAdminEditor';
 import { FeatureOptionsAdminEditor } from './FeatureOptionsAdminEditor';
 import { FloorPlanAdminEditor } from './FloorPlanAdminEditor';
+import { RoutingSlaAdminEditor } from './RoutingSlaAdminEditor';
 import { SeatOptionListsAdminEditor } from './SeatOptionListsAdminEditor';
 import { VehicleMatrixAdminEditor } from './VehicleMatrixAdminEditor';
 import { VehicleMediaAdminEditor } from './VehicleMediaAdminEditor';
@@ -27,22 +28,8 @@ const cmsPages: CmsPage[] = [
   { key: 'vehicle', title: 'Vehicle / Chassis Matrix Management', description: 'Manage chassis, certifications, wheelbases, bus types, and contract eligibility rules.', icon: <Database size={20} />, status: 'Backend CMS' },
   { key: 'features', title: 'Features & Options Management', description: 'Manage customer-facing options and contract-specific option availability rules.', icon: <Settings size={20} />, status: 'Backend CMS' },
   { key: 'floorplans', title: 'Floorplan Management', description: 'Manage floorplan grids, contract rules, seat option lists, and customer-facing layout choices.', icon: <Grid3X3 size={20} />, status: 'Backend CMS' },
-  { key: 'routing', title: 'Routing Rules & SLA Rules', description: 'Manage assignment, priority, approval routing, and turnaround targets.', icon: <Timer size={20} />, status: 'Workflow' },
+  { key: 'routing', title: 'Routing Rules & SLA Rules', description: 'Manage assignment, priority, approval routing, and turnaround targets.', icon: <Timer size={20} />, status: 'Backend CMS' },
   { key: 'roles', title: 'Roles & Permissions', description: 'Manage access levels for Dealer, Internal, Manager, and Admin users.', icon: <Users size={20} />, status: 'Access' }
-];
-
-const routingRules = [
-  { name: 'Commercial RFQs', rule: 'Default to Sales Ops queue', owner: 'Sales Ops', status: 'Seed / V2' },
-  { name: 'Accessibility RFQs', rule: 'Flag when wheelchair capacity or rear lift is requested', owner: 'Estimating Team', status: 'Seed / V2' },
-  { name: 'Contract RFQs', rule: 'Contract-controlled quotes route to contract review/approval before final quote release', owner: 'Sales Ops + Manager', status: 'Planned' },
-  { name: 'Bid / urgent response', rule: 'Mark priority as High when urgent/bid timing is selected', owner: 'Sales Ops', status: 'Planned' }
-];
-
-const slaRules = [
-  { name: 'Standard RFQ assignment', target: '8 business hours', status: 'Seed / V2' },
-  { name: 'Standard quote turnaround', target: '3 business days', status: 'Seed / V2' },
-  { name: 'Contract quote approval', target: 'Approval required before quote release', status: 'Future workflow' },
-  { name: 'Urgent bid response', target: '1 business day', status: 'Planned' }
 ];
 
 const roles = [
@@ -86,7 +73,7 @@ function FloorplanManagementPage() {
 }
 
 function RoutingSlaPage() {
-  return <section className="configTwoColumn cmsPageStack"><ConfigSection icon={<Route size={22} />} title="Routing Rules" description="Baseline assignment and future approval rules prepared for V2 queue management." status="Workflow rules"><div className="configSimpleList">{routingRules.map((rule) => <p key={rule.name}><strong>{rule.name}</strong><span>{rule.rule}</span><em>{rule.owner} • {rule.status}</em></p>)}</div></ConfigSection><ConfigSection icon={<Timer size={22} />} title="SLA Rules" description="Simple SLA targets for V2 aging and management visibility." status="SLA rules"><div className="configSimpleList">{slaRules.map((rule) => <p key={rule.name}><strong>{rule.name}</strong><span>{rule.target}</span><em>{rule.status}</em></p>)}</div></ConfigSection></section>;
+  return <ConfigSection icon={<Timer size={22} />} title="Routing Rules & SLA Rules" description="Create, edit, delete, save, reload, and manage RFQ routing and SLA targets." status="Backend CMS"><RoutingSlaAdminEditor /></ConfigSection>;
 }
 
 function RolesPermissionsPage() {
