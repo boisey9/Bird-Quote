@@ -22,11 +22,12 @@ function FeatureOptionCard({ option, selected, onClick }: { option: FeatureOptio
 }
 
 export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
-  const categories = getVisibleFeatureCategories(draft.specs).filter((category) => category.title !== 'Seats');
+  const categories = getVisibleFeatureCategories(draft.specs).filter((category) => category.title !== 'Seats' && category.title !== 'Layout');
+  const optionFeatures = useMemo(() => draft.features.filter((feature) => feature.category !== 'Seats' && feature.category !== 'Layout'), [draft.features]);
   const [openCategories, setOpenCategories] = useState<Record<number, boolean>>(() => Object.fromEntries(categories.map((category) => [category.id, category.sortOrder <= 4])));
   const [showQuickSummary, setShowQuickSummary] = useState(false);
 
-  const selectedFeatureKeys = useMemo(() => new Set(draft.features.map((feature) => `${feature.category}-${feature.label}`)), [draft.features]);
+  const selectedFeatureKeys = useMemo(() => new Set(optionFeatures.map((feature) => `${feature.category}-${feature.label}`)), [optionFeatures]);
 
   const toggleCategory = (categoryId: number) => {
     setOpenCategories((current) => ({ ...current, [categoryId]: !current[categoryId] }));
@@ -65,12 +66,12 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
             <h2>Options & Packages</h2>
             <p>Select the customer-facing options that should be reviewed for this quote. Special or unusual requirements can be added in the notes below.</p>
           </div>
-          <span className="pill">{draft.features.length} selected</span>
+          <span className="pill">{optionFeatures.length} selected</span>
         </div>
       </section>
 
       {categories.map((category) => {
-        const options = getAvailableFeatureOptions(category.id, draft.specs);
+        const options = getAvailableFeatureOptions(category.id);
         const isOpen = openCategories[category.id] ?? false;
         const selectedCount = options.filter((option) => selectedFeatureKeys.has(`${category.title}-${option.title}`)).length;
 
@@ -101,11 +102,11 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
           <button type="button" onClick={() => setShowQuickSummary((current) => !current)}><Eye size={16} /> {showQuickSummary ? 'Hide Summary' : 'View Summary'}</button>
         </div>
         <div className="summaryChips">
-          <span>{draft.specs.chassis}</span><span>{draft.specs.wheelbase}</span><span>{draft.specs.busType}</span><span>{draft.features.length} options</span>
+          <span>{draft.specs.chassis}</span><span>{draft.specs.wheelbase}</span><span>{draft.specs.busType}</span><span>{optionFeatures.length} options</span>
         </div>
         {showQuickSummary && (
           <div className="expandedOptionSummary">
-            {draft.features.length === 0 ? <p>No extra options selected yet.</p> : draft.features.map((feature) => <p key={`${feature.category}-${feature.label}`}><strong>{feature.category}</strong><span>{feature.label}</span></p>)}
+            {optionFeatures.length === 0 ? <p>No extra options selected yet.</p> : optionFeatures.map((feature) => <p key={`${feature.category}-${feature.label}`}><strong>{feature.category}</strong><span>{feature.label}</span></p>)}
           </div>
         )}
       </section>
