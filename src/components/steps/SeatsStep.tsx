@@ -1,5 +1,5 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { Armchair, Bus, Copy, Grid2X2, Plus, ShieldCheck, Trash2, Users, Wheelchair } from 'lucide-react';
+import { Armchair, Bus, Copy, Grid2X2, Plus, ShieldCheck, Trash2, Users, Accessibility } from 'lucide-react';
 import { seatCmsConfig } from '../../data/featureOptionMatrix';
 import { useAvailableSeatLayouts } from '../../hooks/useSeatCmsData';
 import { SeatLayoutCard, SeatReferencePreview } from './SeatFramePreview';
@@ -212,7 +212,7 @@ export function SeatsStep({ draft, setDraft }: SeatsStepProps) {
             <small>Passenger comfort, material/color, airport, shuttle, activity, or private use.</small>
           </button>
           <button type="button" className={selectedPurpose === 'accessible' ? 'seatPurposeCard selected' : 'seatPurposeCard'} onClick={() => selectPurpose('accessible')}>
-            <Wheelchair size={22} />
+            <Accessibility size={22} />
             <strong>Accessible / Lift</strong>
             <small>Wheelchair positions, foldaway seats, rear lift or ADA-style intent.</small>
           </button>
@@ -279,51 +279,60 @@ export function SeatsStep({ draft, setDraft }: SeatsStepProps) {
             <div className="seatPackageControls refinedSeatControls">
               <SelectField label="Seat Material" value={draft.seatPackage.material} options={seatCmsConfig.materials} onChange={(value) => updateSeatPackage({ material: value })} />
               <SelectField label="Seat Color" value={draft.seatPackage.color} options={seatCmsConfig.colors} onChange={(value) => updateSeatPackage({ color: value })} />
-              <div className="controlField"><span>{schoolLike ? 'Estimated Student Seats' : 'Estimated Passenger Seats'}</span><NumberStepper value={draft.seatPackage.estimatedPassengerSeats} min={1} max={48} onChange={(value) => updateSeatPackage({ estimatedPassengerSeats: value })} /></div>
-              <div className="controlField"><span>Wheelchair / Lift Positions</span><NumberStepper value={draft.seatPackage.wheelchairPositions} min={0} max={8} onChange={(value) => updateSeatPackage({ wheelchairPositions: value })} /></div>
+              <div className="controlField"><span>{schoolLike ? 'Estimated Student Seats' : 'Estimated Passenger Seats'}</span><NumberStepper value={draft.seatPackage.estimatedPassengerSeats} onChange={(value) => updateSeatPackage({ estimatedPassengerSeats: value })} min={0} /></div>
+              <div className="controlField"><span>Wheelchair Positions</span><NumberStepper value={draft.seatPackage.wheelchairPositions} onChange={(value) => updateSeatPackage({ wheelchairPositions: value })} min={0} max={4} /></div>
             </div>
 
-            <div className="seatChecklistGrid">
-              {schoolLike && <span><ShieldCheck size={16} /> Student transportation compliance will be reviewed.</span>}
-              {commercialLike && <span><Armchair size={16} /> Comfort, material, and passenger-use details captured for quote review.</span>}
-              {accessibleLike && <span><Wheelchair size={16} /> Wheelchair/lift request affects capacity and final layout validation.</span>}
-              <span><Bus size={16} /> Final seating layout is validated by Micro Bird after RFQ submission.</span>
+            <div className="seatIntentChips">
+              {schoolLike && <span>School seating intent</span>}
+              {commercialLike && <span>Commercial passenger comfort</span>}
+              {accessibleLike && <span>Accessibility review required</span>}
+              <span>Reference only preview</span>
             </div>
-
-            <div className="seatTypeHeader refinedSeatTypeHeader">
-              <div className="seatBlockTitle"><span>4</span><strong>Seat Type Details</strong><small>Describe the seat types needed for quoting.</small></div>
-              <button type="button" onClick={addSeatGroup}><Plus size={16} /> Add Seat Type</button>
-            </div>
-
-            <div className="seatTypeCards refinedSeatTypeCards">
-              {draft.seatGroups.map((group, index) => (
-                <article className="seatTypeCard" key={group.id}>
-                  <header>
-                    <div>
-                      <strong>Seat Type {index + 1}</strong>
-                      <input aria-label="Seat group name" value={group.name} onChange={(event) => updateSeatGroup(group.id, { name: event.target.value })} />
-                    </div>
-                    <NumberStepper value={group.quantity} min={0} max={48} onChange={(value) => updateSeatGroup(group.id, { quantity: value })} />
-                  </header>
-                  <div className="seatTypeCardGrid">
-                    <SelectField label="Seat Style" value={group.seatStyle} options={seatCmsConfig.seatTypes} onChange={(value) => updateSeatGroup(group.id, { seatStyle: value })} />
-                    <SelectField label={schoolLike ? 'Seat Belt / Restraint' : 'Restraint / Passenger Safety'} value={group.restraintType} options={seatCmsConfig.restraintTypes} onChange={(value) => updateSeatGroup(group.id, { restraintType: value })} />
-                    <SelectField label="Armrest" value={group.armrest} options={seatCmsConfig.armrests} onChange={(value) => updateSeatGroup(group.id, { armrest: value })} />
-                    <SelectField label="Grab Type" value={group.grabType} options={seatCmsConfig.grabTypes} onChange={(value) => updateSeatGroup(group.id, { grabType: value })} />
-                    <SelectField label="Branding" value={group.branding} options={seatCmsConfig.brandingOptions} onChange={(value) => updateSeatGroup(group.id, { branding: value })} />
-                  </div>
-                  <div className="seatRowActions">
-                    <button type="button" onClick={() => duplicateSeatGroup(group)}><Copy size={14} /> Copy</button>
-                    <button type="button" onClick={() => removeSeatGroup(group.id)}><Trash2 size={14} /> Remove</button>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {totalWarning && <p className="warningNote">Seat type quantity total is {totalSeatGroupQty}. Estimated passenger seats is {draft.seatPackage.estimatedPassengerSeats}. Micro Bird will validate the final seating plan.</p>}
           </div>
 
-          <SeatReferencePreview draft={draft} cmsData={seatCmsData} marketHint={selectedPurpose} />
+          <aside className="seatPreviewPanel refinedSeatPreviewPanel">
+            <SeatReferencePreview draft={draft} cmsRows={seatCmsData.rows} />
+            <div className="seatPreviewSummary">
+              <strong>Reference only</strong>
+              <span>Final seating layout, floorplan, and engineering feasibility will be reviewed and validated by Micro Bird.</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className="panel compact seatDetailsPanel">
+        <div className="featureSectionHeader dealerSectionHeader">
+          <div>
+            <h2>Seat Type Details</h2>
+            <p>Add the seat groups required for quoting. These are quantity and feature details, not final placement.</p>
+          </div>
+          <button className="btn btn-secondary btn-sm" type="button" onClick={addSeatGroup}><Plus size={16} /> Add Seat Type</button>
+        </div>
+
+        {totalWarning && <div className="warningNote">Seat type quantities total {totalSeatGroupQty}, while estimated passenger seats is {draft.seatPackage.estimatedPassengerSeats}. This can still be submitted as intent, but should be reviewed.</div>}
+
+        <div className="seatTypeCardList">
+          {draft.seatGroups.map((group, index) => (
+            <article className="seatTypeCard" key={group.id}>
+              <header>
+                <span><Armchair size={18} /> Seat Type {index + 1}</span>
+                <div>
+                  <button type="button" className="iconMiniButton" onClick={() => duplicateSeatGroup(group)} aria-label="Duplicate seat type"><Copy size={15} /></button>
+                  <button type="button" className="iconMiniButton danger" onClick={() => removeSeatGroup(group.id)} aria-label="Remove seat type"><Trash2 size={15} /></button>
+                </div>
+              </header>
+              <div className="seatTypeCardGrid">
+                <label><span>Group Name</span><input value={group.name} onChange={(event) => updateSeatGroup(group.id, { name: event.target.value })} /></label>
+                <label><span>Qty</span><input type="number" min="0" value={group.quantity} onChange={(event) => updateSeatGroup(group.id, { quantity: Number(event.target.value) })} /></label>
+                <label><span>Seat Style</span><select value={group.seatStyle} onChange={(event) => updateSeatGroup(group.id, { seatStyle: event.target.value })}>{seatCmsConfig.seatTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
+                <label><span>Restraint</span><select value={group.restraintType} onChange={(event) => updateSeatGroup(group.id, { restraintType: event.target.value })}>{seatCmsConfig.restraintTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
+                <label><span>Armrest / Grab</span><select value={group.armrest} onChange={(event) => updateSeatGroup(group.id, { armrest: event.target.value })}>{seatCmsConfig.armrests.map((item) => <option key={item}>{item}</option>)}</select></label>
+                <label><span>Grab Type</span><select value={group.grabType} onChange={(event) => updateSeatGroup(group.id, { grabType: event.target.value })}>{seatCmsConfig.grabTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
+                <label><span>Branding</span><select value={group.branding} onChange={(event) => updateSeatGroup(group.id, { branding: event.target.value })}>{seatCmsConfig.brandingOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
     </div>
