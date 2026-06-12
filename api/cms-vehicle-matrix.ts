@@ -39,28 +39,32 @@ function getPayload(body: unknown) {
 }
 
 async function ensureSchema(sql: ReturnType<typeof neon>) {
-  await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_chassis (chassis_id text PRIMARY KEY, name text NOT NULL, description text NOT NULL DEFAULT '', badge text NOT NULL DEFAULT '', sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', updated_at timestamptz NOT NULL DEFAULT now())`;
-  await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_certifications (certification_id text PRIMARY KEY, chassis_id text NOT NULL, name text NOT NULL, description text NOT NULL DEFAULT '', sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', updated_at timestamptz NOT NULL DEFAULT now())`;
-  await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_wheelbases (wheelbase_id text PRIMARY KEY, chassis_id text NOT NULL, name text NOT NULL, description text NOT NULL DEFAULT '', certification_scope text NOT NULL DEFAULT 'school_commercial', sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', updated_at timestamptz NOT NULL DEFAULT now())`;
-  await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_bus_types (bus_type_id text PRIMARY KEY, name text NOT NULL, description text NOT NULL DEFAULT '', sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', updated_at timestamptz NOT NULL DEFAULT now())`;
+  await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_chassis (chassis_id text PRIMARY KEY, name text NOT NULL, description text NOT NULL DEFAULT '', badge text NOT NULL DEFAULT '', image_url text NOT NULL DEFAULT '', sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', updated_at timestamptz NOT NULL DEFAULT now())`;
+  await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_certifications (certification_id text PRIMARY KEY, chassis_id text NOT NULL, name text NOT NULL, description text NOT NULL DEFAULT '', image_url text NOT NULL DEFAULT '', sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', updated_at timestamptz NOT NULL DEFAULT now())`;
+  await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_wheelbases (wheelbase_id text PRIMARY KEY, chassis_id text NOT NULL, name text NOT NULL, description text NOT NULL DEFAULT '', certification_scope text NOT NULL DEFAULT 'school_commercial', image_url text NOT NULL DEFAULT '', sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', updated_at timestamptz NOT NULL DEFAULT now())`;
+  await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_bus_types (bus_type_id text PRIMARY KEY, name text NOT NULL, description text NOT NULL DEFAULT '', image_url text NOT NULL DEFAULT '', sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', updated_at timestamptz NOT NULL DEFAULT now())`;
   await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_compatibility (id text PRIMARY KEY, chassis_id text NOT NULL, wheelbase_id text NOT NULL, bus_type_id text NOT NULL, active boolean NOT NULL DEFAULT true, updated_at timestamptz NOT NULL DEFAULT now())`;
   await sql`CREATE TABLE IF NOT EXISTS cms_vehicle_contract_rules (id text PRIMARY KEY, contract_id text NOT NULL, chassis_id text NOT NULL DEFAULT 'any', certification_id text NOT NULL DEFAULT 'any', wheelbase_id text NOT NULL DEFAULT 'any', bus_type_id text NOT NULL DEFAULT 'any', allowed boolean NOT NULL DEFAULT true, required boolean NOT NULL DEFAULT false, active boolean NOT NULL DEFAULT true, notes text NOT NULL DEFAULT '', updated_at timestamptz NOT NULL DEFAULT now())`;
+  await sql`ALTER TABLE cms_vehicle_chassis ADD COLUMN IF NOT EXISTS image_url text NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE cms_vehicle_certifications ADD COLUMN IF NOT EXISTS image_url text NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE cms_vehicle_wheelbases ADD COLUMN IF NOT EXISTS image_url text NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE cms_vehicle_bus_types ADD COLUMN IF NOT EXISTS image_url text NOT NULL DEFAULT ''`;
 }
 
 function mapChassis(row: Record<string, unknown>): ChassisRecord {
-  return { id: String(row.chassis_id), name: String(row.name ?? ''), description: String(row.description ?? ''), badge: String(row.badge ?? ''), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true) };
+  return { id: String(row.chassis_id), name: String(row.name ?? ''), description: String(row.description ?? ''), badge: String(row.badge ?? ''), imageUrl: String(row.image_url ?? ''), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true) };
 }
 
 function mapCertification(row: Record<string, unknown>): CertificationRecord {
-  return { id: String(row.certification_id), chassisId: String(row.chassis_id), name: String(row.name ?? ''), description: String(row.description ?? ''), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true) };
+  return { id: String(row.certification_id), chassisId: String(row.chassis_id), name: String(row.name ?? ''), description: String(row.description ?? ''), imageUrl: String(row.image_url ?? ''), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true) };
 }
 
 function mapWheelbase(row: Record<string, unknown>): WheelbaseRecord {
-  return { id: String(row.wheelbase_id), chassisId: String(row.chassis_id), name: String(row.name ?? ''), description: String(row.description ?? ''), certificationScope: String(row.certification_scope ?? 'school_commercial') as WheelbaseRecord['certificationScope'], sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true) };
+  return { id: String(row.wheelbase_id), chassisId: String(row.chassis_id), name: String(row.name ?? ''), description: String(row.description ?? ''), certificationScope: String(row.certification_scope ?? 'school_commercial') as WheelbaseRecord['certificationScope'], imageUrl: String(row.image_url ?? ''), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true) };
 }
 
 function mapBusType(row: Record<string, unknown>): BusTypeRecord {
-  return { id: String(row.bus_type_id), name: String(row.name ?? ''), description: String(row.description ?? ''), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true) };
+  return { id: String(row.bus_type_id), name: String(row.name ?? ''), description: String(row.description ?? ''), imageUrl: String(row.image_url ?? ''), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true) };
 }
 
 function mapCompatibility(row: Record<string, unknown>): CompatibilityRecord {
@@ -90,10 +94,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
-      const chassisRows = await sql`SELECT chassis_id, name, description, badge, sort_order, active FROM cms_vehicle_chassis ORDER BY sort_order, name`;
-      const certificationRows = await sql`SELECT certification_id, chassis_id, name, description, sort_order, active FROM cms_vehicle_certifications ORDER BY chassis_id, sort_order, name`;
-      const wheelbaseRows = await sql`SELECT wheelbase_id, chassis_id, name, description, certification_scope, sort_order, active FROM cms_vehicle_wheelbases ORDER BY chassis_id, sort_order, name`;
-      const busTypeRows = await sql`SELECT bus_type_id, name, description, sort_order, active FROM cms_vehicle_bus_types ORDER BY sort_order, name`;
+      const chassisRows = await sql`SELECT chassis_id, name, description, badge, image_url, sort_order, active FROM cms_vehicle_chassis ORDER BY sort_order, name`;
+      const certificationRows = await sql`SELECT certification_id, chassis_id, name, description, image_url, sort_order, active FROM cms_vehicle_certifications ORDER BY chassis_id, sort_order, name`;
+      const wheelbaseRows = await sql`SELECT wheelbase_id, chassis_id, name, description, certification_scope, image_url, sort_order, active FROM cms_vehicle_wheelbases ORDER BY chassis_id, sort_order, name`;
+      const busTypeRows = await sql`SELECT bus_type_id, name, description, image_url, sort_order, active FROM cms_vehicle_bus_types ORDER BY sort_order, name`;
       const compatibilityRows = await sql`SELECT chassis_id, wheelbase_id, bus_type_id FROM cms_vehicle_compatibility WHERE active = true ORDER BY chassis_id, wheelbase_id, bus_type_id`;
       const contractRuleRows = await sql`SELECT id, contract_id, chassis_id, certification_id, wheelbase_id, bus_type_id, allowed, required, active, notes FROM cms_vehicle_contract_rules ORDER BY contract_id, chassis_id, wheelbase_id, bus_type_id`;
 
@@ -119,14 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'PUT') {
     try {
       const payload = getPayload(req.body);
-      const next = {
-        chassis: payload.chassis ?? [],
-        certifications: payload.certifications ?? [],
-        wheelbases: payload.wheelbases ?? [],
-        busTypes: payload.busTypes ?? [],
-        compatibility: payload.compatibility ?? [],
-        vehicleContractRules: payload.vehicleContractRules ?? []
-      };
+      const next = { chassis: payload.chassis ?? [], certifications: payload.certifications ?? [], wheelbases: payload.wheelbases ?? [], busTypes: payload.busTypes ?? [], compatibility: payload.compatibility ?? [], vehicleContractRules: payload.vehicleContractRules ?? [] };
       validatePayload(next);
 
       await sql`DELETE FROM cms_vehicle_contract_rules`;
@@ -137,16 +134,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await sql`DELETE FROM cms_vehicle_chassis`;
 
       for (const item of next.chassis) {
-        await sql`INSERT INTO cms_vehicle_chassis (chassis_id, name, description, badge, sort_order, active, status, updated_at) VALUES (${item.id}, ${item.name}, ${item.description}, ${item.badge ?? ''}, ${item.sortOrder}, ${item.active}, ${item.active ? 'active' : 'inactive'}, now())`;
+        await sql`INSERT INTO cms_vehicle_chassis (chassis_id, name, description, badge, image_url, sort_order, active, status, updated_at) VALUES (${item.id}, ${item.name}, ${item.description}, ${item.badge ?? ''}, ${item.imageUrl ?? ''}, ${item.sortOrder}, ${item.active}, ${item.active ? 'active' : 'inactive'}, now())`;
       }
       for (const item of next.certifications) {
-        await sql`INSERT INTO cms_vehicle_certifications (certification_id, chassis_id, name, description, sort_order, active, status, updated_at) VALUES (${item.id}, ${item.chassisId}, ${item.name}, ${item.description}, ${item.sortOrder}, ${item.active}, ${item.active ? 'active' : 'inactive'}, now())`;
+        await sql`INSERT INTO cms_vehicle_certifications (certification_id, chassis_id, name, description, image_url, sort_order, active, status, updated_at) VALUES (${item.id}, ${item.chassisId}, ${item.name}, ${item.description}, ${item.imageUrl ?? ''}, ${item.sortOrder}, ${item.active}, ${item.active ? 'active' : 'inactive'}, now())`;
       }
       for (const item of next.wheelbases) {
-        await sql`INSERT INTO cms_vehicle_wheelbases (wheelbase_id, chassis_id, name, description, certification_scope, sort_order, active, status, updated_at) VALUES (${item.id}, ${item.chassisId}, ${item.name}, ${item.description}, ${item.certificationScope}, ${item.sortOrder}, ${item.active}, ${item.active ? 'active' : 'inactive'}, now())`;
+        await sql`INSERT INTO cms_vehicle_wheelbases (wheelbase_id, chassis_id, name, description, certification_scope, image_url, sort_order, active, status, updated_at) VALUES (${item.id}, ${item.chassisId}, ${item.name}, ${item.description}, ${item.certificationScope}, ${item.imageUrl ?? ''}, ${item.sortOrder}, ${item.active}, ${item.active ? 'active' : 'inactive'}, now())`;
       }
       for (const item of next.busTypes) {
-        await sql`INSERT INTO cms_vehicle_bus_types (bus_type_id, name, description, sort_order, active, status, updated_at) VALUES (${item.id}, ${item.name}, ${item.description}, ${item.sortOrder}, ${item.active}, ${item.active ? 'active' : 'inactive'}, now())`;
+        await sql`INSERT INTO cms_vehicle_bus_types (bus_type_id, name, description, image_url, sort_order, active, status, updated_at) VALUES (${item.id}, ${item.name}, ${item.description}, ${item.imageUrl ?? ''}, ${item.sortOrder}, ${item.active}, ${item.active ? 'active' : 'inactive'}, now())`;
       }
       for (const item of next.compatibility) {
         const id = `${item.chassisId}-${item.wheelbaseId}-${item.busTypeId}`;
