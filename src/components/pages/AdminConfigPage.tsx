@@ -7,6 +7,7 @@ import { floorPlanMaster, floorPlanSeatTypes, floorPlanZones } from '../../data/
 import { ContractProgramAdminEditor } from './ContractProgramAdminEditor';
 import { FloorPlanAdminEditor } from './FloorPlanAdminEditor';
 import { VehicleMatrixAdminEditor } from './VehicleMatrixAdminEditor';
+import { VehicleMediaAdminEditor } from './VehicleMediaAdminEditor';
 import './AdminCms.css';
 
 type CmsPageKey = 'contracts' | 'vehicle' | 'features' | 'floorplans' | 'routing' | 'roles';
@@ -80,7 +81,16 @@ function ContractProgramPage() {
 }
 
 function VehicleMatrixPage() {
-  return <ConfigSection icon={<Database size={22} />} title="Vehicle / Chassis Matrix" description="Create, edit, delete, save, reload, and manage contract rules for vehicle selection data." status="Backend CMS"><VehicleMatrixAdminEditor /></ConfigSection>;
+  return (
+    <div className="cmsPageStack">
+      <ConfigSection icon={<Database size={22} />} title="Vehicle / Chassis Matrix" description="Create, edit, delete, save, reload, and manage contract rules for vehicle selection data." status="Backend CMS">
+        <VehicleMatrixAdminEditor />
+      </ConfigSection>
+      <ConfigSection icon={<Database size={22} />} title="Vehicle Images / Media" description="Manage image URLs used on customer-facing chassis and bus type selection cards." status="CMS media fields">
+        <VehicleMediaAdminEditor />
+      </ConfigSection>
+    </div>
+  );
 }
 
 function FeaturesOptionsPage() {
