@@ -135,7 +135,7 @@ function unique(values: string[]) {
 }
 
 function buildLayoutsFromFloorPlans(payload?: FloorPlanApiResponse) {
-  const activePlans = (payload?.floorPlanMaster ?? []).filter((plan) => plan.status === 'active' && plan.dealerVisible);
+  const activePlans = (payload?.floorPlanMaster ?? []).filter((plan) => plan.dealerVisible && plan.status !== 'retired');
   const allZones = payload?.floorPlanZones ?? [];
   const allRules = payload?.floorPlanCompatibilityRules ?? [];
   const layouts: SeatLayoutTemplate[] = activePlans.map((plan) => {
