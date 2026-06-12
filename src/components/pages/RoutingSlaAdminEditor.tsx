@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Download, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { saveRoutingSlaCms, seedRoutingSlaCms, toRoutingSlaCmsData, type RoutingRule, type RoutingSlaCmsData, type SlaRule } from '../../hooks/useRoutingSlaCms';
 import './FeatureOptionsAdminEditor.css';
@@ -23,6 +23,10 @@ export function RoutingSlaAdminEditor() {
   const [data, setData] = useState<RoutingSlaCmsData>(() => seedRoutingSlaCms());
   const [activeTab, setActiveTab] = useState<EditorTab>('routing');
   const [status, setStatus] = useState('Loading Routing/SLA CMS...');
+  const fastestTargetHours = useMemo(() => {
+    const targets = data.slaRules.map((item) => item.targetHours).filter((value) => Number.isFinite(value) && value > 0);
+    return targets.length ? Math.min(...targets) : 0;
+  }, [data.slaRules]);
 
   async function loadData() {
     setStatus('Loading Routing/SLA CMS...');
@@ -105,7 +109,7 @@ export function RoutingSlaAdminEditor() {
         <div className="featureCmsStat"><strong>{data.routingRules.filter((item) => item.active).length}</strong><span>Active Routing</span></div>
         <div className="featureCmsStat"><strong>{data.slaRules.length}</strong><span>SLA Rules</span></div>
         <div className="featureCmsStat"><strong>{data.slaRules.filter((item) => item.active).length}</strong><span>Active SLA</span></div>
-        <div className="featureCmsStat"><strong>{Math.min(...data.slaRules.map((item) => item.targetHours)) || 0}</strong><span>Fastest Target Hours</span></div>
+        <div className="featureCmsStat"><strong>{fastestTargetHours}</strong><span>Fastest Target Hours</span></div>
       </div>
       <div className="featureEditorTabs">
         <button type="button" className={activeTab === 'routing' ? 'active' : ''} onClick={() => setActiveTab('routing')}>Routing Rules</button>
