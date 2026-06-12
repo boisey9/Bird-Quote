@@ -110,17 +110,18 @@ function cellStyle(row: SeatLayoutRow, side: 'left' | 'right', compact: boolean)
   const base: CSSProperties = {
     border: '1px dashed #cbd5e1',
     background: '#fff',
-    borderRadius: compact ? 5 : 10,
+    borderRadius: compact ? 5 : 8,
     display: 'grid',
     placeItems: 'center',
     textAlign: 'center',
     color: '#334155',
-    fontSize: compact ? 0 : 10,
+    fontSize: compact ? 0 : 8,
     fontWeight: 800,
-    minHeight: compact ? 20 : 42,
-    padding: compact ? 0 : '2px 4px',
-    lineHeight: 1.1,
-    whiteSpace: 'normal'
+    minHeight: compact ? 18 : 34,
+    padding: compact ? 0 : '2px',
+    lineHeight: 1.05,
+    whiteSpace: 'normal',
+    overflow: 'hidden'
   };
 
   if (positionType === 'passenger-seat') return { ...base, background: '#dbeafe', borderColor: '#93c5fd', color: '#1e3a8a' };
@@ -133,40 +134,39 @@ function cellStyle(row: SeatLayoutRow, side: 'left' | 'right', compact: boolean)
 function AdminFloorPlanGridPreview({ rows, compact = false }: { rows: SeatLayoutRow[]; compact?: boolean }) {
   const frameStyle: CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: compact ? '44px 1fr' : '76px 1fr',
-    gap: compact ? 5 : 8,
+    gridTemplateColumns: compact ? '32px minmax(0, 1fr)' : '54px minmax(0, 1fr)',
+    gap: compact ? 3 : 5,
     width: '100%',
-    minHeight: compact ? 74 : 170,
+    minHeight: compact ? 70 : 148,
     border: compact ? '1px solid #101828' : '2px solid #101828',
-    borderRadius: compact ? '18px 10px 10px 18px' : '32px 14px 14px 32px',
+    borderRadius: compact ? '15px 8px 8px 15px' : '26px 12px 12px 26px',
     background: '#f8fafc',
-    padding: compact ? 6 : 12,
-    overflowX: 'auto',
-    overflowY: 'hidden',
+    padding: compact ? 4 : 8,
+    overflow: 'hidden',
     boxSizing: 'border-box'
   };
 
   const frontStyle: CSSProperties = {
-    borderRadius: compact ? '14px 6px 6px 14px' : '22px 8px 8px 22px',
+    borderRadius: compact ? '12px 5px 5px 12px' : '18px 7px 7px 18px',
     background: '#e2e8f0',
     color: '#0f172a',
     display: 'grid',
     placeItems: 'center',
-    fontSize: compact ? 8 : 11,
+    fontSize: compact ? 7 : 9,
     fontWeight: 900,
     letterSpacing: '.04em',
     writingMode: 'vertical-rl',
-    minHeight: compact ? 62 : 148
+    minHeight: compact ? 60 : 132
   };
 
   return (
     <div className={compact ? 'adminFloorPlanPreview compactAdminFloorPlanPreview' : 'adminFloorPlanPreview'} style={frameStyle}>
       <div className="adminFloorPlanFront" style={frontStyle}>FRONT</div>
-      <div className="adminFloorPlanRows" style={{ display: 'flex', gap: compact ? 3 : 6, minWidth: 'max-content' }}>
+      <div className="adminFloorPlanRows" style={{ display: 'grid', gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: compact ? 2 : 4, minWidth: 0 }}>
         {rows.map((row) => (
-          <div className="adminFloorPlanRow" key={row.id} style={{ display: 'grid', gridTemplateRows: compact ? '1fr 10px 1fr' : '1fr 18px 1fr', gap: compact ? 2 : 4, minWidth: compact ? 34 : 72 }}>
+          <div className="adminFloorPlanRow" key={row.id} style={{ display: 'grid', gridTemplateRows: compact ? '1fr 9px 1fr' : '1fr 16px 1fr', gap: compact ? 2 : 3, minWidth: 0 }}>
             <div className={`adminFloorPlanCell type-${cssSafe(row.leftPositionType)}`} style={cellStyle(row, 'left', compact)}>{formatCellLabel(row, 'left')}</div>
-            <div className="adminFloorPlanAisle" style={{ borderRadius: 999, background: '#e2e8f0', color: '#64748b', display: 'grid', placeItems: 'center', fontSize: compact ? 7 : 9, fontWeight: 900 }}>R{row.rowNumber}</div>
+            <div className="adminFloorPlanAisle" style={{ borderRadius: 999, background: '#e2e8f0', color: '#64748b', display: 'grid', placeItems: 'center', fontSize: compact ? 6 : 8, fontWeight: 900, overflow: 'hidden' }}>R{row.rowNumber}</div>
             <div className={`adminFloorPlanCell type-${cssSafe(row.rightPositionType)}`} style={cellStyle(row, 'right', compact)}>{formatCellLabel(row, 'right')}</div>
           </div>
         ))}
