@@ -292,7 +292,7 @@ export function SeatsStep({ draft, setDraft }: SeatsStepProps) {
           </div>
 
           <aside className="seatPreviewPanel refinedSeatPreviewPanel">
-            <SeatReferencePreview draft={draft} cmsRows={seatCmsData.rows} />
+            <SeatReferencePreview draft={draft} cmsData={seatCmsData} marketHint={selectedPurpose} />
             <div className="seatPreviewSummary">
               <strong>Reference only</strong>
               <span>Final seating layout, floorplan, and engineering feasibility will be reviewed and validated by Micro Bird.</span>
