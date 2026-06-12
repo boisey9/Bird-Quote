@@ -55,6 +55,32 @@
   line-height: 1.4;
 }
 
+.vehicleImage img,
+.busThumb img,
+.miniCardImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.vehicleImage:has(img),
+.busThumb:has(img),
+.miniCardImage {
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+}
+
+.miniCardImage {
+  width: 100%;
+  height: 76px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
 @media(max-width:1180px) {
   .rfqNoRecentLayout {
     grid-template-columns: 1fr;
