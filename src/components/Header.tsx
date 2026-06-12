@@ -1,5 +1,4 @@
 import { Clock, FileText, HelpCircle, Menu, Plus, Settings } from 'lucide-react';
-import { microBirdLogo } from '../assets/microBirdLogo';
 
 export type AppPage = 'new-quote' | 'my-requests' | 'quote-status' | 'rfq-queue' | 'admin-config' | 'confirmation';
 export type UserRole = 'dealer' | 'internal' | 'admin';
@@ -23,9 +22,9 @@ export function Header({ page, role, onNavigate, onRoleChange, onHelp }: HeaderP
 
   return (
     <header className="topbar productionTopbar">
-      <div className="brand">
-        <img src={microBirdLogo} alt="Micro Bird" className="brandLogo" />
-        <span className="brandFallback">Micro Bird</span>
+      <div className="brand microBirdWordmark" aria-label="Micro Bird">
+        <span className="microBirdMicro">Micro</span>
+        <span className="microBirdBird">Bird</span>
       </div>
       <nav className="tabs">
         {canSee('new-quote') && <button className={page === 'new-quote' ? 'active' : ''} onClick={() => onNavigate('new-quote')}><Plus size={18} /> New Quote</button>}
