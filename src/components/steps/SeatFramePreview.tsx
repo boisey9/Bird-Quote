@@ -39,7 +39,8 @@ function getLayoutShellId(layout?: SeatLayoutTemplate) {
   return 'shell-standard';
 }
 
-function formatShellLabel(shellId: string) {
+function formatShellLabel(shellId?: string) {
+  if (!shellId) return 'Not selected';
   if (shellId === 'shell-rear-lift') return 'Rear lift ready';
   if (shellId === 'shell-mid-door') return 'Mid-door layout';
   return 'Standard body';
@@ -233,12 +234,13 @@ export function SeatLayoutCard({ layout, selected, onSelect, draft, cmsRows, mar
 
 export function SeatReferencePreview({ draft, cmsData, marketHint }: { draft: RfqDraft; cmsData: SeatPreviewCmsData; marketHint?: MarketHint }) {
   const selectedLayout = getSeatLayoutById(cmsData.layouts, draft.seatPackage.layoutId);
-  const shellId = getLayoutShellId(selectedLayout);
+  const hasSelectedLayout = Boolean(selectedLayout);
+  const shellId = hasSelectedLayout ? getLayoutShellId(selectedLayout) : undefined;
   const totalSeatGroupQty = draft.seatGroups.reduce((sum, group) => sum + group.quantity, 0);
-  const selectedCapacity = selectedLayout?.defaultCapacity ?? selectedLayout?.maxSeats ?? draft.seatPackage.estimatedPassengerSeats;
+  const selectedCapacity = selectedLayout?.defaultCapacity ?? selectedLayout?.maxSeats ?? 0;
 
   return (
-    <aside className="seatPreviewCard framePreviewCard dealerPreviewCard">
+    <aside className={hasSelectedLayout ? 'seatPreviewCard framePreviewCard dealerPreviewCard' : 'seatPreviewCard framePreviewCard dealerPreviewCard noLayoutPreview'}>
       <div className="previewHeader">
         <h3>Reference Preview / Summary</h3>
         <span>{formatMarketHint(marketHint)}</span>
@@ -246,22 +248,27 @@ export function SeatReferencePreview({ draft, cmsData, marketHint }: { draft: Rf
       <div className="seatSummaryList">
         <p><strong>Selected Layout</strong><span>{selectedLayout?.title ?? 'Not selected'}</span></p>
         <p><strong>Body Reference</strong><span>{formatShellLabel(shellId)}</span></p>
-        <p><strong>Seat Material</strong><span>{draft.seatPackage.material}</span></p>
-        <p><strong>Seat Color</strong><span>{draft.seatPackage.color}</span></p>
-        <p><strong>Estimated Capacity</strong><span>{selectedCapacity} passenger seats</span></p>
+        <p><strong>Seat Material</strong><span>{draft.seatPackage.material || 'Not selected'}</span></p>
+        <p><strong>Seat Color</strong><span>{draft.seatPackage.color || 'Not selected'}</span></p>
+        <p><strong>Estimated Capacity</strong><span>{hasSelectedLayout ? `${selectedCapacity} passenger seats` : 'Not selected'}</span></p>
         <p><strong>Seat Type Total</strong><span>{totalSeatGroupQty} seats</span></p>
         <p><strong>Wheelchair / Lift</strong><span>{draft.seatPackage.wheelchairPositions > 0 || shellId === 'shell-rear-lift' ? 'Requested / available' : 'Not requested'}</span></p>
       </div>
       {cmsData.error && <p className="warningNote">Showing backup layout options. Micro Bird will review the final seating request.</p>}
-      <div className="largeFrameWrap">
-        <div className="directionLabel">FRONT / ENTRY REFERENCE</div>
-        <BusFramePreview layoutId={selectedLayout?.id} shellId={shellId} layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={selectedCapacity} wheelchairPositions={draft.seatPackage.wheelchairPositions} rows={cmsData.rows} />
-      </div>
-      <div className="seatLegend">
-        <span><i className="seatBox" />Passenger Seats</span>
-        <span><i className="openBox" />Wheelchair / Lift Area</span>
-        <span><i className="doorBox" />Entry Door</span>
-      </div>
+      {!hasSelectedLayout && <div className="emptyPreviewMessage">Select a compatible seating layout to show the reference preview.</div>}
+      {hasSelectedLayout && (
+        <div className="largeFrameWrap">
+          <div className="directionLabel">FRONT / ENTRY REFERENCE</div>
+          <BusFramePreview layoutId={selectedLayout?.id} shellId={shellId} layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={selectedCapacity} wheelchairPositions={draft.seatPackage.wheelchairPositions} rows={cmsData.rows} />
+        </div>
+      )}
+      {hasSelectedLayout && (
+        <div className="seatLegend">
+          <span><i className="seatBox" />Passenger Seats</span>
+          <span><i className="openBox" />Wheelchair / Lift Area</span>
+          <span><i className="doorBox" />Entry Door</span>
+        </div>
+      )}
       <p className="warningNote">Reference only - final seating layout will be reviewed and validated by Micro Bird.</p>
     </aside>
   );
