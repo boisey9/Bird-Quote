@@ -12,6 +12,7 @@ import { AdminConfigPage } from './components/pages/AdminConfigPage';
 import { ConfirmationPage } from './components/pages/ConfirmationPage';
 import './components/pages/PageStyles.css';
 import './components/pages/LayoutFixes.css';
+import './components/steps/RfqCleanup.css';
 import { CompanyStep } from './components/steps/CompanyStep';
 import { SpecsStep } from './components/steps/SpecsStep';
 import { FeaturesStep } from './components/steps/FeaturesStep';
