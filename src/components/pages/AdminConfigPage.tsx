@@ -2,11 +2,12 @@ import { useState, type ReactNode } from 'react';
 import { Database, Grid3X3, Lock, Route, Settings, Timer, Users } from 'lucide-react';
 import { busSpecMatrixData } from '../../data/busSpecMatrix';
 import { contractOptions } from '../../data/contractConfig';
-import { featureOptions, seatCmsConfig } from '../../data/featureOptionMatrix';
+import { featureOptions } from '../../data/featureOptionMatrix';
 import { floorPlanMaster, floorPlanSeatTypes, floorPlanZones } from '../../data/floorPlanGrid';
 import { ContractProgramAdminEditor } from './ContractProgramAdminEditor';
 import { FeatureOptionsAdminEditor } from './FeatureOptionsAdminEditor';
 import { FloorPlanAdminEditor } from './FloorPlanAdminEditor';
+import { SeatOptionListsAdminEditor } from './SeatOptionListsAdminEditor';
 import { VehicleMatrixAdminEditor } from './VehicleMatrixAdminEditor';
 import { VehicleMediaAdminEditor } from './VehicleMediaAdminEditor';
 import './AdminCms.css';
@@ -60,34 +61,15 @@ function ConfigSection({ icon, title, description, children, status = 'Config ar
 }
 
 function ContractProgramPage() {
-  return (
-    <div className="cmsPageStack">
-      <ConfigSection icon={<Route size={22} />} title="Contract Programs" description="Create, edit, duplicate, delete, retire, and save contract keys used across the RFQ app." status="Backend CMS">
-        <ContractProgramAdminEditor />
-      </ConfigSection>
-    </div>
-  );
+  return <div className="cmsPageStack"><ConfigSection icon={<Route size={22} />} title="Contract Programs" description="Create, edit, duplicate, delete, retire, and save contract keys used across the RFQ app." status="Backend CMS"><ContractProgramAdminEditor /></ConfigSection></div>;
 }
 
 function VehicleMatrixPage() {
-  return (
-    <div className="cmsPageStack">
-      <ConfigSection icon={<Database size={22} />} title="Vehicle / Chassis Matrix" description="Create, edit, delete, save, reload, and manage contract rules for vehicle selection data." status="Backend CMS">
-        <VehicleMatrixAdminEditor />
-      </ConfigSection>
-      <ConfigSection icon={<Database size={22} />} title="Vehicle Images / Media" description="Manage image URLs used on customer-facing chassis and bus type selection cards." status="CMS media fields">
-        <VehicleMediaAdminEditor />
-      </ConfigSection>
-    </div>
-  );
+  return <div className="cmsPageStack"><ConfigSection icon={<Database size={22} />} title="Vehicle / Chassis Matrix" description="Create, edit, delete, save, reload, and manage contract rules for vehicle selection data." status="Backend CMS"><VehicleMatrixAdminEditor /></ConfigSection><ConfigSection icon={<Database size={22} />} title="Vehicle Images / Media" description="Manage image URLs used on customer-facing chassis and bus type selection cards." status="CMS media fields"><VehicleMediaAdminEditor /></ConfigSection></div>;
 }
 
 function FeaturesOptionsPage() {
-  return (
-    <ConfigSection icon={<Settings size={22} />} title="Features & Options CMS" description="Create, edit, delete, save, reload, and manage contract rules for customer-facing feature options." status="Backend CMS">
-      <FeatureOptionsAdminEditor />
-    </ConfigSection>
-  );
+  return <ConfigSection icon={<Settings size={22} />} title="Features & Options CMS" description="Create, edit, delete, save, reload, and manage contract rules for customer-facing feature options." status="Backend CMS"><FeatureOptionsAdminEditor /></ConfigSection>;
 }
 
 function FloorplanManagementPage() {
@@ -96,8 +78,8 @@ function FloorplanManagementPage() {
       <ConfigSection icon={<Grid3X3 size={22} />} title="Floorplan Grid Editor" description="Admin source of truth for customer-facing Seat Layout Templates. Active dealer-visible grids are converted into seat layout choices at runtime." status="Backend CMS">
         <FloorPlanAdminEditor />
       </ConfigSection>
-      <ConfigSection icon={<Database size={22} />} title="Seat Option Lists" description="Reusable seat materials, colors, restraints, grab types, and seat style values used by the Seats step." status="Seat source lists">
-        <div className="configPillRow">{seatCmsConfig.materials.map((item) => <span key={item}>Material: {item}</span>)}{seatCmsConfig.colors.map((item) => <span key={item}>Color: {item}</span>)}{seatCmsConfig.restraintTypes.map((item) => <span key={item}>Restraint: {item}</span>)}{seatCmsConfig.armrests.map((item) => <span key={item}>Armrest: {item}</span>)}{seatCmsConfig.grabTypes.map((item) => <span key={item}>Grab: {item}</span>)}{seatCmsConfig.seatTypes.map((item) => <span key={item}>Seat Type: {item}</span>)}</div>
+      <ConfigSection icon={<Database size={22} />} title="Seat Option Lists" description="Manage reusable seat materials, colors, restraints, grab types, branding, and seat style values used by the Seats step." status="Backend CMS">
+        <SeatOptionListsAdminEditor />
       </ConfigSection>
     </div>
   );
@@ -139,9 +121,7 @@ export function AdminConfigPage() {
         <aside className="cmsConfigNav">
           {cmsPages.map((page) => <button type="button" className={activePage === page.key ? 'active' : ''} key={page.key} onClick={() => setActivePage(page.key)}><span>{page.icon}</span><strong>{page.title}</strong><small>{page.description}</small><em>{page.status}</em></button>)}
         </aside>
-        <main className="cmsConfigContent">
-          <ActiveCmsPage page={activePage} />
-        </main>
+        <main className="cmsConfigContent"><ActiveCmsPage page={activePage} /></main>
       </div>
     </section>
   );
