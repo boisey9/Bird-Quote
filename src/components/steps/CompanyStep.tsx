@@ -1,6 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { ChevronRight, ClipboardList, FileCheck2, User } from 'lucide-react';
-import { contractOptions, getContractById } from '../../data/contractConfig';
+import { getContractById } from '../../data/contractConfig';
+import { useActiveContractPrograms } from '../../hooks/useContractPrograms';
 import { Input } from '../FormControls';
 import type { RfqDraft } from '../../types/rfq';
 
@@ -11,14 +12,16 @@ type CompanyStepProps = {
 
 export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
   const [showReferenceDetails, setShowReferenceDetails] = useState(false);
-  const selectedContract = getContractById(draft.company.contractId);
+  const contractCms = useActiveContractPrograms();
+  const contractOptions = contractCms.contracts;
+  const selectedContract = contractOptions.find((contract) => contract.id === draft.company.contractId) ?? getContractById(draft.company.contractId);
 
   const update = (key: keyof RfqDraft['company'], value: string) => {
     setDraft((current) => ({ ...current, company: { ...current.company, [key]: value } }));
   };
 
   const updateContract = (contractId: string) => {
-    const contract = getContractById(contractId);
+    const contract = contractOptions.find((item) => item.id === contractId) ?? getContractById(contractId);
     setDraft((current) => ({
       ...current,
       company: {
@@ -57,13 +60,6 @@ export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
             <span>{selectedContract.description}</span>
           </div>
         </div>
-        {selectedContract.workflowType === 'contract-controlled' && (
-          <div className="contractRulesSummary">
-            <p><strong>Vehicle Rules</strong><span>{selectedContract.allowedChassisIds.length} chassis • {selectedContract.allowedWheelbaseIds.length || 'Any'} wheelbases • {selectedContract.allowedBusTypeIds.length} bus types</span></p>
-            <p><strong>Seat Layout Rules</strong><span>{selectedContract.allowedSeatLayoutIds.length} approved seating layouts</span></p>
-            <p><strong>Recommended Documents</strong><span>{selectedContract.requiredDocumentTypes.join(', ')}</span></p>
-          </div>
-        )}
       </section>
 
       <section className="panel">
@@ -76,7 +72,7 @@ export function CompanyStep({ draft, setDraft }: CompanyStepProps) {
           <div>
             <small>Selected Reference</small>
             <strong>{draft.company.pastQuoteOrOrderNumber || 'No reference selected'}</strong>
-            <p>Ford • 158” WB DRW • 16 Passenger</p>
+            <p>Ford • 158 WB DRW • 16 Passenger</p>
           </div>
           <button className="linkBtn" type="button" onClick={() => setShowReferenceDetails((current) => !current)}>{showReferenceDetails ? 'Hide details' : 'View details'} <ChevronRight size={16} /></button>
         </div>
