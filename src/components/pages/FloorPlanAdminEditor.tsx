@@ -16,6 +16,7 @@ import {
 import './FloorPlanAdminEditor.css';
 
 type FloorPlanFrameStyle = CSSProperties & { '--row-count': number };
+type RuleOption = { id: string; name: string; chassisId?: string };
 type FloorPlanCmsPayload = {
   ok?: boolean;
   error?: string;
@@ -33,12 +34,12 @@ type FloorPlanCmsPayload = {
 const defaultFloorPlan = seedFloorPlanMaster[0]!;
 const sideOptions: FloorPlanSide[] = ['curb', 'street', 'center', 'full'];
 const zoneTypeOptions: FloorPlanZone['zoneType'][] = ['seat', 'wheelchair', 'foldaway', 'entrance', 'mid-door', 'rear-lift', 'luggage', 'aisle', 'empty', 'driver', 'clearance'];
-const anyOption = { id: 'any', name: 'Any / All' };
+const anyOption: RuleOption = { id: 'any', name: 'Any / All' };
 const contractRuleOptions = [{ id: 'any', label: 'Any Contract / All' }, ...contractOptions];
-const chassisRuleOptions = [anyOption, ...busSpecMatrixData.chassis.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name }))];
-const certificationRuleOptions = [anyOption, ...busSpecMatrixData.certifications.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name }))];
-const wheelbaseRuleOptions = [anyOption, ...busSpecMatrixData.wheelbases.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name }))];
-const busTypeRuleOptions = [anyOption, ...busSpecMatrixData.busTypes.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name }))];
+const chassisRuleOptions: RuleOption[] = [anyOption, ...busSpecMatrixData.chassis.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name }))];
+const certificationRuleOptions: RuleOption[] = [anyOption, ...busSpecMatrixData.certifications.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name, chassisId: item.chassisId }))];
+const wheelbaseRuleOptions: RuleOption[] = [anyOption, ...busSpecMatrixData.wheelbases.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name, chassisId: item.chassisId }))];
+const busTypeRuleOptions: RuleOption[] = [anyOption, ...busSpecMatrixData.busTypes.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name }))];
 
 async function parseFloorPlanResponse(response: Response): Promise<FloorPlanCmsPayload> {
   const text = await response.text();
@@ -91,7 +92,7 @@ function FloorPlanCanvas({ floorPlan, zones }: { floorPlan: FloorPlanMaster; zon
   );
 }
 
-function matchesChassisScope(item: { chassisId?: string }, chassisId: string) {
+function matchesChassisScope(item: RuleOption, chassisId: string) {
   return chassisId === 'any' || !item.chassisId || item.chassisId === chassisId;
 }
 
@@ -313,8 +314,8 @@ export function FloorPlanAdminEditor() {
             <div className="floorPlanTableGrid compatibility editable">
               <div className="head"><span>Contract</span><span>Chassis</span><span>Wheelbase</span><span>Certification</span><span>Bus Type</span><span>Allowed</span><span>Action</span></div>
               {selectedRules.map((rule, index) => {
-                const wheelbaseOptions = wheelbaseRuleOptions.filter((item) => item.id === 'any' || matchesChassisScope(item, rule.chassis));
-                const certificationOptions = certificationRuleOptions.filter((item) => item.id === 'any' || matchesChassisScope(item, rule.chassis));
+                const wheelbaseOptions = wheelbaseRuleOptions.filter((item) => matchesChassisScope(item, rule.chassis));
+                const certificationOptions = certificationRuleOptions.filter((item) => matchesChassisScope(item, rule.chassis));
                 return <div key={`${rule.floorPlanId}-${index}`}><select value={rule.contractId} onChange={(event) => updateRule(index, { contractId: event.target.value })}>{contractRuleOptions.map((contract) => <option key={contract.id} value={contract.id}>{contract.label}</option>)}</select><select value={rule.chassis} onChange={(event) => updateRule(index, { chassis: event.target.value })}>{chassisRuleOptions.map((chassis) => <option key={chassis.id} value={chassis.id}>{chassis.name}</option>)}</select><select value={rule.wheelbase} onChange={(event) => updateRule(index, { wheelbase: event.target.value })}>{wheelbaseOptions.map((wheelbase) => <option key={wheelbase.id} value={wheelbase.id}>{wheelbase.name}</option>)}</select><select value={rule.certification} onChange={(event) => updateRule(index, { certification: event.target.value })}>{certificationOptions.map((certification) => <option key={certification.id} value={certification.id}>{certification.name}</option>)}</select><select value={rule.busType} onChange={(event) => updateRule(index, { busType: event.target.value })}>{busTypeRuleOptions.map((busType) => <option key={busType.id} value={busType.id}>{busType.name}</option>)}</select><select value={rule.allowed ? 'yes' : 'no'} onChange={(event) => updateRule(index, { allowed: event.target.value === 'yes' })}><option value="yes">Yes</option><option value="no">No</option></select><button type="button" className="iconMiniButton danger" onClick={() => deleteRule(index)}><Trash2 size={14} /></button></div>;
               })}
             </div>
