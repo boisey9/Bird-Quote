@@ -1,0 +1,21 @@
+.seatUxV2 .seatDetailsPanel > .warningNote {
+  display: none;
+}
+
+.seatUxV2 .seatTypeCardGrid label:first-child,
+.seatUxV2 .seatTypeCardGrid label:last-child {
+  display: none;
+}
+
+.seatUxV2 .seatTypeCardGrid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.contractSummaryCards,
+.contractRuleCards,
+.procurementSummaryCards,
+.referenceQuotePanel,
+.pastOrderPanel,
+.referenceOrderPanel {
+  display: none !important;
+}
