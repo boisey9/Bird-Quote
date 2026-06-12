@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowRight, X } from 'lucide-react';
-import { busSpecMatrixData } from './data/busSpecMatrix';
 import { initialDraft } from './data/initialDraft';
+import { useVehicleMatrixCms } from './hooks/useVehicleMatrixCms';
 import { Header, type AppPage, type UserRole } from './components/Header';
 import { Hero, Stepper } from './components/RfqShell';
 import { QuoteSummary } from './components/QuoteSummary';
@@ -86,10 +86,12 @@ export function App() {
   const [submitStatus, setSubmitStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const vehicleCms = useVehicleMatrixCms();
+  const vehicleMatrix = vehicleCms.matrix;
 
-  const selectedChassis = busSpecMatrixData.chassis.find((item) => item.id === draft.specs.chassis);
-  const selectedWheelbase = busSpecMatrixData.wheelbases.find((item) => item.id === draft.specs.wheelbase);
-  const selectedBusType = busSpecMatrixData.busTypes.find((item) => item.id === draft.specs.busType);
+  const selectedChassis = vehicleMatrix.chassis.find((item) => item.id === draft.specs.chassis);
+  const selectedWheelbase = vehicleMatrix.wheelbases.find((item) => item.id === draft.specs.wheelbase);
+  const selectedBusType = vehicleMatrix.busTypes.find((item) => item.id === draft.specs.busType);
   const summaryFeatures = useMemo(() => draft.features.filter((feature) => feature.category !== 'Seats' && feature.category !== 'Layout').slice(0, 6), [draft.features]);
   const progress = Math.round((step / 4) * 100);
 
