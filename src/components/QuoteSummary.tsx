@@ -27,10 +27,10 @@ function getSelectedSeatLayoutLabel(layoutId: string) {
   return layoutId || 'Not selected';
 }
 
-export function QuoteSummary({ draft, progress, step, selectedChassis, selectedWheelbase, selectedBusType, features, onEdit }: QuoteSummaryProps) {
+export function QuoteSummary(props: QuoteSummaryProps) {
+  const { draft, progress, step, selectedChassis, selectedWheelbase, selectedBusType, features, onEdit } = props;
   const selectedSeatLayout = getSelectedSeatLayoutLabel(draft.seatPackage.layoutId);
-  const displayFeatures = features.filter((feature) => !['Seats', 'Layout'].includes(feature.category));
-  const displayProgress = step >= 3 ? 100 : progress;
+  const displayFeatures = features.filter((feature) => feature.category !== 'Seats' && feature.category !== 'Layout');
 
   return (
     <aside className="summary productionSummary">
@@ -68,14 +68,14 @@ export function QuoteSummary({ draft, progress, step, selectedChassis, selectedW
           <span>Options</span>
           <strong>{displayFeatures.length} selected</strong>
           {displayFeatures.slice(0, 4).map((feature) => (
-            <p className="featureSummary" key={`${feature.category}-${feature.label}`}>{feature.label}</p>
+            <p className="featureSummary" key={feature.category + '-' + feature.label}>{feature.label}</p>
           ))}
         </>
       )}
       <hr />
       <small>PROGRESS</small>
       <div className="progress">
-        <div>{displayProgress}%</div>
+        <div>{progress}%</div>
         <span>Step {step} of 4<br /><strong>{stepNames[step]}</strong></span>
       </div>
     </aside>
