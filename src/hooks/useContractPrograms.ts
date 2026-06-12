@@ -21,6 +21,8 @@ type ContractCmsPayload = {
   error?: string;
   contractPrograms?: ContractProgram[];
   contractRuleIndex?: ContractRuleIndex[];
+  contractCount?: number;
+  ruleCount?: number;
 };
 
 export type ContractCmsRuntimeData = {
