@@ -11,11 +11,8 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.contractSummaryCards,
-.contractRuleCards,
-.procurementSummaryCards,
-.referenceQuotePanel,
-.pastOrderPanel,
-.referenceOrderPanel {
+.contractRulesSummary,
+.referenceCard,
+.referenceDetailsPanel {
   display: none !important;
 }
