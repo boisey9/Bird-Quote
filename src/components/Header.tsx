@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Clock, FileText, HelpCircle, Menu, Plus, Settings, X } from 'lucide-react';
-import microBirdLogo from '../assets/micro-bird-logo.png';
 
 export type AppPage = 'new-quote' | 'my-requests' | 'quote-status' | 'rfq-queue' | 'admin-config' | 'confirmation';
 export type UserRole = 'dealer' | 'internal' | 'admin';
+
+const microBirdLogo = '/assets/micro-bird-logo.png';
 
 type HeaderProps = {
   page: AppPage;
