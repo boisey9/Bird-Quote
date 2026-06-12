@@ -16,3 +16,47 @@
 .referenceDetailsPanel {
   display: none !important;
 }
+
+.rfqNoRecentLayout {
+  grid-template-columns: minmax(760px, 1fr) 280px;
+  max-width: 1480px;
+}
+
+.microBirdWordmark {
+  min-width: 250px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: #061b4f;
+}
+
+.microBirdWordmark .microBirdMicro,
+.microBirdWordmark .microBirdBird {
+  font-size: 34px;
+}
+
+.noLayoutPreview .largeFrameWrap,
+.noLayoutPreview .seatLegend {
+  display: none;
+}
+
+.emptyPreviewMessage {
+  margin: 18px;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 18px;
+  color: #475569;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+@media(max-width:1180px) {
+  .rfqNoRecentLayout {
+    grid-template-columns: 1fr;
+  }
+}
