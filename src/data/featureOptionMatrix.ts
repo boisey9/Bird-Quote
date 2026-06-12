@@ -2,8 +2,8 @@ import { getContractById } from './contractConfig';
 import type { BusSpecs, FeatureOptionCategory, FeatureOptionItem, SeatCmsConfig } from '../types/rfq';
 
 export const featureOptionCategories: FeatureOptionCategory[] = [
-  { id: 1, title: 'Layout', description: 'Customer-facing layout intent and floorplan reference.', sortOrder: 1, active: true, comments: 'Market segments and layout intent. Seats module is managed separately.' },
-  { id: 17, title: 'Seats', description: 'Seat layout, material, color, and seat type requirements.', sortOrder: 2, active: true, comments: 'Critical CMS-managed module by model/wheelbase.' },
+  { id: 1, title: 'Layout', description: 'Customer-facing layout intent and floorplan reference.', sortOrder: 1, active: false, comments: 'Handled by Seats and Floorplan Intent.' },
+  { id: 17, title: 'Seats', description: 'Seat layout, material, color, and seat type requirements.', sortOrder: 2, active: false, comments: 'Handled by Seats and Floorplan Intent.' },
   { id: 9, title: 'Interior Features', description: 'Interior materials, grab rails, wall/ceiling finish, lighting, and flooring.', sortOrder: 3, active: true, comments: '' },
   { id: 7, title: 'Doors and Accessibility', description: 'Entry door, wheelchair lift/ramp, securement, handrails, and accessibility aids.', sortOrder: 4, active: true, comments: '' },
   { id: 2, title: 'Climate and Comfort', description: 'A/C, heating, defrost, comfort package, and passenger climate requirements.', sortOrder: 5, active: true, comments: '' },
@@ -78,52 +78,27 @@ export const seatCmsConfig: SeatCmsConfig = {
     { id: 'sch-r2', layoutId: 'school-3x2', rowNumber: 2, zone: 'mid', leftPositionType: 'passenger-seat', rightPositionType: 'passenger-seat', seatCountLeft: 3, seatCountRight: 2, allowedSeatStyles: ['Low Back Standard', 'High Back Standard'] },
     { id: 'sch-r3', layoutId: 'school-3x2', rowNumber: 3, zone: 'rear', leftPositionType: 'passenger-seat', rightPositionType: 'passenger-seat', seatCountLeft: 3, seatCountRight: 2, allowedSeatStyles: ['Low Back Standard', 'High Back Standard'] }
   ],
-  seatTypes: ['High Back Standard', 'High Back Premium', 'Low Back Standard', 'Foldaway Seat', 'Perimeter / Lounge Seat'],
-  materials: ['Vinyl', 'Cloth', 'Freedman Level 4 Vinyl'],
-  colors: ['Black', 'Gray', 'Blue', 'Custom'],
-  restraintTypes: ['None', 'Lap Belt', '3-Point', 'Integrated Child Seat'],
+  seatTypes: ['High Back Standard', 'High Back Premium', 'Low Back Standard', 'Foldaway Seat', 'Integrated Child Seat', 'Perimeter / Lounge Seat'],
+  materials: ['Vinyl', 'Cloth', 'Leathermate', 'Combination Vinyl/Cloth'],
+  colors: ['Blue', 'Gray', 'Black', 'Brown', 'Customer Specified'],
+  restraintTypes: ['Lap Belt', '3-Point', 'Integrated Child Seat', 'None'],
   armrests: ['None', 'Aisle Side', 'Wall Side', 'Both Sides'],
   grabTypes: ['None', 'Standard Grab', 'Wall Grab Rail', 'Seat Back Grab'],
-  brandingOptions: ['No Branding', 'Standard Micro Bird', 'Customer Logo Patch', 'Custom Embroidery']
+  brandingOptions: ['No Branding', 'Standard Micro Bird', 'Customer Logo / Embroidery'],
+  shells: [],
+  zones: []
 };
 
-export function getVisibleFeatureCategories(specs: BusSpecs): FeatureOptionCategory[] {
+export function getAvailableFeatureCategories(specs: BusSpecs) {
+  const contract = getContractById(specs.contractId ?? 'none');
   return featureOptionCategories
     .filter((category) => category.active)
-    .filter((category) => {
-      if (category.title === 'Powertrain' && specs.chassis === 'ford-transit') return false;
-      if (category.title === 'Doors and Accessibility' && specs.wheelchairCapacity === 0 && specs.busType !== 'assisted-living' && specs.busType !== 'commercial-special-needs') return false;
-      return true;
-    })
+    .filter((category) => !contract.featureCategoryIds?.length || contract.featureCategoryIds.includes(category.id))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-export function getAvailableFeatureOptions(categoryId: number, specs: BusSpecs): FeatureOptionItem[] {
+export function getAvailableFeatureOptions(categoryId: number) {
   return featureOptions
     .filter((option) => option.active && option.categoryId === categoryId)
-    .filter((option) => {
-      if (option.title.includes('Lift') && specs.wheelchairCapacity === 0) return false;
-      if (option.title.includes('Propane') && specs.chassis === 'ford-transit') return false;
-      if (option.title.includes('High Capacity') && specs.seatingCapacity < 16) return false;
-      return true;
-    })
     .sort((a, b) => a.sortOrder - b.sortOrder);
-}
-
-export function getAvailableSeatLayouts(specs: BusSpecs, contractId = 'none') {
-  const contract = getContractById(contractId);
-  return seatCmsConfig.layouts.filter((layout) => {
-    const rule = seatCmsConfig.rules.find((item) => item.layoutId === layout.id);
-    if (!rule) return false;
-    const chassisOk = rule.chassisIds.length === 0 || rule.chassisIds.includes(specs.chassis);
-    const busTypeOk = rule.busTypeIds.length === 0 || rule.busTypeIds.includes(specs.busType);
-    const wheelbaseOk = rule.wheelbaseIds.length === 0 || rule.wheelbaseIds.includes(specs.wheelbase);
-    const certificationOk = !rule.certificationIds || rule.certificationIds.length === 0 || rule.certificationIds.includes(specs.certification);
-    const contractOk = contract.workflowType === 'standard' || contract.allowedSeatLayoutIds.includes(layout.id);
-    return chassisOk && busTypeOk && wheelbaseOk && certificationOk && contractOk;
-  });
-}
-
-export function getSeatLayoutRows(layoutId: string) {
-  return seatCmsConfig.rows.filter((row) => row.layoutId === layoutId).sort((a, b) => a.rowNumber - b.rowNumber);
 }
