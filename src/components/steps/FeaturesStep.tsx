@@ -1,7 +1,7 @@
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { ChevronDown, ChevronUp, Eye, Info, Plus, CheckCircle2 } from 'lucide-react';
-import { getAvailableFeatureOptions, getVisibleFeatureCategories } from '../../data/featureOptionMatrix';
-import type { FeatureOptionItem, RfqDraft } from '../../types/rfq';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { ChevronDown, ChevronUp, Eye, Info, Plus, CheckCircle2, AlertCircle, Star } from 'lucide-react';
+import { useFeatureOptionsCms, type FeatureCategoryCmsRecord, type FeatureContractRule, type FeatureOptionCmsRecord } from '../../hooks/useFeatureOptionsCms';
+import type { RfqDraft } from '../../types/rfq';
 import { SeatsStep } from './SeatsStep';
 import './SeatsModule.css';
 import './RfqCleanup.css';
@@ -11,29 +11,111 @@ type FeaturesStepProps = {
   setDraft: Dispatch<SetStateAction<RfqDraft>>;
 };
 
-function FeatureOptionCard({ option, selected, onClick }: { option: FeatureOptionItem; selected: boolean; onClick: () => void }) {
+type OptionRuleState = {
+  hidden: boolean;
+  required: boolean;
+  recommended: boolean;
+  autoSelect: boolean;
+  requiresDocument: boolean;
+};
+
+function sortByOrder<T extends { sortOrder: number }>(items: T[]) {
+  return [...items].sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function ruleMatchesContract(rule: FeatureContractRule, contractId: string) {
+  return rule.active && (rule.contractId === 'any' || rule.contractId === contractId);
+}
+
+function getOptionRuleState(option: FeatureOptionCmsRecord, categoryId: number, rules: FeatureContractRule[]): OptionRuleState {
+  const matchingRules = rules.filter((rule) => (rule.categoryId === null || rule.categoryId === categoryId) && (rule.optionId === null || rule.optionId === option.id));
+  return {
+    hidden: matchingRules.some((rule) => rule.ruleType === 'hidden'),
+    required: matchingRules.some((rule) => rule.ruleType === 'required'),
+    recommended: matchingRules.some((rule) => rule.ruleType === 'recommended'),
+    autoSelect: matchingRules.some((rule) => rule.autoSelect),
+    requiresDocument: Boolean(option.requiresDocument) || matchingRules.some((rule) => rule.requiresDocument)
+  };
+}
+
+function getOptionImageUrl(option: FeatureOptionCmsRecord) {
+  if (option.imageUrl) return option.imageUrl;
+  if (option.imageExt) return `/images/options/${option.imageExt}`;
+  return '';
+}
+
+function FeatureOptionCard({ option, selected, state, onClick }: { option: FeatureOptionCmsRecord; selected: boolean; state: OptionRuleState; onClick: () => void }) {
+  const imageUrl = getOptionImageUrl(option);
   return (
     <button type="button" className={selected ? 'featureOptionCard selected' : 'featureOptionCard'} onClick={onClick}>
       <span className="optionIcon">{selected ? <CheckCircle2 size={16} /> : <Plus size={16} />}</span>
+      {imageUrl && <span className="featureOptionImage"><img src={imageUrl} alt="" /></span>}
       <strong>{option.title}</strong>
       <small>{option.description}</small>
+      <span className="featureOptionBadges">
+        {state.required && <em className="required"><AlertCircle size={13} /> Required</em>}
+        {state.recommended && <em className="recommended"><Star size={13} /> Recommended</em>}
+        {state.requiresDocument && <em>Document</em>}
+      </span>
     </button>
   );
 }
 
 export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
-  const categories = getVisibleFeatureCategories(draft.specs).filter((category) => category.title !== 'Seats' && category.title !== 'Layout');
+  const featureCms = useFeatureOptionsCms();
+  const cmsData = featureCms.data;
+  const activeRules = useMemo(() => cmsData.contractRules.filter((rule) => ruleMatchesContract(rule, draft.company.contractId)), [cmsData.contractRules, draft.company.contractId]);
+  const hiddenCategoryIds = useMemo(() => new Set(activeRules.filter((rule) => rule.ruleType === 'hidden' && rule.categoryId !== null && rule.optionId === null).map((rule) => rule.categoryId as number)), [activeRules]);
+  const categories = useMemo(() => sortByOrder(cmsData.categories.filter((category) => category.active && category.customerVisible !== false && category.status !== 'retired' && category.title !== 'Seats' && category.title !== 'Layout' && !hiddenCategoryIds.has(category.id))), [cmsData.categories, hiddenCategoryIds]);
   const optionFeatures = useMemo(() => draft.features.filter((feature) => feature.category !== 'Seats' && feature.category !== 'Layout'), [draft.features]);
-  const [openCategories, setOpenCategories] = useState<Record<number, boolean>>(() => Object.fromEntries(categories.map((category) => [category.id, category.sortOrder <= 4])));
+  const [openCategories, setOpenCategories] = useState<Record<number, boolean>>({});
   const [showQuickSummary, setShowQuickSummary] = useState(false);
 
+  useEffect(() => {
+    setOpenCategories((current) => {
+      const next = { ...current };
+      categories.forEach((category) => {
+        if (next[category.id] === undefined) next[category.id] = category.sortOrder <= 4;
+      });
+      return next;
+    });
+  }, [categories]);
+
   const selectedFeatureKeys = useMemo(() => new Set(optionFeatures.map((feature) => `${feature.category}-${feature.label}`)), [optionFeatures]);
+
+  const optionsByCategory = useMemo(() => {
+    const result = new Map<number, FeatureOptionCmsRecord[]>();
+    categories.forEach((category: FeatureCategoryCmsRecord) => {
+      const options = sortByOrder(cmsData.options.filter((option) => {
+        if (!option.active || option.status === 'retired' || option.categoryId !== category.id) return false;
+        const state = getOptionRuleState(option, category.id, activeRules);
+        return !state.hidden;
+      }));
+      result.set(category.id, options);
+    });
+    return result;
+  }, [activeRules, categories, cmsData.options]);
+
+  useEffect(() => {
+    const autoSelectedOptions: { category: string; label: string; value: string }[] = [];
+    categories.forEach((category) => {
+      const options = optionsByCategory.get(category.id) ?? [];
+      options.forEach((option) => {
+        const state = getOptionRuleState(option, category.id, activeRules);
+        if (state.autoSelect && !selectedFeatureKeys.has(`${category.title}-${option.title}`)) {
+          autoSelectedOptions.push({ category: category.title, label: option.title, value: option.description });
+        }
+      });
+    });
+    if (autoSelectedOptions.length === 0) return;
+    setDraft((current) => ({ ...current, features: [...current.features, ...autoSelectedOptions] }));
+  }, [activeRules, categories, optionsByCategory, selectedFeatureKeys, setDraft]);
 
   const toggleCategory = (categoryId: number) => {
     setOpenCategories((current) => ({ ...current, [categoryId]: !current[categoryId] }));
   };
 
-  const toggleFeature = (categoryTitle: string, option: FeatureOptionItem) => {
+  const toggleFeature = (categoryTitle: string, option: FeatureOptionCmsRecord) => {
     const key = `${categoryTitle}-${option.title}`;
     setDraft((current) => {
       const alreadySelected = current.features.some((feature) => `${feature.category}-${feature.label}` === key);
@@ -65,15 +147,17 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
           <div>
             <h2>Options & Packages</h2>
             <p>Select the customer-facing options that should be reviewed for this quote. Special or unusual requirements can be added in the notes below.</p>
+            {featureCms.loadState === 'error' && <small className="cmsFallbackNote">Feature Options CMS unavailable. Showing static fallback options.</small>}
           </div>
           <span className="pill">{optionFeatures.length} selected</span>
         </div>
       </section>
 
       {categories.map((category) => {
-        const options = getAvailableFeatureOptions(category.id);
+        const options = optionsByCategory.get(category.id) ?? [];
         const isOpen = openCategories[category.id] ?? false;
         const selectedCount = options.filter((option) => selectedFeatureKeys.has(`${category.title}-${option.title}`)).length;
+        const requiredCount = options.filter((option) => getOptionRuleState(option, category.id, activeRules).required).length;
 
         return (
           <section className={isOpen ? 'panel compact optionAccordion open' : 'panel compact optionAccordion'} key={category.id}>
@@ -82,14 +166,15 @@ export function FeaturesStep({ draft, setDraft }: FeaturesStepProps) {
                 <strong>{category.title}</strong>
                 <small>{category.description}</small>
               </div>
-              <span className="pill">{selectedCount} selected / {options.length} available</span>
+              <span className="pill">{selectedCount} selected / {options.length} available{requiredCount ? ` • ${requiredCount} required` : ''}</span>
               {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
             {isOpen && (
               <div className="featureOptionGrid compactOptionGrid">
-                {options.map((option) => (
-                  <FeatureOptionCard key={option.id} option={option} selected={selectedFeatureKeys.has(`${category.title}-${option.title}`)} onClick={() => toggleFeature(category.title, option)} />
-                ))}
+                {options.map((option) => {
+                  const state = getOptionRuleState(option, category.id, activeRules);
+                  return <FeatureOptionCard key={option.id} option={option} state={state} selected={selectedFeatureKeys.has(`${category.title}-${option.title}`)} onClick={() => toggleFeature(category.title, option)} />;
+                })}
               </div>
             )}
           </section>
