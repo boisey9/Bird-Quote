@@ -1,6 +1,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import { getSeatLayoutById, getSeatLayoutRowsFromCms } from '../../hooks/useSeatCmsData';
 import { seatShellImages, type SeatShellImageKey } from '../../assets/seatShells';
+import type { CSSProperties } from 'react';
 import type { RfqDraft, SeatCmsConfig, SeatLayoutRow, SeatLayoutTemplate } from '../../types/rfq';
 
 type SeatFrameProps = {
@@ -97,23 +98,76 @@ function formatCellLabel(row: SeatLayoutRow, side: 'left' | 'right') {
   const positionType = side === 'left' ? row.leftPositionType : row.rightPositionType;
   const count = side === 'left' ? row.seatCountLeft : row.seatCountRight;
   if (positionType === 'empty' || positionType === 'aisle') return 'Open';
-  if (positionType === 'wheelchair-space') return 'Wheelchair';
-  if (positionType === 'foldaway') return count > 0 ? `Foldaway ${count}` : 'Foldaway';
-  if (positionType === 'lounge') return count > 0 ? `Lounge ${count}` : 'Lounge';
-  if (positionType === 'perimeter-seat') return count > 0 ? `Perimeter ${count}` : 'Perimeter';
+  if (positionType === 'wheelchair-space') return 'W/C';
+  if (positionType === 'foldaway') return count > 0 ? `${count} Fold` : 'Fold';
+  if (positionType === 'lounge') return count > 0 ? `${count} Lounge` : 'Lounge';
+  if (positionType === 'perimeter-seat') return count > 0 ? `${count} Perim.` : 'Perim.';
   return count > 0 ? `${count} Seats` : 'Seat';
 }
 
+function cellStyle(row: SeatLayoutRow, side: 'left' | 'right', compact: boolean): CSSProperties {
+  const positionType = side === 'left' ? row.leftPositionType : row.rightPositionType;
+  const base: CSSProperties = {
+    border: '1px dashed #cbd5e1',
+    background: '#fff',
+    borderRadius: compact ? 5 : 10,
+    display: 'grid',
+    placeItems: 'center',
+    textAlign: 'center',
+    color: '#334155',
+    fontSize: compact ? 0 : 10,
+    fontWeight: 800,
+    minHeight: compact ? 20 : 42,
+    padding: compact ? 0 : '2px 4px',
+    lineHeight: 1.1,
+    whiteSpace: 'normal'
+  };
+
+  if (positionType === 'passenger-seat') return { ...base, background: '#dbeafe', borderColor: '#93c5fd', color: '#1e3a8a' };
+  if (positionType === 'foldaway') return { ...base, background: '#dcfce7', borderColor: '#86efac', color: '#166534' };
+  if (positionType === 'wheelchair-space') return { ...base, background: '#ede9fe', borderColor: '#c4b5fd', color: '#5b21b6' };
+  if (positionType === 'lounge' || positionType === 'perimeter-seat') return { ...base, background: '#ccfbf1', borderColor: '#5eead4', color: '#115e59' };
+  return { ...base, background: '#fff', borderColor: '#d7dee8', color: '#94a3b8' };
+}
+
 function AdminFloorPlanGridPreview({ rows, compact = false }: { rows: SeatLayoutRow[]; compact?: boolean }) {
+  const frameStyle: CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: compact ? '44px 1fr' : '76px 1fr',
+    gap: compact ? 5 : 8,
+    width: '100%',
+    minHeight: compact ? 74 : 170,
+    border: compact ? '1px solid #101828' : '2px solid #101828',
+    borderRadius: compact ? '18px 10px 10px 18px' : '32px 14px 14px 32px',
+    background: '#f8fafc',
+    padding: compact ? 6 : 12,
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    boxSizing: 'border-box'
+  };
+
+  const frontStyle: CSSProperties = {
+    borderRadius: compact ? '14px 6px 6px 14px' : '22px 8px 8px 22px',
+    background: '#e2e8f0',
+    color: '#0f172a',
+    display: 'grid',
+    placeItems: 'center',
+    fontSize: compact ? 8 : 11,
+    fontWeight: 900,
+    letterSpacing: '.04em',
+    writingMode: 'vertical-rl',
+    minHeight: compact ? 62 : 148
+  };
+
   return (
-    <div className={compact ? 'adminFloorPlanPreview compactAdminFloorPlanPreview' : 'adminFloorPlanPreview'}>
-      <div className="adminFloorPlanFront">FRONT</div>
-      <div className="adminFloorPlanRows">
+    <div className={compact ? 'adminFloorPlanPreview compactAdminFloorPlanPreview' : 'adminFloorPlanPreview'} style={frameStyle}>
+      <div className="adminFloorPlanFront" style={frontStyle}>FRONT</div>
+      <div className="adminFloorPlanRows" style={{ display: 'flex', gap: compact ? 3 : 6, minWidth: 'max-content' }}>
         {rows.map((row) => (
-          <div className="adminFloorPlanRow" key={row.id}>
-            <div className={`adminFloorPlanCell type-${cssSafe(row.leftPositionType)}`}>{formatCellLabel(row, 'left')}</div>
-            <div className="adminFloorPlanAisle">R{row.rowNumber}</div>
-            <div className={`adminFloorPlanCell type-${cssSafe(row.rightPositionType)}`}>{formatCellLabel(row, 'right')}</div>
+          <div className="adminFloorPlanRow" key={row.id} style={{ display: 'grid', gridTemplateRows: compact ? '1fr 10px 1fr' : '1fr 18px 1fr', gap: compact ? 2 : 4, minWidth: compact ? 34 : 72 }}>
+            <div className={`adminFloorPlanCell type-${cssSafe(row.leftPositionType)}`} style={cellStyle(row, 'left', compact)}>{formatCellLabel(row, 'left')}</div>
+            <div className="adminFloorPlanAisle" style={{ borderRadius: 999, background: '#e2e8f0', color: '#64748b', display: 'grid', placeItems: 'center', fontSize: compact ? 7 : 9, fontWeight: 900 }}>R{row.rowNumber}</div>
+            <div className={`adminFloorPlanCell type-${cssSafe(row.rightPositionType)}`} style={cellStyle(row, 'right', compact)}>{formatCellLabel(row, 'right')}</div>
           </div>
         ))}
       </div>
