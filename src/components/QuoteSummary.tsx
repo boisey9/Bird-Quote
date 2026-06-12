@@ -20,8 +20,17 @@ const stepNames: Record<RfqStep, string> = {
   4: 'Review & Submit'
 };
 
+function getSelectedSeatLayoutLabel(layoutId: string) {
+  const staticLayout = seatCmsConfig.layouts.find((layout) => layout.id === layoutId)?.title;
+  if (staticLayout) return staticLayout;
+  if (layoutId.startsWith('fp-')) return 'Admin floor plan';
+  return layoutId || 'Not selected';
+}
+
 export function QuoteSummary({ draft, progress, step, selectedChassis, selectedWheelbase, selectedBusType, features, onEdit }: QuoteSummaryProps) {
-  const selectedSeatLayout = seatCmsConfig.layouts.find((layout) => layout.id === draft.seatPackage.layoutId)?.title ?? draft.seatPackage.layoutId;
+  const selectedSeatLayout = getSelectedSeatLayoutLabel(draft.seatPackage.layoutId);
+  const displayFeatures = features.filter((feature) => !['Seats', 'Layout'].includes(feature.category));
+  const displayProgress = step >= 3 ? 100 : progress;
 
   return (
     <aside className="summary productionSummary">
@@ -57,16 +66,16 @@ export function QuoteSummary({ draft, progress, step, selectedChassis, selectedW
           <span>Seat Types</span>
           <strong>{draft.seatGroups.length}</strong>
           <span>Options</span>
-          <strong>{draft.features.length} selected</strong>
-          {features.slice(0, 4).map((feature) => (
-            <p className="featureSummary" key={`${feature.category}-${feature.label}`}>{feature.label}<strong>{feature.category}</strong></p>
+          <strong>{displayFeatures.length} selected</strong>
+          {displayFeatures.slice(0, 4).map((feature) => (
+            <p className="featureSummary" key={`${feature.category}-${feature.label}`}>{feature.label}</p>
           ))}
         </>
       )}
       <hr />
       <small>PROGRESS</small>
       <div className="progress">
-        <div>{progress}%</div>
+        <div>{displayProgress}%</div>
         <span>Step {step} of 4<br /><strong>{stepNames[step]}</strong></span>
       </div>
     </aside>
