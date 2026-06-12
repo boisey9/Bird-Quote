@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Copy, Download, Grid3X3, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { busSpecMatrixData } from '../../data/busSpecMatrix';
-import { contractOptions } from '../../data/contractConfig';
+import { useActiveContractPrograms } from '../../hooks/useContractPrograms';
 import {
   floorPlanCompatibilityRules as seedCompatibilityRules,
   floorPlanMaster as seedFloorPlanMaster,
@@ -17,6 +17,7 @@ import './FloorPlanAdminEditor.css';
 
 type FloorPlanFrameStyle = CSSProperties & { '--row-count': number };
 type RuleOption = { id: string; name: string; chassisId?: string };
+type ContractRuleOption = { id: string; label: string };
 type FloorPlanCmsPayload = {
   ok?: boolean;
   error?: string;
@@ -35,7 +36,6 @@ const defaultFloorPlan = seedFloorPlanMaster[0]!;
 const sideOptions: FloorPlanSide[] = ['curb', 'street', 'center', 'full'];
 const zoneTypeOptions: FloorPlanZone['zoneType'][] = ['seat', 'wheelchair', 'foldaway', 'entrance', 'mid-door', 'rear-lift', 'luggage', 'aisle', 'empty', 'driver', 'clearance'];
 const anyOption: RuleOption = { id: 'any', name: 'Any / All' };
-const contractRuleOptions = [{ id: 'any', label: 'Any Contract / All' }, ...contractOptions];
 const chassisRuleOptions: RuleOption[] = [anyOption, ...busSpecMatrixData.chassis.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name }))];
 const certificationRuleOptions: RuleOption[] = [anyOption, ...busSpecMatrixData.certifications.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name, chassisId: item.chassisId }))];
 const wheelbaseRuleOptions: RuleOption[] = [anyOption, ...busSpecMatrixData.wheelbases.filter((item) => item.active).map((item) => ({ id: item.id, name: item.name, chassisId: item.chassisId }))];
@@ -103,6 +103,12 @@ export function FloorPlanAdminEditor() {
   const [rules, setRules] = useState<FloorPlanCompatibilityRule[]>(seedCompatibilityRules);
   const [selectedFloorPlanId, setSelectedFloorPlanId] = useState(defaultFloorPlan.floorPlanId);
   const [status, setStatus] = useState('Loading floor plan CMS...');
+  const contractCms = useActiveContractPrograms();
+
+  const contractRuleOptions: ContractRuleOption[] = useMemo(() => [
+    { id: 'any', label: 'Any Contract / All' },
+    ...contractCms.contracts.map((contract) => ({ id: contract.id, label: contract.label }))
+  ], [contractCms.contracts]);
 
   const selectedPlan = plans.find((plan) => plan.floorPlanId === selectedFloorPlanId) ?? plans[0] ?? defaultFloorPlan;
   const selectedZones = useMemo(() => zones.filter((zone) => zone.floorPlanId === selectedPlan.floorPlanId).sort((a, b) => a.rowStart - b.rowStart || a.side.localeCompare(b.side)), [zones, selectedPlan.floorPlanId]);
@@ -243,8 +249,7 @@ export function FloorPlanAdminEditor() {
   }
 
   function exportJson() {
-    const payload = { floorPlanMaster: plans, floorPlanZones: zones, floorPlanSeatTypes: seatTypes, floorPlanCompatibilityRules: rules };
-    navigator.clipboard?.writeText(JSON.stringify(payload, null, 2));
+    navigator.clipboard?.writeText(JSON.stringify({ floorPlanMaster: plans, floorPlanZones: zones, floorPlanSeatTypes: seatTypes, floorPlanCompatibilityRules: rules }, null, 2));
     setStatus('Floor plan CMS JSON copied to clipboard.');
   }
 
