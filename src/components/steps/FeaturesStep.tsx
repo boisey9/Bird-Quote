@@ -4,6 +4,7 @@ import { getAvailableFeatureOptions, getVisibleFeatureCategories } from '../../d
 import type { FeatureOptionItem, RfqDraft } from '../../types/rfq';
 import { SeatsStep } from './SeatsStep';
 import './SeatsModule.css';
+import './RfqCleanup.css';
 
 type FeaturesStepProps = {
   draft: RfqDraft;
