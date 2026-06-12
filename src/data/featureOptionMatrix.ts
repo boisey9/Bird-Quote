@@ -1,4 +1,3 @@
-import { getContractById } from './contractConfig';
 import type { BusSpecs, FeatureOptionCategory, FeatureOptionItem, SeatCmsConfig } from '../types/rfq';
 
 export const featureOptionCategories: FeatureOptionCategory[] = [
@@ -89,13 +88,13 @@ export const seatCmsConfig: SeatCmsConfig = {
   zones: []
 };
 
-export function getAvailableFeatureCategories(specs: BusSpecs) {
-  const contract = getContractById(specs.contractId ?? 'none');
+export function getAvailableFeatureCategories(_specs?: BusSpecs) {
   return featureOptionCategories
     .filter((category) => category.active)
-    .filter((category) => !contract.featureCategoryIds?.length || contract.featureCategoryIds.includes(category.id))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
+
+export const getVisibleFeatureCategories = getAvailableFeatureCategories;
 
 export function getAvailableFeatureOptions(categoryId: number) {
   return featureOptions
