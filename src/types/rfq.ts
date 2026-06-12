@@ -223,4 +223,20 @@ export interface SeatLayoutRow {
   seatCountLeft: number;
   seatCountRight: number;
   allowedSeatStyles: string[];
+  notes?: string;
+}
+
+export interface SeatCmsConfig {
+  shells: SeatShell[];
+  zones: SeatLayoutZone[];
+  layouts: SeatLayoutTemplate[];
+  rules: SeatLayoutRule[];
+  rows: SeatLayoutRow[];
+  seatTypes: string[];
+  materials: string[];
+  colors: string[];
+  restraintTypes: string[];
+  armrests: string[];
+  grabTypes: string[];
+  brandingOptions: string[];
 }
