@@ -1,0 +1,218 @@
+import { useEffect, useState } from 'react';
+import { Copy, Download, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { saveContractPrograms, seedContractPrograms, type ContractProgram, type ContractRuleIndex } from '../../hooks/useContractPrograms';
+import './AdminCms.css';
+
+type ContractCmsPayload = {
+  ok?: boolean;
+  source?: string;
+  error?: string;
+  contractPrograms?: ContractProgram[];
+  contractRuleIndex?: ContractRuleIndex[];
+  contractCount?: number;
+  ruleCount?: number;
+};
+
+async function parseContractResponse(response: Response): Promise<ContractCmsPayload> {
+  const text = await response.text();
+  let payload: ContractCmsPayload;
+  try {
+    payload = text ? JSON.parse(text) as ContractCmsPayload : {};
+  } catch {
+    const preview = text.replace(/\s+/g, ' ').slice(0, 180);
+    throw new Error(`Contract CMS returned non-JSON (${response.status}). ${preview || response.statusText}`);
+  }
+  if (!response.ok || payload.ok === false) throw new Error(payload.error ?? `Contract CMS request failed (${response.status}).`);
+  return payload;
+}
+
+function csvToList(value: string) {
+  return value.split(',').map((item) => item.trim()).filter(Boolean);
+}
+
+function listToCsv(value: string[]) {
+  return value.join(', ');
+}
+
+function normalizeKey(value: string) {
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+export function ContractProgramAdminEditor() {
+  const [contracts, setContracts] = useState<ContractProgram[]>(seedContractPrograms());
+  const [rules, setRules] = useState<ContractRuleIndex[]>([]);
+  const [selectedId, setSelectedId] = useState('none');
+  const [status, setStatus] = useState('Loading Contract CMS...');
+
+  const selected = contracts.find((contract) => contract.id === selectedId) ?? contracts[0] ?? seedContractPrograms()[0];
+  const selectedRules = rules.filter((rule) => rule.contractId === selected.id);
+
+  async function loadContracts() {
+    setStatus('Loading Contract CMS...');
+    try {
+      const payload = await parseContractResponse(await fetch('/api/cms-contracts'));
+      const nextContracts = payload.contractPrograms?.length ? payload.contractPrograms : seedContractPrograms();
+      setContracts(nextContracts);
+      setRules(payload.contractRuleIndex ?? []);
+      setSelectedId((current) => nextContracts.some((contract) => contract.id === current) ? current : nextContracts[0]?.id ?? 'none');
+      setStatus(payload.source === 'empty-neon' ? 'No saved Contract CMS records yet. Showing seed contracts; click Save to initialize backend.' : 'Loaded Contract CMS from Neon.');
+    } catch (error) {
+      setContracts(seedContractPrograms());
+      setRules([]);
+      setStatus(error instanceof Error ? `${error.message} Showing seed contracts.` : 'Unable to load Contract CMS. Showing seed contracts.');
+    }
+  }
+
+  useEffect(() => { loadContracts(); }, []);
+
+  function updateSelected(updates: Partial<ContractProgram>) {
+    setContracts((current) => current.map((contract) => contract.id === selected.id ? { ...contract, ...updates } : contract));
+    setStatus('Unsaved contract changes.');
+  }
+
+  function createContract() {
+    const nextId = `contract-${Date.now()}`;
+    const next: ContractProgram = {
+      id: nextId,
+      label: 'New Contract Program',
+      agency: 'Agency / Customer',
+      description: 'Describe the contract program and customer-facing rules.',
+      workflowType: 'contract-controlled',
+      allowedChassisIds: [],
+      allowedWheelbaseIds: [],
+      allowedBusTypeIds: [],
+      allowedSeatLayoutIds: [],
+      requiredDocumentTypes: [],
+      adminNotes: '',
+      status: 'draft',
+      active: false,
+      sortOrder: contracts.length + 1
+    };
+    setContracts((current) => [...current, next]);
+    setSelectedId(nextId);
+    setStatus('New contract created. Save to persist to backend.');
+  }
+
+  function duplicateContract() {
+    const nextId = `${selected.id}-copy-${Date.now()}`;
+    const copy: ContractProgram = { ...selected, id: nextId, label: `${selected.label} Copy`, status: 'draft', active: false, sortOrder: contracts.length + 1 };
+    setContracts((current) => [...current, copy]);
+    setRules((current) => [...current, ...selectedRules.map((rule) => ({ ...rule, id: `${nextId}-${rule.ruleArea}-${Date.now()}`, contractId: nextId }))]);
+    setSelectedId(nextId);
+    setStatus('Contract duplicated. Save to persist to backend.');
+  }
+
+  function deleteContract() {
+    if (selected.id === 'none') {
+      setStatus('The standard No Contract record cannot be deleted. Set inactive only if needed.');
+      return;
+    }
+    const nextContracts = contracts.filter((contract) => contract.id !== selected.id);
+    setContracts(nextContracts);
+    setRules((current) => current.filter((rule) => rule.contractId !== selected.id));
+    setSelectedId(nextContracts[0]?.id ?? 'none');
+    setStatus('Contract deleted locally. Save to persist deletion to backend.');
+  }
+
+  function retireContract() {
+    updateSelected({ status: 'retired', active: false });
+  }
+
+  function updateRule(ruleId: string, updates: Partial<ContractRuleIndex>) {
+    setRules((current) => current.map((rule) => rule.id === ruleId ? { ...rule, ...updates } : rule));
+    setStatus('Unsaved contract rule index changes.');
+  }
+
+  function addRule() {
+    const next: ContractRuleIndex = {
+      id: `${selected.id}-rule-${Date.now()}`,
+      contractId: selected.id,
+      ruleArea: 'vehicle',
+      summary: 'Describe the linked rule coverage.',
+      active: true
+    };
+    setRules((current) => [...current, next]);
+    setStatus('Rule index row added. Save to persist to backend.');
+  }
+
+  function deleteRule(ruleId: string) {
+    setRules((current) => current.filter((rule) => rule.id !== ruleId));
+    setStatus('Rule index row deleted locally. Save to persist deletion to backend.');
+  }
+
+  async function save() {
+    setStatus('Saving Contract CMS...');
+    try {
+      const cleanedContracts = contracts.map((contract) => ({ ...contract, id: normalizeKey(contract.id) || contract.id }));
+      const result = await saveContractPrograms(cleanedContracts, rules);
+      setContracts(result.contractPrograms?.length ? result.contractPrograms : cleanedContracts);
+      setRules(result.contractRuleIndex ?? rules);
+      setStatus(`Saved. ${result.contractCount ?? cleanedContracts.length} contract(s), ${result.ruleCount ?? rules.length} rule index row(s).`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Unable to save Contract CMS.');
+    }
+  }
+
+  function exportJson() {
+    navigator.clipboard?.writeText(JSON.stringify({ contractPrograms: contracts, contractRuleIndex: rules }, null, 2));
+    setStatus('Contract CMS JSON copied to clipboard.');
+  }
+
+  return (
+    <div className="contractEditorShell">
+      <aside className="contractEditorList">
+        <div className="floorPlanListHeader"><strong>Contract Programs</strong><button type="button" className="btn btn-secondary btn-sm" onClick={createContract}><Plus size={14} /> New</button></div>
+        {contracts.map((contract) => (
+          <button type="button" className={contract.id === selected.id ? 'active' : ''} key={contract.id} onClick={() => setSelectedId(contract.id)}>
+            <strong>{contract.label}</strong>
+            <span>{contract.id} • {contract.agency}</span>
+            <em>{contract.active ? 'Active' : 'Inactive'} • {contract.status}</em>
+          </button>
+        ))}
+      </aside>
+
+      <section className="contractEditorMain">
+        <div className="floorPlanHeader">
+          <div>
+            <small>Selected Contract Program</small>
+            <strong>{selected.label}</strong>
+            <p>{selected.description}</p>
+          </div>
+          <div className="floorPlanAdminActions">
+            <span className="floorPlanStatus">{selected.status}</span>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={loadContracts}><RefreshCw size={14} /> Reload</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={duplicateContract}><Copy size={14} /> Duplicate</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={exportJson}><Download size={14} /> Export JSON</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={retireContract}>Retire</button>
+            <button type="button" className="btn btn-danger btn-sm" onClick={deleteContract}><Trash2 size={14} /> Delete</button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={save}><Save size={14} /> Save</button>
+          </div>
+        </div>
+        <div className="submitStatus cmsSaveStatus">{status}</div>
+
+        <div className="floorPlanMetaGrid contractMetaGrid">
+          <label><span>Contract Key</span><input value={selected.id} disabled={selected.id === 'none'} onChange={(event) => updateSelected({ id: normalizeKey(event.target.value) })} /></label>
+          <label><span>Label</span><input value={selected.label} onChange={(event) => updateSelected({ label: event.target.value })} /></label>
+          <label><span>Agency</span><input value={selected.agency} onChange={(event) => updateSelected({ agency: event.target.value })} /></label>
+          <label><span>Workflow</span><select value={selected.workflowType} onChange={(event) => updateSelected({ workflowType: event.target.value as ContractProgram['workflowType'] })}><option value="standard">Standard</option><option value="contract-controlled">Contract-Controlled</option></select></label>
+          <label><span>Status</span><select value={selected.status} onChange={(event) => updateSelected({ status: event.target.value })}><option value="draft">Draft</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="retired">Retired</option></select></label>
+          <label><span>Active</span><select value={selected.active ? 'yes' : 'no'} onChange={(event) => updateSelected({ active: event.target.value === 'yes' })}><option value="yes">Yes</option><option value="no">No</option></select></label>
+          <label><span>Sort Order</span><input type="number" value={selected.sortOrder} onChange={(event) => updateSelected({ sortOrder: Number(event.target.value) })} /></label>
+          <label className="wideField"><span>Description</span><input value={selected.description} onChange={(event) => updateSelected({ description: event.target.value })} /></label>
+          <label className="wideField"><span>Required Documents</span><input value={listToCsv(selected.requiredDocumentTypes)} placeholder="bid, floorplan" onChange={(event) => updateSelected({ requiredDocumentTypes: csvToList(event.target.value) })} /></label>
+          <label className="wideField"><span>Admin Notes</span><input value={selected.adminNotes} onChange={(event) => updateSelected({ adminNotes: event.target.value })} /></label>
+        </div>
+
+        <div className="floorPlanTables">
+          <div className="floorPlanTable">
+            <div className="floorPlanTableHeader"><h4>Contract Rule Coverage Index</h4><button type="button" className="btn btn-secondary btn-sm" onClick={addRule}><Plus size={14} /> Add Coverage</button></div>
+            <div className="contractRuleIndexTable">
+              <div className="head"><span>Area</span><span>Summary</span><span>Active</span><span>Action</span></div>
+              {selectedRules.map((rule) => <div key={rule.id}><select value={rule.ruleArea} onChange={(event) => updateRule(rule.id, { ruleArea: event.target.value })}><option value="vehicle">Vehicle</option><option value="feature">Feature</option><option value="floorplan">Floorplan</option><option value="document">Document</option><option value="routing">Routing</option><option value="approval">Approval</option></select><input value={rule.summary} onChange={(event) => updateRule(rule.id, { summary: event.target.value })} /><select value={rule.active ? 'yes' : 'no'} onChange={(event) => updateRule(rule.id, { active: event.target.value === 'yes' })}><option value="yes">Yes</option><option value="no">No</option></select><button type="button" className="iconMiniButton danger" onClick={() => deleteRule(rule.id)}><Trash2 size={14} /></button></div>)}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
