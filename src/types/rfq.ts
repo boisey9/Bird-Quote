@@ -76,6 +76,7 @@ export interface ChassisOption {
   badge: string;
   sortOrder: number;
   active: boolean;
+  imageUrl?: string;
 }
 
 export interface CertificationOption {
@@ -85,6 +86,7 @@ export interface CertificationOption {
   description: string;
   sortOrder: number;
   active: boolean;
+  imageUrl?: string;
 }
 
 export interface WheelbaseOption {
@@ -95,6 +97,7 @@ export interface WheelbaseOption {
   certificationScope: 'school_commercial' | 'commercial_only' | 'school_only';
   sortOrder: number;
   active: boolean;
+  imageUrl?: string;
 }
 
 export interface BusTypeOption {
@@ -103,6 +106,7 @@ export interface BusTypeOption {
   description: string;
   sortOrder: number;
   active: boolean;
+  imageUrl?: string;
 }
 
 export interface BusTypeCompatibility {
@@ -219,25 +223,4 @@ export interface SeatLayoutRow {
   seatCountLeft: number;
   seatCountRight: number;
   allowedSeatStyles: string[];
-  xPosition?: number;
-  yPosition?: number;
-  rowWidth?: number;
-  isBlocked?: boolean;
-  positionGroup?: string;
-  notes?: string;
-}
-
-export interface SeatCmsConfig {
-  layouts: SeatLayoutTemplate[];
-  rules: SeatLayoutRule[];
-  rows: SeatLayoutRow[];
-  shells?: SeatShell[];
-  zones?: SeatLayoutZone[];
-  seatTypes: string[];
-  materials: string[];
-  colors: string[];
-  restraintTypes: string[];
-  armrests: string[];
-  grabTypes: string[];
-  brandingOptions: string[];
 }
