@@ -1,0 +1,185 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Download, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { saveFeatureOptionsCms, seedFeatureOptionsCms, toFeatureOptionsCmsData, type FeatureCategoryCmsRecord, type FeatureContractRule, type FeatureOptionCmsRecord, type FeatureOptionsCmsData } from '../../hooks/useFeatureOptionsCms';
+import { useActiveContractPrograms } from '../../hooks/useContractPrograms';
+import './FeatureOptionsAdminEditor.css';
+
+type FeatureEditorTab = 'categories' | 'options' | 'contractRules';
+
+type FeatureOptionsPayload = Partial<FeatureOptionsCmsData> & {
+  ok?: boolean;
+  source?: string;
+  error?: string;
+  counts?: Record<string, number>;
+};
+
+const tabs: { id: FeatureEditorTab; label: string }[] = [
+  { id: 'categories', label: 'Categories' },
+  { id: 'options', label: 'Options' },
+  { id: 'contractRules', label: 'Contract Rules' }
+];
+
+async function parseFeatureOptionsResponse(response: Response): Promise<FeatureOptionsPayload> {
+  const text = await response.text();
+  let payload: FeatureOptionsPayload;
+  try {
+    payload = text ? JSON.parse(text) as FeatureOptionsPayload : {};
+  } catch {
+    const preview = text.replace(/\s+/g, ' ').slice(0, 180);
+    throw new Error(`Feature Options CMS returned non-JSON (${response.status}). ${preview || response.statusText}`);
+  }
+  if (!response.ok || payload.ok === false) throw new Error(payload.error ?? `Feature Options CMS request failed (${response.status}).`);
+  return payload;
+}
+
+function FeatureStat({ label, value }: { label: string; value: number }) {
+  return <div className="featureCmsStat"><strong>{value}</strong><span>{label}</span></div>;
+}
+
+function nextNumberId(values: number[]) {
+  return values.length ? Math.max(...values) + 1 : 1;
+}
+
+export function FeatureOptionsAdminEditor() {
+  const [data, setData] = useState<FeatureOptionsCmsData>(() => seedFeatureOptionsCms());
+  const [activeTab, setActiveTab] = useState<FeatureEditorTab>('categories');
+  const [status, setStatus] = useState('Loading Feature Options CMS...');
+  const contractCms = useActiveContractPrograms();
+
+  const visibleCategories = data.categories.filter((item) => item.active && item.customerVisible !== false);
+  const activeOptions = data.options.filter((item) => item.active);
+  const contractOptions = useMemo(() => [{ id: 'any', label: 'Any Contract / All' }, ...contractCms.contracts], [contractCms.contracts]);
+  const categoryOptions = useMemo(() => [{ id: 0, title: 'Any Category / All' }, ...data.categories], [data.categories]);
+  const optionChoices = useMemo(() => [{ id: 0, title: 'Any Option / All', categoryId: 0 }, ...data.options], [data.options]);
+
+  async function loadData() {
+    setStatus('Loading Feature Options CMS...');
+    try {
+      const payload = await parseFeatureOptionsResponse(await fetch('/api/cms-feature-options'));
+      setData(toFeatureOptionsCmsData(payload));
+      setStatus(payload.source === 'empty-neon' ? 'No saved Feature Options CMS records yet. Showing seed options; click Save to initialize backend.' : 'Loaded Feature Options CMS from Neon.');
+    } catch (error) {
+      setData(seedFeatureOptionsCms());
+      setStatus(error instanceof Error ? `${error.message} Showing seed feature options.` : 'Unable to load Feature Options CMS. Showing seed feature options.');
+    }
+  }
+
+  useEffect(() => { loadData(); }, []);
+
+  function updateData(updates: Partial<FeatureOptionsCmsData>) {
+    setData((current) => ({ ...current, ...updates }));
+    setStatus('Unsaved feature option changes.');
+  }
+
+  async function saveData() {
+    setStatus('Saving Feature Options CMS...');
+    try {
+      const result = await saveFeatureOptionsCms(data);
+      setData(toFeatureOptionsCmsData(result));
+      setStatus(`Saved. ${result.counts?.categories ?? data.categories.length} categories, ${result.counts?.options ?? data.options.length} options, ${result.counts?.contractRules ?? data.contractRules.length} contract rule(s).`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Unable to save Feature Options CMS.');
+    }
+  }
+
+  function exportJson() {
+    navigator.clipboard?.writeText(JSON.stringify(data, null, 2));
+    setStatus('Feature Options CMS JSON copied to clipboard.');
+  }
+
+  function addCategory() {
+    const id = nextNumberId(data.categories.map((item) => item.id));
+    updateData({ categories: [...data.categories, { id, title: 'New Feature Category', description: 'New customer-facing option category.', sortOrder: data.categories.length * 10 + 10, active: false, customerVisible: false, status: 'draft', comments: '' }] });
+  }
+
+  function updateCategory(id: number, updates: Partial<FeatureCategoryCmsRecord>) {
+    updateData({ categories: data.categories.map((item) => item.id === id ? { ...item, ...updates } : item) });
+  }
+
+  function deleteCategory(id: number) {
+    updateData({ categories: data.categories.filter((item) => item.id !== id), options: data.options.filter((item) => item.categoryId !== id), contractRules: data.contractRules.filter((rule) => rule.categoryId !== id) });
+  }
+
+  function addOption() {
+    const id = nextNumberId(data.options.map((item) => item.id));
+    const categoryId = visibleCategories[0]?.id ?? data.categories[0]?.id ?? 1;
+    updateData({ options: [...data.options, { id, categoryId, title: 'New Option', description: 'New customer-facing option.', sortOrder: data.options.length * 10 + 10, active: false, imageExt: '', imageUrl: '', requiresDocument: false, status: 'draft', notes: '' }] });
+  }
+
+  function updateOption(id: number, updates: Partial<FeatureOptionCmsRecord>) {
+    updateData({ options: data.options.map((item) => item.id === id ? { ...item, ...updates } : item) });
+  }
+
+  function deleteOption(id: number) {
+    updateData({ options: data.options.filter((item) => item.id !== id), contractRules: data.contractRules.filter((rule) => rule.optionId !== id) });
+  }
+
+  function addContractRule() {
+    updateData({ contractRules: [...data.contractRules, { id: `feature-rule-${Date.now()}`, contractId: 'any', categoryId: null, optionId: null, ruleType: 'available', autoSelect: false, requiresDocument: false, active: true, notes: '' }] });
+  }
+
+  function updateContractRule(id: string, updates: Partial<FeatureContractRule>) {
+    updateData({ contractRules: data.contractRules.map((item) => item.id === id ? { ...item, ...updates } : item) });
+  }
+
+  function deleteContractRule(id: string) {
+    updateData({ contractRules: data.contractRules.filter((item) => item.id !== id) });
+  }
+
+  return (
+    <div className="featureOptionsEditor">
+      <div className="floorPlanHeader featureEditorHeader">
+        <div>
+          <small>Feature Options CMS</small>
+          <strong>Features & Options Management</strong>
+          <p>Manage customer-facing option categories, option records, images, required document flags, and contract feature rules.</p>
+        </div>
+        <div className="floorPlanAdminActions">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={loadData}><RefreshCw size={14} /> Reload</button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={exportJson}><Download size={14} /> Export JSON</button>
+          <button type="button" className="btn btn-primary btn-sm" onClick={saveData}><Save size={14} /> Save</button>
+        </div>
+      </div>
+
+      <div className="submitStatus cmsSaveStatus">{status}</div>
+      <div className="featureCmsStats">
+        <FeatureStat label="Categories" value={data.categories.length} />
+        <FeatureStat label="Customer Visible" value={visibleCategories.length} />
+        <FeatureStat label="Options" value={data.options.length} />
+        <FeatureStat label="Active Options" value={activeOptions.length} />
+        <FeatureStat label="Contract Rules" value={data.contractRules.length} />
+      </div>
+
+      <div className="featureEditorTabs">
+        {tabs.map((tab) => <button type="button" className={activeTab === tab.id ? 'active' : ''} key={tab.id} onClick={() => setActiveTab(tab.id)}>{tab.label}</button>)}
+      </div>
+
+      {activeTab === 'categories' && (
+        <div className="featureEditorTable categoryTable">
+          <div className="featureEditorTableHeader"><h4>Feature Categories</h4><button type="button" className="btn btn-secondary btn-sm" onClick={addCategory}><Plus size={14} /> Add Category</button></div>
+          <div className="featureGrid categories head"><span>ID</span><span>Title</span><span>Description</span><span>Sort</span><span>Active</span><span>Visible</span><span>Status</span><span>Comments</span><span>Action</span></div>
+          {data.categories.map((item) => <div className="featureGrid categories" key={item.id}><input type="number" value={item.id} onChange={(event) => updateCategory(item.id, { id: Number(event.target.value) })} /><input value={item.title} onChange={(event) => updateCategory(item.id, { title: event.target.value })} /><input value={item.description} onChange={(event) => updateCategory(item.id, { description: event.target.value })} /><input type="number" value={item.sortOrder} onChange={(event) => updateCategory(item.id, { sortOrder: Number(event.target.value) })} /><select value={item.active ? 'yes' : 'no'} onChange={(event) => updateCategory(item.id, { active: event.target.value === 'yes' })}><option value="yes">Yes</option><option value="no">No</option></select><select value={item.customerVisible !== false ? 'yes' : 'no'} onChange={(event) => updateCategory(item.id, { customerVisible: event.target.value === 'yes' })}><option value="yes">Yes</option><option value="no">No</option></select><select value={item.status ?? 'active'} onChange={(event) => updateCategory(item.id, { status: event.target.value })}><option value="draft">Draft</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="retired">Retired</option></select><input value={item.comments} onChange={(event) => updateCategory(item.id, { comments: event.target.value })} /><button type="button" className="iconMiniButton danger" onClick={() => deleteCategory(item.id)}><Trash2 size={14} /></button></div>)}
+        </div>
+      )}
+
+      {activeTab === 'options' && (
+        <div className="featureEditorTable optionTable">
+          <div className="featureEditorTableHeader"><h4>Feature Option Records</h4><button type="button" className="btn btn-secondary btn-sm" onClick={addOption}><Plus size={14} /> Add Option</button></div>
+          <div className="featureGrid options head"><span>ID</span><span>Category</span><span>Title</span><span>Description</span><span>Image URL</span><span>Image File</span><span>Docs</span><span>Sort</span><span>Active</span><span>Status</span><span>Action</span></div>
+          {data.options.map((item) => <div className="featureGrid options" key={item.id}><input type="number" value={item.id} onChange={(event) => updateOption(item.id, { id: Number(event.target.value) })} /><select value={item.categoryId} onChange={(event) => updateOption(item.id, { categoryId: Number(event.target.value) })}>{data.categories.map((category) => <option key={category.id} value={category.id}>{category.title}</option>)}</select><input value={item.title} onChange={(event) => updateOption(item.id, { title: event.target.value })} /><input value={item.description} onChange={(event) => updateOption(item.id, { description: event.target.value })} /><input value={item.imageUrl ?? ''} placeholder="/images/options/example.png or https://..." onChange={(event) => updateOption(item.id, { imageUrl: event.target.value })} /><input value={item.imageExt} onChange={(event) => updateOption(item.id, { imageExt: event.target.value })} /><select value={item.requiresDocument ? 'yes' : 'no'} onChange={(event) => updateOption(item.id, { requiresDocument: event.target.value === 'yes' })}><option value="no">No</option><option value="yes">Yes</option></select><input type="number" value={item.sortOrder} onChange={(event) => updateOption(item.id, { sortOrder: Number(event.target.value) })} /><select value={item.active ? 'yes' : 'no'} onChange={(event) => updateOption(item.id, { active: event.target.value === 'yes' })}><option value="yes">Yes</option><option value="no">No</option></select><select value={item.status ?? 'active'} onChange={(event) => updateOption(item.id, { status: event.target.value })}><option value="draft">Draft</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="retired">Retired</option></select><button type="button" className="iconMiniButton danger" onClick={() => deleteOption(item.id)}><Trash2 size={14} /></button></div>)}
+        </div>
+      )}
+
+      {activeTab === 'contractRules' && (
+        <div className="featureEditorTable featureContractRuleTable">
+          <div className="featureEditorTableHeader"><h4>Contract Feature Rules</h4><button type="button" className="btn btn-secondary btn-sm" onClick={addContractRule}><Plus size={14} /> Add Rule</button></div>
+          <div className="featureGrid contractRules head"><span>Contract</span><span>Category</span><span>Option</span><span>Rule</span><span>Auto</span><span>Docs</span><span>Active</span><span>Notes</span><span>Action</span></div>
+          {data.contractRules.map((item) => {
+            const filteredOptions = optionChoices.filter((option) => !item.categoryId || option.id === 0 || option.categoryId === item.categoryId);
+            return <div className="featureGrid contractRules" key={item.id}><select value={item.contractId} onChange={(event) => updateContractRule(item.id, { contractId: event.target.value })}>{contractOptions.map((contract) => <option key={contract.id} value={contract.id}>{contract.label}</option>)}</select><select value={item.categoryId ?? 0} onChange={(event) => updateContractRule(item.id, { categoryId: Number(event.target.value) || null, optionId: null })}>{categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.title}</option>)}</select><select value={item.optionId ?? 0} onChange={(event) => updateContractRule(item.id, { optionId: Number(event.target.value) || null })}>{filteredOptions.map((option) => <option key={option.id} value={option.id}>{option.title}</option>)}</select><select value={item.ruleType} onChange={(event) => updateContractRule(item.id, { ruleType: event.target.value as FeatureContractRule['ruleType'] })}><option value="available">Available</option><option value="hidden">Hidden</option><option value="required">Required</option><option value="recommended">Recommended</option></select><select value={item.autoSelect ? 'yes' : 'no'} onChange={(event) => updateContractRule(item.id, { autoSelect: event.target.value === 'yes' })}><option value="no">No</option><option value="yes">Yes</option></select><select value={item.requiresDocument ? 'yes' : 'no'} onChange={(event) => updateContractRule(item.id, { requiresDocument: event.target.value === 'yes' })}><option value="no">No</option><option value="yes">Yes</option></select><select value={item.active ? 'yes' : 'no'} onChange={(event) => updateContractRule(item.id, { active: event.target.value === 'yes' })}><option value="yes">Yes</option><option value="no">No</option></select><input value={item.notes} onChange={(event) => updateContractRule(item.id, { notes: event.target.value })} /><button type="button" className="iconMiniButton danger" onClick={() => deleteContractRule(item.id)}><Trash2 size={14} /></button></div>;
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
