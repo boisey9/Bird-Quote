@@ -89,10 +89,46 @@ function getRows(layoutId: string | undefined, layoutType: string, estimatedSeat
   return configuredRows.length > 0 ? configuredRows : fallbackRows(layoutType, estimatedSeats);
 }
 
+function isAdminFloorPlanLayout(layoutId?: string) {
+  return Boolean(layoutId?.startsWith('fp-'));
+}
+
+function formatCellLabel(row: SeatLayoutRow, side: 'left' | 'right') {
+  const positionType = side === 'left' ? row.leftPositionType : row.rightPositionType;
+  const count = side === 'left' ? row.seatCountLeft : row.seatCountRight;
+  if (positionType === 'empty' || positionType === 'aisle') return 'Open';
+  if (positionType === 'wheelchair-space') return 'Wheelchair';
+  if (positionType === 'foldaway') return count > 0 ? `Foldaway ${count}` : 'Foldaway';
+  if (positionType === 'lounge') return count > 0 ? `Lounge ${count}` : 'Lounge';
+  if (positionType === 'perimeter-seat') return count > 0 ? `Perimeter ${count}` : 'Perimeter';
+  return count > 0 ? `${count} Seats` : 'Seat';
+}
+
+function AdminFloorPlanGridPreview({ rows, compact = false }: { rows: SeatLayoutRow[]; compact?: boolean }) {
+  return (
+    <div className={compact ? 'adminFloorPlanPreview compactAdminFloorPlanPreview' : 'adminFloorPlanPreview'}>
+      <div className="adminFloorPlanFront">FRONT</div>
+      <div className="adminFloorPlanRows">
+        {rows.map((row) => (
+          <div className="adminFloorPlanRow" key={row.id}>
+            <div className={`adminFloorPlanCell type-${cssSafe(row.leftPositionType)}`}>{formatCellLabel(row, 'left')}</div>
+            <div className="adminFloorPlanAisle">R{row.rowNumber}</div>
+            <div className={`adminFloorPlanCell type-${cssSafe(row.rightPositionType)}`}>{formatCellLabel(row, 'right')}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function BusFramePreview({ layoutType, layoutId, shellId, estimatedSeats, wheelchairPositions, rows = [], compact = false }: SeatFrameProps) {
   const hasRearLift = wheelchairPositions > 0 || shellId === 'shell-rear-lift';
   const previewRows = getRows(layoutId, layoutType, estimatedSeats, rows);
   const shellImage = seatShellImages[getShellImageKey(shellId)];
+
+  if (isAdminFloorPlanLayout(layoutId) && previewRows.length > 0) {
+    return <AdminFloorPlanGridPreview rows={previewRows} compact={compact} />;
+  }
 
   return (
     <div className={compact ? 'realBusPreview compactFrame' : 'realBusPreview'}>
@@ -125,10 +161,10 @@ export function SeatLayoutCard({ layout, selected, onSelect, draft, cmsRows, mar
   return (
     <button type="button" className={selected ? 'seatLayoutCard frameCard selected' : 'seatLayoutCard frameCard'} onClick={onSelect}>
       {selected && <CheckCircle2 className="selectedBadge" size={20} />}
-      <BusFramePreview layoutId={layout.id} shellId={shellId} layoutType={layout.layoutType} estimatedSeats={Math.min(draft.seatPackage.estimatedPassengerSeats, layout.maxSeats)} wheelchairPositions={wheelchairPreview} rows={cmsRows} compact />
+      <BusFramePreview layoutId={layout.id} shellId={shellId} layoutType={layout.layoutType} estimatedSeats={capacity} wheelchairPositions={wheelchairPreview} rows={cmsRows} compact />
       <div className="seatCardTitleLine">
         <strong>{layout.title}</strong>
-        <em>{formatLayoutFamily(layoutFamily)}</em>
+        <em>{isAdminFloorPlanLayout(layout.id) ? 'Admin Grid' : formatLayoutFamily(layoutFamily)}</em>
       </div>
       <small>{layout.description}</small>
       <div className="seatCardBadges dealerSeatBadges">
@@ -145,6 +181,7 @@ export function SeatReferencePreview({ draft, cmsData, marketHint }: { draft: Rf
   const selectedLayout = getSeatLayoutById(cmsData.layouts, draft.seatPackage.layoutId);
   const shellId = getLayoutShellId(selectedLayout);
   const totalSeatGroupQty = draft.seatGroups.reduce((sum, group) => sum + group.quantity, 0);
+  const selectedCapacity = selectedLayout?.defaultCapacity ?? selectedLayout?.maxSeats ?? draft.seatPackage.estimatedPassengerSeats;
 
   return (
     <aside className="seatPreviewCard framePreviewCard dealerPreviewCard">
@@ -157,14 +194,14 @@ export function SeatReferencePreview({ draft, cmsData, marketHint }: { draft: Rf
         <p><strong>Body Reference</strong><span>{formatShellLabel(shellId)}</span></p>
         <p><strong>Seat Material</strong><span>{draft.seatPackage.material}</span></p>
         <p><strong>Seat Color</strong><span>{draft.seatPackage.color}</span></p>
-        <p><strong>Estimated Capacity</strong><span>{draft.seatPackage.estimatedPassengerSeats} passenger seats</span></p>
+        <p><strong>Estimated Capacity</strong><span>{selectedCapacity} passenger seats</span></p>
         <p><strong>Seat Type Total</strong><span>{totalSeatGroupQty} seats</span></p>
         <p><strong>Wheelchair / Lift</strong><span>{draft.seatPackage.wheelchairPositions > 0 || shellId === 'shell-rear-lift' ? 'Requested / available' : 'Not requested'}</span></p>
       </div>
       {cmsData.error && <p className="warningNote">Showing backup layout options. Micro Bird will review the final seating request.</p>}
       <div className="largeFrameWrap">
         <div className="directionLabel">FRONT / ENTRY REFERENCE</div>
-        <BusFramePreview layoutId={selectedLayout?.id} shellId={shellId} layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={draft.seatPackage.estimatedPassengerSeats} wheelchairPositions={draft.seatPackage.wheelchairPositions} rows={cmsData.rows} />
+        <BusFramePreview layoutId={selectedLayout?.id} shellId={shellId} layoutType={selectedLayout?.layoutType ?? 'front_facing'} estimatedSeats={selectedCapacity} wheelchairPositions={draft.seatPackage.wheelchairPositions} rows={cmsData.rows} />
       </div>
       <div className="seatLegend">
         <span><i className="seatBox" />Passenger Seats</span>
