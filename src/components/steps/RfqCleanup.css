@@ -57,7 +57,8 @@
 
 .vehicleImage img,
 .busThumb img,
-.miniCardImage img {
+.miniCardImage img,
+.featureOptionImage img {
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -66,7 +67,8 @@
 
 .vehicleImage:has(img),
 .busThumb:has(img),
-.miniCardImage {
+.miniCardImage,
+.featureOptionImage {
   background: #f8fafc;
   border: 1px solid #dbe4f0;
 }
@@ -79,6 +81,53 @@
   place-items: center;
   overflow: hidden;
   margin-bottom: 8px;
+}
+
+.featureOptionImage {
+  width: 100%;
+  height: 72px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  margin: 2px 0 8px;
+}
+
+.featureOptionBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.featureOptionBadges em {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #004cca;
+  padding: 4px 7px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.featureOptionBadges em.required {
+  background: #fff1d1;
+  color: #8a5a00;
+}
+
+.featureOptionBadges em.recommended {
+  background: #e9f9ee;
+  color: #087a2e;
+}
+
+.cmsFallbackNote {
+  display: block;
+  margin-top: 6px;
+  color: #8a5a00;
+  font-weight: 900;
 }
 
 @media(max-width:1180px) {
