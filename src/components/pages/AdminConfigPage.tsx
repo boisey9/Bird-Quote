@@ -32,25 +32,24 @@ function ConfigStat({ label, value }: { label: string; value: number | string })
   return <div className="configStat"><strong>{value}</strong><span>{label}</span></div>;
 }
 
-function ConfigSection({ icon, title, description, children, status = 'Read-only V2 seed config' }: { icon: ReactNode; title: string; description: string; children: ReactNode; status?: string }) {
+function ConfigSection({ icon, title, description, children, status = 'Read-only V2 config source' }: { icon: ReactNode; title: string; description: string; children: ReactNode; status?: string }) {
   return <section className="panel configSection"><div className="configSectionHeader"><span>{icon}</span><div><h2>{title}</h2><p>{description}</p></div><em>{status}</em></div>{children}</section>;
 }
 
 function ContractConfigSection() {
   return (
-    <ConfigSection icon={<Route size={22} />} title="Contract Programs" description="Contract-controlled RFQs can restrict model choices, required documents, seating templates, workflow, and future approval routing." status="Active DB CMS">
+    <ConfigSection icon={<Route size={22} />} title="Contract Programs" description="Contract keys used by RFQs and floor-plan compatibility rules. These keys can be selected directly in the Floor Plan Grid rule editor." status="Rule source">
       <div className="contractCmsGrid">
         {contractOptions.map((contract) => (
           <div className={contract.workflowType === 'contract-controlled' ? 'contractCmsCard controlled' : 'contractCmsCard'} key={contract.id}>
             <strong>{contract.label}</strong>
-            <span>{contract.agency}</span>
+            <span>Key: {contract.id} • {contract.agency}</span>
             <p>{contract.description}</p>
             <em>{contract.workflowType}</em>
-            <small>Seat layouts: {contract.allowedSeatLayoutIds.length || 'standard matrix'} • Required docs: {contract.requiredDocumentTypes.join(', ') || 'none'}</small>
+            <small>Required docs: {contract.requiredDocumentTypes.join(', ') || 'none'}</small>
           </div>
         ))}
       </div>
-      <div className="configNotice inlineNotice"><p><strong>Future approval item added:</strong> contract-controlled quotes will require an approval workflow before final quote release. This is tracked for brainstorming and should not block the current CMS activation work.</p></div>
     </ConfigSection>
   );
 }
@@ -58,38 +57,34 @@ function ContractConfigSection() {
 export function AdminConfigPage() {
   return (
     <section className="contentCard pageCard adminConfigPage">
-      <div className="pageHero adminHero"><div><h1>Admin Configuration</h1><p>V2 CMS foundation: seat layout templates, floor plan grid files, contract programs, routing, SLA, and permissions.</p></div><div className="statusSearch">Floor Plan Grid Active</div></div>
-      <div className="configNotice"><Lock size={18} /><p><strong>Floor plan grid CMS is active:</strong> layouts are now separated into master templates, zones, seat types, and compatibility rules. Dealer previews remain reference only and final seating is validated by Micro Bird.</p></div>
+      <div className="pageHero adminHero"><div><h1>Admin Configuration</h1><p>V2 CMS foundation: active floor-plan grids now feed the customer-facing Seat Layout Templates.</p></div><div className="statusSearch">Grid CMS Source of Truth</div></div>
+      <div className="configNotice"><Lock size={18} /><p><strong>Testing path:</strong> create or edit a floor-plan grid, set it dealer visible, add compatibility rules including contract key, save, then test the customer Seats step. Static seat template cards have been removed from this admin page to avoid confusion.</p></div>
       <div className="configStatsGrid">
         <ConfigStat label="Chassis Platforms" value={busSpecMatrixData.chassis.length} />
+        <ConfigStat label="Certifications" value={busSpecMatrixData.certifications.length} />
         <ConfigStat label="Wheelbases" value={busSpecMatrixData.wheelbases.length} />
         <ConfigStat label="Bus Types" value={busSpecMatrixData.busTypes.length} />
-        <ConfigStat label="Option Categories" value={featureOptionCategories.length} />
-        <ConfigStat label="Seat Layouts" value={seatCmsConfig.layouts.length} />
-        <ConfigStat label="Floor Plan Grids" value={floorPlanMaster.length} />
-        <ConfigStat label="Grid Zones" value={floorPlanZones.length} />
-        <ConfigStat label="Grid Seat Types" value={floorPlanSeatTypes.length} />
+        <ConfigStat label="Feature Categories" value={featureOptionCategories.length} />
+        <ConfigStat label="Feature Options" value={featureOptions.length} />
+        <ConfigStat label="Floor Plan Seed Grids" value={floorPlanMaster.length} />
+        <ConfigStat label="Grid Zones / Seat Types" value={`${floorPlanZones.length} / ${floorPlanSeatTypes.length}`} />
       </div>
 
       <ContractConfigSection />
 
-      <ConfigSection icon={<Database size={22} />} title="Vehicle Matrix" description="Base RFQ selection rules for chassis, certifications, wheelbases, and bus types.">
-        <div className="configTable matrixTable"><div className="configTableHead"><span>Type</span><span>Name</span><span>Description</span><span>Status</span></div>{busSpecMatrixData.chassis.map((item) => <div key={item.id}><strong>Chassis</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}{busSpecMatrixData.wheelbases.slice(0, 8).map((item) => <div key={item.id}><strong>Wheelbase</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}</div>
+      <ConfigSection icon={<Database size={22} />} title="Vehicle Matrix" description="Controlled dropdown source for floor-plan compatibility rules and the RFQ vehicle selection flow." status="Dropdown source">
+        <div className="configTable matrixTable"><div className="configTableHead"><span>Type</span><span>Name</span><span>Description</span><span>Status</span></div>{busSpecMatrixData.chassis.map((item) => <div key={item.id}><strong>Chassis</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}{busSpecMatrixData.certifications.map((item) => <div key={item.id}><strong>Certification</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}{busSpecMatrixData.wheelbases.map((item) => <div key={item.id}><strong>Wheelbase</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}{busSpecMatrixData.busTypes.map((item) => <div key={item.id}><strong>Bus Type</strong><span>{item.name}</span><span>{item.description}</span><em>{item.active ? 'Active' : 'Inactive'}</em></div>)}</div>
       </ConfigSection>
 
-      <ConfigSection icon={<Settings size={22} />} title="Feature Options" description="Customer-facing V2 option categories and available option records.">
+      <ConfigSection icon={<Settings size={22} />} title="Feature Options" description="Customer-facing V2 option categories and available option records. These remain visible here as the controlled option source for the RFQ Features step." status="Dropdown/card source">
         <div className="configCardsGrid">{featureOptionCategories.map((category) => { const count = featureOptions.filter((option) => option.categoryId === category.id).length; return <div className="configMiniCard" key={category.id}><strong>{category.title}</strong><span>{category.description}</span><em>{count} options</em></div>; })}</div>
       </ConfigSection>
 
-      <ConfigSection icon={<Database size={22} />} title="Seat Layout Templates" description="Reusable seat layout templates that feed the customer-facing Seats RFQ intake." status="Seed CMS">
-        <div className="configCardsGrid">{seatCmsConfig.layouts.map((layout) => <div className="configMiniCard" key={layout.id}><strong>{layout.title}</strong><span>{layout.description}</span><em>Max {layout.maxSeats} seats • {layout.market ?? 'any market'}</em></div>)}</div>
-      </ConfigSection>
-
-      <ConfigSection icon={<Grid3X3 size={22} />} title="Floor Plan Grid Editor" description="Admin input format for row-span floor plans: FloorPlanMaster, FloorPlanZones, SeatTypes, and CompatibilityRules." status="Grid CMS seed">
+      <ConfigSection icon={<Grid3X3 size={22} />} title="Floor Plan Grid Editor" description="Admin source of truth for customer-facing Seat Layout Templates. Active dealer-visible grids are converted into seat layout choices at runtime." status="Backend CMS">
         <FloorPlanAdminEditor />
       </ConfigSection>
 
-      <ConfigSection icon={<Database size={22} />} title="Seat Option Lists" description="Reusable seat materials, colors, restraints, and seat style values.">
+      <ConfigSection icon={<Database size={22} />} title="Seat Option Lists" description="Reusable seat materials, colors, restraints, and seat style values used by the Seats step.">
         <div className="configPillRow">{seatCmsConfig.materials.map((item) => <span key={item}>Material: {item}</span>)}{seatCmsConfig.colors.map((item) => <span key={item}>Color: {item}</span>)}{seatCmsConfig.restraintTypes.map((item) => <span key={item}>Restraint: {item}</span>)}{seatCmsConfig.seatTypes.map((item) => <span key={item}>Seat Type: {item}</span>)}</div>
       </ConfigSection>
 
