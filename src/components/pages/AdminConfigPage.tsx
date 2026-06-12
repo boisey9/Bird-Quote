@@ -7,6 +7,7 @@ import { floorPlanMaster, floorPlanSeatTypes, floorPlanZones } from '../../data/
 import { ContractProgramAdminEditor } from './ContractProgramAdminEditor';
 import { FeatureOptionsAdminEditor } from './FeatureOptionsAdminEditor';
 import { FloorPlanAdminEditor } from './FloorPlanAdminEditor';
+import { RolesPermissionsAdminEditor } from './RolesPermissionsAdminEditor';
 import { RoutingSlaAdminEditor } from './RoutingSlaAdminEditor';
 import { SeatOptionListsAdminEditor } from './SeatOptionListsAdminEditor';
 import { VehicleMatrixAdminEditor } from './VehicleMatrixAdminEditor';
@@ -29,14 +30,7 @@ const cmsPages: CmsPage[] = [
   { key: 'features', title: 'Features & Options Management', description: 'Manage customer-facing options and contract-specific option availability rules.', icon: <Settings size={20} />, status: 'Backend CMS' },
   { key: 'floorplans', title: 'Floorplan Management', description: 'Manage floorplan grids, contract rules, seat option lists, and customer-facing layout choices.', icon: <Grid3X3 size={20} />, status: 'Backend CMS' },
   { key: 'routing', title: 'Routing Rules & SLA Rules', description: 'Manage assignment, priority, approval routing, and turnaround targets.', icon: <Timer size={20} />, status: 'Backend CMS' },
-  { key: 'roles', title: 'Roles & Permissions', description: 'Manage access levels for Dealer, Internal, Manager, and Admin users.', icon: <Users size={20} />, status: 'Access' }
-];
-
-const roles = [
-  { role: 'Dealer', permissions: 'Create RFQ, view own RFQs, track status, add documents' },
-  { role: 'Sales Ops', permissions: 'Review queue, assign owner, update status, view documents' },
-  { role: 'Manager', permissions: 'View pipeline, manage priority, monitor SLA, approve contract quotes' },
-  { role: 'Admin', permissions: 'Maintain users, roles, seed config, SLA/routing rules' }
+  { key: 'roles', title: 'Roles & Permissions', description: 'Manage access levels for Dealer, Internal, Manager, and Admin users.', icon: <Users size={20} />, status: 'Backend CMS' }
 ];
 
 function ConfigStat({ label, value }: { label: string; value: number | string }) {
@@ -77,7 +71,7 @@ function RoutingSlaPage() {
 }
 
 function RolesPermissionsPage() {
-  return <ConfigSection icon={<Users size={22} />} title="Roles & Permissions" description="V2 role model shell for future access-control enforcement." status="Access model"><div className="configCardsGrid roleCards">{roles.map((role) => <div className="configMiniCard" key={role.role}><strong>{role.role}</strong><span>{role.permissions}</span><em>V2 permission baseline</em></div>)}</div></ConfigSection>;
+  return <ConfigSection icon={<Users size={22} />} title="Roles & Permissions" description="Create, edit, delete, save, reload, and manage application roles, permission definitions, and assignments." status="Backend CMS"><RolesPermissionsAdminEditor /></ConfigSection>;
 }
 
 function ActiveCmsPage({ page }: { page: CmsPageKey }) {
@@ -102,7 +96,7 @@ export function AdminConfigPage() {
         <ConfigStat label="Feature Options" value={featureOptions.length} />
         <ConfigStat label="Floorplan Seed Grids" value={floorPlanMaster.length} />
         <ConfigStat label="Grid Zones / Seat Types" value={`${floorPlanZones.length} / ${floorPlanSeatTypes.length}`} />
-        <ConfigStat label="Roles" value={roles.length} />
+        <ConfigStat label="Config Areas" value="6" />
       </div>
       <div className="cmsConfigLayout">
         <aside className="cmsConfigNav">
