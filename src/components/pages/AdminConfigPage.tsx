@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from 'react';
-import { Database, Grid3X3, Lock, Route, Settings, ShieldCheck, Timer, Users } from 'lucide-react';
+import { Database, Grid3X3, Lock, Route, Settings, Timer, Users } from 'lucide-react';
 import { busSpecMatrixData } from '../../data/busSpecMatrix';
 import { contractOptions } from '../../data/contractConfig';
-import { featureOptionCategories, featureOptions, seatCmsConfig } from '../../data/featureOptionMatrix';
+import { featureOptions, seatCmsConfig } from '../../data/featureOptionMatrix';
 import { floorPlanMaster, floorPlanSeatTypes, floorPlanZones } from '../../data/floorPlanGrid';
 import { ContractProgramAdminEditor } from './ContractProgramAdminEditor';
+import { FeatureOptionsAdminEditor } from './FeatureOptionsAdminEditor';
 import { FloorPlanAdminEditor } from './FloorPlanAdminEditor';
 import { VehicleMatrixAdminEditor } from './VehicleMatrixAdminEditor';
 import { VehicleMediaAdminEditor } from './VehicleMediaAdminEditor';
@@ -23,7 +24,7 @@ type CmsPage = {
 const cmsPages: CmsPage[] = [
   { key: 'contracts', title: 'Contract Program Management', description: 'Manage contract keys, agency rules, required documents, and contract-controlled workflows.', icon: <Route size={20} />, status: 'Foundation' },
   { key: 'vehicle', title: 'Vehicle / Chassis Matrix Management', description: 'Manage chassis, certifications, wheelbases, bus types, and contract eligibility rules.', icon: <Database size={20} />, status: 'Backend CMS' },
-  { key: 'features', title: 'Features & Options Management', description: 'Manage customer-facing options and contract-specific option availability rules.', icon: <Settings size={20} />, status: 'Options' },
+  { key: 'features', title: 'Features & Options Management', description: 'Manage customer-facing options and contract-specific option availability rules.', icon: <Settings size={20} />, status: 'Backend CMS' },
   { key: 'floorplans', title: 'Floorplan Management', description: 'Manage floorplan grids, contract rules, seat option lists, and customer-facing layout choices.', icon: <Grid3X3 size={20} />, status: 'Backend CMS' },
   { key: 'routing', title: 'Routing Rules & SLA Rules', description: 'Manage assignment, priority, approval routing, and turnaround targets.', icon: <Timer size={20} />, status: 'Workflow' },
   { key: 'roles', title: 'Roles & Permissions', description: 'Manage access levels for Dealer, Internal, Manager, and Admin users.', icon: <Users size={20} />, status: 'Access' }
@@ -58,23 +59,11 @@ function ConfigSection({ icon, title, description, children, status = 'Config ar
   return <section className="panel configSection"><div className="configSectionHeader"><span>{icon}</span><div><h2>{title}</h2><p>{description}</p></div><em>{status}</em></div>{children}</section>;
 }
 
-function RulePlaceholder({ title, description }: { title: string; description: string }) {
-  return <div className="cmsRulePlaceholder"><ShieldCheck size={18} /><div><strong>{title}</strong><p>{description}</p></div><span>Rule table next</span></div>;
-}
-
 function ContractProgramPage() {
   return (
     <div className="cmsPageStack">
       <ConfigSection icon={<Route size={22} />} title="Contract Programs" description="Create, edit, duplicate, delete, retire, and save contract keys used across the RFQ app." status="Backend CMS">
         <ContractProgramAdminEditor />
-      </ConfigSection>
-      <ConfigSection icon={<Lock size={22} />} title="Contract Rule Coverage" description="Coverage index showing where each contract controls vehicle, options, floorplans, documents, and approvals." status="Sprint 1 foundation">
-        <div className="configCardsGrid">
-          <RulePlaceholder title="Vehicle eligibility rules" description="Contract-to-chassis, certification, wheelbase, and bus type permissions. Full editor is now in Vehicle / Chassis Matrix Management." />
-          <RulePlaceholder title="Feature option rules" description="Contract-specific available, required, recommended, or hidden options. Full editor comes in Sprint 3." />
-          <RulePlaceholder title="Floorplan rules" description="Contract-specific seating layouts and floorplan eligibility. Already started in Floorplan Management." />
-          <RulePlaceholder title="Document rules" description="Required bid, floorplan, signed contract, or agency documents. Contract documents are editable in the contract record now." />
-        </div>
       </ConfigSection>
     </div>
   );
@@ -95,22 +84,9 @@ function VehicleMatrixPage() {
 
 function FeaturesOptionsPage() {
   return (
-    <div className="cmsPageStack">
-      <ConfigSection icon={<Settings size={22} />} title="Feature Categories" description="Customer-facing V2 option categories and available option records." status="Option source">
-        <div className="configCardsGrid">{featureOptionCategories.map((category) => { const count = featureOptions.filter((option) => option.categoryId === category.id).length; return <div className="configMiniCard" key={category.id}><strong>{category.title}</strong><span>{category.description}</span><em>{category.active ? `${count} options` : `Hidden • ${count} options`}</em></div>; })}</div>
-      </ConfigSection>
-      <ConfigSection icon={<Database size={22} />} title="Feature Option Records" description="Individual option records shown in Options & Packages." status="Current static records">
-        <div className="configTable optionRecordTable"><div className="configTableHead"><span>Category</span><span>Option</span><span>Description</span><span>Status</span></div>{featureOptions.map((option) => { const category = featureOptionCategories.find((item) => item.id === option.categoryId); return <div key={option.id}><strong>{category?.title ?? 'Unmapped'}</strong><span>{option.title}</span><span>{option.description}</span><em>{option.active ? 'Active' : 'Inactive'}</em></div>; })}</div>
-      </ConfigSection>
-      <ConfigSection icon={<ShieldCheck size={22} />} title="Contract Feature Rules" description="Contract-specific feature option availability will be managed here." status="Planned backend CRUD">
-        <div className="configCardsGrid">
-          <RulePlaceholder title="Available options" description="Show or hide option cards by contract key." />
-          <RulePlaceholder title="Required options" description="Force required options for specific contract programs." />
-          <RulePlaceholder title="Recommended options" description="Pre-highlight recommended options without forcing selection." />
-          <RulePlaceholder title="Document-triggering options" description="Require supporting files when certain options are selected." />
-        </div>
-      </ConfigSection>
-    </div>
+    <ConfigSection icon={<Settings size={22} />} title="Features & Options CMS" description="Create, edit, delete, save, reload, and manage contract rules for customer-facing feature options." status="Backend CMS">
+      <FeatureOptionsAdminEditor />
+    </ConfigSection>
   );
 }
 
