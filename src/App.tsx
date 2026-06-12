@@ -3,7 +3,6 @@ import { ArrowRight, X } from 'lucide-react';
 import { busSpecMatrixData } from './data/busSpecMatrix';
 import { initialDraft } from './data/initialDraft';
 import { Header, type AppPage, type UserRole } from './components/Header';
-import { RecentRequests } from './components/RecentRequests';
 import { Hero, Stepper } from './components/RfqShell';
 import { QuoteSummary } from './components/QuoteSummary';
 import { MyRequestsPage } from './components/pages/MyRequestsPage';
@@ -90,7 +89,7 @@ export function App() {
   const selectedChassis = busSpecMatrixData.chassis.find((item) => item.id === draft.specs.chassis);
   const selectedWheelbase = busSpecMatrixData.wheelbases.find((item) => item.id === draft.specs.wheelbase);
   const selectedBusType = busSpecMatrixData.busTypes.find((item) => item.id === draft.specs.busType);
-  const summaryFeatures = useMemo(() => draft.features.slice(0, 6), [draft.features]);
+  const summaryFeatures = useMemo(() => draft.features.filter((feature) => feature.category !== 'Seats' && feature.category !== 'Layout').slice(0, 6), [draft.features]);
   const progress = Math.round((step / 4) * 100);
 
   const navigate = (targetPage: AppPage) => {
@@ -164,8 +163,7 @@ export function App() {
     <div className="appShell">
       <Header page={page} role={role} onNavigate={navigate} onRoleChange={handleRoleChange} onHelp={() => setShowHelp(true)} />
       {page === 'new-quote' && (
-        <main className="quoteFormLayout productionQuoteLayout">
-          <RecentRequests />
+        <main className="quoteFormLayout productionQuoteLayout rfqNoRecentLayout">
           <section className="contentCard quoteFormCard">
             <Hero step={step} />
             <Stepper step={step} />
