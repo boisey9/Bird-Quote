@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, X } from 'lucide-react';
 import { initialDraft } from './data/initialDraft';
 import { useVehicleMatrixCms } from './hooks/useVehicleMatrixCms';
-import { Header, type AppPage, type UserRole } from './components/Header';
+import { Header, type AppPage } from './components/Header';
 import { Hero, Stepper } from './components/RfqShell';
 import { QuoteSummary } from './components/QuoteSummary';
 import { MyRequestsPage } from './components/pages/MyRequestsPage';
@@ -10,6 +10,9 @@ import { QuoteStatusPage } from './components/pages/QuoteStatusPage';
 import { InternalQueuePage } from './components/pages/InternalQueuePage';
 import { AdminConfigPage } from './components/pages/AdminConfigPage';
 import { ConfirmationPage } from './components/pages/ConfirmationPage';
+import { LoginPage } from './components/pages/LoginPage';
+import { canAccessPage, getDefaultPage } from './session/permissionRules';
+import { usePortalSession } from './session/usePortalSession';
 import './components/pages/PageStyles.css';
 import './components/pages/LayoutFixes.css';
 import './components/steps/RfqCleanup.css';
@@ -20,30 +23,12 @@ import { ReviewStep } from './components/steps/ReviewStep';
 import { buildRfqSubmissionPayload, getDraftValidationIssues } from './utils/rfqSubmission';
 import type { RfqDraft, RfqStep } from './types/rfq';
 
-const defaultPageByRole: Record<UserRole, AppPage> = {
-  dealer: 'new-quote',
-  internal: 'rfq-queue',
-  admin: 'admin-config'
-};
-
-const permittedPages: Record<UserRole, AppPage[]> = {
-  dealer: ['new-quote', 'my-requests', 'quote-status', 'confirmation'],
-  internal: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'confirmation'],
-  admin: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'admin-config', 'confirmation']
-};
-
 const nextButtonLabels: Record<RfqStep, string> = {
   1: 'Next: Bus Selection',
   2: 'Next: Seats & Options',
   3: 'Next: Review',
   4: 'Submit Quote Request'
 };
-
-function getInitialRole(): UserRole {
-  if (typeof window === 'undefined') return 'dealer';
-  const roleParam = new URLSearchParams(window.location.search).get('role');
-  return roleParam === 'admin' || roleParam === 'internal' || roleParam === 'dealer' ? roleParam : 'dealer';
-}
 
 function HelpModal({ onClose }: { onClose: () => void }) {
   return (
@@ -77,8 +62,9 @@ function HelpModal({ onClose }: { onClose: () => void }) {
 }
 
 export function App() {
-  const [role, setRole] = useState<UserRole>(() => getInitialRole());
-  const [page, setPage] = useState<AppPage>(() => defaultPageByRole[getInitialRole()]);
+  const portalSession = usePortalSession();
+  const user = portalSession.user;
+  const [page, setPage] = useState<AppPage>('new-quote');
   const [step, setStep] = useState<RfqStep>(1);
   const [draft, setDraft] = useState<RfqDraft>(initialDraft);
   const [submittedDraft, setSubmittedDraft] = useState<RfqDraft | null>(null);
@@ -89,29 +75,31 @@ export function App() {
   const vehicleCms = useVehicleMatrixCms();
   const vehicleMatrix = vehicleCms.matrix;
 
+  useEffect(() => {
+    if (!user) return;
+    if (!canAccessPage(user, page)) setPage(getDefaultPage(user));
+  }, [page, user]);
+
   const selectedChassis = vehicleMatrix.chassis.find((item) => item.id === draft.specs.chassis);
   const selectedWheelbase = vehicleMatrix.wheelbases.find((item) => item.id === draft.specs.wheelbase);
   const selectedBusType = vehicleMatrix.busTypes.find((item) => item.id === draft.specs.busType);
   const summaryFeatures = useMemo(() => draft.features.filter((feature) => feature.category !== 'Seats' && feature.category !== 'Layout').slice(0, 6), [draft.features]);
   const progress = Math.round((step / 4) * 100);
 
+  if (!user) return <LoginPage status={portalSession.status} onSignIn={portalSession.signInWithDemoUser} />;
+
   const navigate = (targetPage: AppPage) => {
-    if (!permittedPages[role].includes(targetPage)) {
-      setPage(defaultPageByRole[role]);
+    if (!canAccessPage(user, targetPage)) {
+      setPage(getDefaultPage(user));
       return;
     }
     setPage(targetPage);
   };
 
-  const handleRoleChange = (nextRole: UserRole) => {
-    setRole(nextRole);
-    if (!permittedPages[nextRole].includes(page)) setPage(defaultPageByRole[nextRole]);
-  };
-
   const goNext = () => setStep((current) => Math.min(4, current + 1) as RfqStep);
   const goBack = () => setStep((current) => Math.max(1, current - 1) as RfqStep);
   const saveAndExit = () => {
-    localStorage.setItem('birdQuoteDraft', JSON.stringify(draft));
+    localStorage.setItem(`birdQuoteDraft:${user.id}`, JSON.stringify({ userId: user.id, dealerId: user.dealerId, draft }));
     setSubmitStatus('Draft saved locally. You can continue editing from this browser session.');
     setPage('my-requests');
   };
@@ -144,10 +132,11 @@ export function App() {
     setSubmitStatus('Submitting RFQ...');
 
     try {
+      const payload = buildRfqSubmissionPayload(draft);
       const response = await fetch('/api/rfqs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRfqSubmissionPayload(draft))
+        body: JSON.stringify({ ...payload, userId: user.id, dealerId: user.dealerId, submittedBy: user.email })
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error ?? 'Unable to submit RFQ.');
@@ -164,7 +153,7 @@ export function App() {
 
   return (
     <div className="appShell">
-      <Header page={page} role={role} onNavigate={navigate} onRoleChange={handleRoleChange} onHelp={() => setShowHelp(true)} />
+      <Header page={page} user={user} onNavigate={navigate} onSignOut={portalSession.signOut} onHelp={() => setShowHelp(true)} />
       {page === 'new-quote' && (
         <main className="quoteFormLayout productionQuoteLayout rfqNoRecentLayout">
           <section className="contentCard quoteFormCard">
@@ -177,9 +166,7 @@ export function App() {
             {submitStatus && <div className="submitStatus">{submitStatus}</div>}
             <div className="actions productionActions">
               <button className="secondary" type="button" onClick={step === 1 ? saveAndExit : goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button>
-              <button className="primary" disabled={isSubmitting} onClick={step === 4 ? submitRfq : goNext}>
-                {isSubmitting ? 'Submitting...' : nextButtonLabels[step]} <ArrowRight size={18} />
-              </button>
+              <button className="primary" disabled={isSubmitting} onClick={step === 4 ? submitRfq : goNext}>{isSubmitting ? 'Submitting...' : nextButtonLabels[step]} <ArrowRight size={18} /></button>
             </div>
           </section>
           <QuoteSummary draft={draft} progress={progress} step={step} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} features={summaryFeatures} onEdit={jumpToStep} />
