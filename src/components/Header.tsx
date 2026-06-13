@@ -17,11 +17,11 @@ type HeaderProps = {
 };
 
 function pageLabel(page: AppPage) {
-  if (page === 'new-quote') return 'New Quote';
+  if (page === 'new-quote') return 'New RFQ';
   if (page === 'my-requests') return 'My Requests';
   if (page === 'quote-status') return 'Quote Status';
   if (page === 'rfq-queue') return 'RFQ Queue';
-  if (page === 'admin-config') return 'Config';
+  if (page === 'admin-config') return 'Admin Config';
   return 'Confirmation';
 }
 
@@ -50,7 +50,7 @@ export function Header({ page, user, onNavigate, onSignOut, onHelp }: HeaderProp
 
   return (
     <header className="topbar productionTopbar">
-      <button type="button" className="brand logoBrand" onClick={() => navigate('new-quote')} aria-label="Go to New Quote">
+      <button type="button" className="brand logoBrand" onClick={() => navigate('new-quote')} aria-label="Go to New RFQ">
         <img src={microBirdLogo} alt="Micro Bird" />
       </button>
 
