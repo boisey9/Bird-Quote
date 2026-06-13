@@ -1,0 +1,21 @@
+.tablePanel,.featureEditorTable,.floorPlanTable{border-radius:16px;border-color:#d9e3f0;background:#fff;}
+.requestHead,.featureGrid.head,.floorPlanTableGrid .head span,.configTableHead{font-size:11px;letter-spacing:.045em;color:#344054;}
+.requestRow,.featureGrid:not(.head){font-size:13px;}
+.requestRow strong,.featureGrid strong{color:#061b4f;}
+.requestRow small{color:#667085;}
+.cmsConfigLayout{gap:20px;}
+.cmsConfigNav{gap:8px;}
+.cmsConfigNav button{padding:13px;border-radius:14px;}
+.cmsConfigNav strong{font-size:13px;}
+.cmsConfigNav small{font-size:12px;}
+.configSection{border-radius:18px;}
+.configSectionHeader{margin-bottom:14px;}
+.configSectionHeader h2{font-size:20px;}
+.configSectionHeader p{font-size:13px;}
+.floorPlanHeader,.featureEditorHeader{border-radius:16px;border-color:#d9e3f0;background:#fbfdff;}
+.floorPlanAdminActions{gap:7px;}
+.featureCmsStats,.floorPlanStats,.configStatsGrid{gap:10px;}
+.featureCmsStat,.floorPlanStat,.configStat{border-radius:14px;}
+.featureGrid input,.featureGrid select,.floorPlanTableGrid input,.floorPlanTableGrid select{min-height:38px;}
+.featureGrid:not(.head):hover{background:#f8fbff;}
+@media(max-width:760px){.featureCmsStats,.floorPlanStats,.configStatsGrid,.kpiGrid{grid-template-columns:1fr 1fr!important;}}
