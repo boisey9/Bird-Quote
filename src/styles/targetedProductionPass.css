@@ -1,0 +1,85 @@
+/* Targeted production pass: Seats/Options, RFQ snapshot, admin tables, header, mobile. */
+
+/* 1. Seats & Options page */
+.seatUxV2{display:grid;gap:18px;}
+.seatUxV2 .panel,.seatPackagePanel,.seatDetailsPanel,.featureOptionsPanel{box-shadow:0 8px 22px rgba(6,27,79,.055);}
+.seatUxV2 h2,.seatUxV2 h3{color:#061b4f;letter-spacing:-.02em;}
+.seatUxV2 p{line-height:1.45;}
+.seatLayoutCard.frameCard{padding:14px!important;display:grid!important;gap:10px!important;align-content:start;}
+.seatLayoutCard.frameCard small{line-height:1.35;color:#667085;}
+.seatCardTitleLine{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.seatCardTitleLine strong{font-size:15px;color:#061b4f;}
+.seatCardTitleLine em{font-size:11px;background:#eef4ff;color:#004cca;border-radius:999px;padding:5px 8px;white-space:nowrap;}
+.dealerSeatBadges{gap:6px!important;margin-top:2px!important;}
+.dealerSeatBadges span{font-size:11px!important;padding:5px 8px!important;background:#f8fbff!important;border:1px solid #d9e3f0!important;color:#344054!important;}
+.dealerPreviewCard{box-shadow:0 10px 26px rgba(6,27,79,.06);}
+.previewHeader{align-items:flex-start;gap:12px;}
+.previewHeader h3{font-size:20px;margin:0;}
+.seatSummaryList p{border-bottom:1px solid #edf2f7;padding:9px 0;margin:0;}
+.seatSummaryList p:last-child{border-bottom:0;}
+.seatSummaryList strong{font-size:12px;color:#667085;text-transform:uppercase;letter-spacing:.035em;}
+.seatSummaryList span{font-weight:900;color:#061b4f;}
+.featureOptionCard{padding:14px!important;}
+.featureOptionCard strong{color:#061b4f;}
+.featureOptionCard p{color:#667085;}
+
+/* 2. Quote Summary sidebar */
+.rfqSnapshot{max-height:calc(100vh - 118px);overflow:auto;scrollbar-width:thin;}
+.rfqSnapshot h3{position:sticky;top:0;z-index:2;}
+.summarySection{gap:9px!important;}
+.summaryRow{min-height:24px;}
+.summaryRow span{color:#667085;}
+.summaryRow strong{font-size:13px;}
+.summaryChips span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.weightEstimateCard strong{font-size:15px!important;}
+.weightEstimateCard b{font-size:17px!important;}
+
+/* 3. Admin Config tables */
+.cmsManagementPage .featureEditorTable,.cmsManagementPage .floorPlanTable,.cmsManagementPage .configTable{border-radius:14px;overflow:auto;}
+.cmsManagementPage .featureGrid{padding-top:7px;padding-bottom:7px;}
+.cmsManagementPage .featureGrid.head{padding-top:10px;padding-bottom:10px;}
+.cmsManagementPage .featureGrid input,.cmsManagementPage .featureGrid select{padding:7px 8px;font-size:12px;}
+.cmsManagementPage .floorPlanTableGrid input,.cmsManagementPage .floorPlanTableGrid select{padding:7px 8px;font-size:12px;}
+.cmsManagementPage .featureEditorTableHeader,.cmsManagementPage .floorPlanTableHeader{min-height:54px;}
+.cmsManagementPage .featureEditorTableHeader h4,.cmsManagementPage .floorPlanTableHeader h4{color:#061b4f;}
+.cmsManagementPage .floorPlanAdminActions .btn{height:34px;}
+
+/* 4. Header spacing */
+.topbar.productionTopbar{min-height:72px;}
+.logoBrand{min-width:220px;}
+.logoBrand img{width:220px;}
+.desktopTabs button{padding-left:18px;padding-right:18px;font-size:14px;}
+.signedInProfile .profileText{max-width:210px;}
+.signedInProfile .profileText strong,.signedInProfile .profileText small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.signOutButton{height:38px;padding:8px 11px;}
+
+/* 5. Mobile RFQ flow */
+@media(max-width:900px){
+  .quoteFormLayout,.pageLayout{width:calc(100vw - 24px);margin:12px auto;}
+  .hero,.pageHero{padding:20px 18px;}
+  .hero h1,.pageHero h1{font-size:25px;}
+  .hero p,.pageHero p{font-size:15px;}
+  .processStepper.railStepper{padding:12px 14px;}
+  .processStepperMeta strong{font-size:14px;}
+  .seatLayoutCard.frameCard{min-height:auto;}
+  .seatUxV2 .seatTypeCardGrid{grid-template-columns:1fr 1fr!important;}
+  .summary.productionSummary{max-height:none;}
+  .cmsConfigLayout{gap:14px;}
+}
+
+@media(max-width:620px){
+  .quoteFormLayout,.pageLayout{width:100%;margin:0;}
+  .topbar.productionTopbar{padding:12px 14px;}
+  .logoBrand img{width:165px;}
+  .hero,.pageHero{padding:18px 16px;}
+  .hero .help{display:none;}
+  .processStepperTrack{gap:6px!important;}
+  .processStep{padding:9px 10px!important;}
+  .processStepText strong{font-size:12px;}
+  .seatUxV2 .seatTypeCardGrid{grid-template-columns:1fr!important;}
+  .largeFrameWrap{overflow-x:auto;}
+  .actions.productionActions{gap:8px;}
+  .actions.productionActions button{min-width:0;padding-left:12px;padding-right:12px;}
+  .kpiGrid{grid-template-columns:1fr!important;}
+  .featureCmsStats,.floorPlanStats,.configStatsGrid{grid-template-columns:1fr!important;}
+}
