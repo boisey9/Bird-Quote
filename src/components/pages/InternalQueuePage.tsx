@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { mockRequests, type MockRequest, type RequestStatus } from '../../data/mockRequests';
 import { fetchRfqRequests, fetchRfqRows, updateRfqRequest, type RfqApiRow } from '../../services/rfqApi';
+import type { PortalUser } from '../../session/sessionTypes';
 import { canMoveToStatus, getSlaPriority, getSlaStatus } from '../../utils/rfqSla';
 import { RfqDetailDrawer } from './RfqDetailDrawer';
 
@@ -11,7 +12,7 @@ function toClassName(value: string) {
   return value.toLowerCase().replace(/\s+/g, '-');
 }
 
-export function InternalQueuePage() {
+export function InternalQueuePage({ user }: { user: PortalUser }) {
   const [requests, setRequests] = useState<MockRequest[]>(mockRequests);
   const [rawRows, setRawRows] = useState<RfqApiRow[]>([]);
   const [selectedId, setSelectedId] = useState(mockRequests[0]?.id ?? '');
@@ -21,7 +22,7 @@ export function InternalQueuePage() {
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([fetchRfqRequests(), fetchRfqRows()])
+    Promise.all([fetchRfqRequests({ scope: 'all', user }), fetchRfqRows({ scope: 'all', user })])
       .then(([items, rows]) => {
         if (!mounted) return;
         const nextRequests = items.length > 0 ? items : mockRequests;
@@ -35,10 +36,8 @@ export function InternalQueuePage() {
         const message = error instanceof Error ? error.message : 'Unable to load RFQ queue.';
         setLoadStatus(`${message} Showing sample queue.`);
       });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    return () => { mounted = false; };
+  }, [user]);
 
   const selectedRequest = requests.find((request) => request.id === selectedId) ?? requests[0];
   const unassignedCount = requests.filter((request) => request.owner === 'Unassigned').length;
@@ -48,7 +47,7 @@ export function InternalQueuePage() {
   async function persistQueueChange(rfqId: string, updates: { status?: RequestStatus; assignedOwner?: string }) {
     setSaveStatus('Saving queue update...');
     try {
-      const result = await updateRfqRequest({ rfqId, ...updates });
+      const result = await updateRfqRequest({ rfqId, ...updates, actor: user.email });
       setRawRows((current) => current.map((row) => row.id === rfqId ? { ...row, status: result.status, assigned_owner: result.assignedOwner } : row));
       setSaveStatus('Queue update saved to Neon and audit history.');
     } catch (error) {
@@ -88,7 +87,7 @@ export function InternalQueuePage() {
           <h1>Internal RFQ Queue</h1>
           <p>Review incoming RFQs, assign ownership, monitor SLA, and prepare quote creation.</p>
         </div>
-        <div className="statusSearch">Sales Ops View</div>
+        <div className="statusSearch">{user.name} • {user.role}</div>
       </div>
 
       <div className="kpiGrid">
@@ -142,7 +141,7 @@ export function InternalQueuePage() {
             <p><strong>Current Owner:</strong> {selectedRequest.owner}</p>
             <p><strong>Current Status:</strong> {selectedRequest.status}</p>
             <p><strong>SLA:</strong> {getSlaStatus(selectedRequest)} • {selectedRequest.slaAge}</p>
-            <div className="infoBox">Owner and status changes now persist to Neon with status history audit rows.</div>
+            <div className="infoBox">Owner and status changes now persist to Neon with status history audit rows under the signed-in actor.</div>
           </div>
         </section>
       )}
