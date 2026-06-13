@@ -19,6 +19,10 @@ export type FeatureContractRule = {
   contractId: string;
   categoryId: number | null;
   optionId: number | null;
+  chassisId: string;
+  certificationId: string;
+  wheelbaseId: string;
+  busTypeId: string;
   ruleType: 'available' | 'hidden' | 'required' | 'recommended';
   autoSelect: boolean;
   requiresDocument: boolean;
@@ -45,6 +49,24 @@ export type FeatureOptionsRuntimeData = {
   loadState: 'loading' | 'neon' | 'fallback' | 'error';
   error?: string;
 };
+
+function normalizeRule(rule: Partial<FeatureContractRule> & Pick<FeatureContractRule, 'id' | 'contractId' | 'ruleType' | 'autoSelect' | 'requiresDocument' | 'active' | 'notes'>): FeatureContractRule {
+  return {
+    id: rule.id,
+    contractId: rule.contractId,
+    categoryId: rule.categoryId ?? null,
+    optionId: rule.optionId ?? null,
+    chassisId: rule.chassisId ?? 'any',
+    certificationId: rule.certificationId ?? 'any',
+    wheelbaseId: rule.wheelbaseId ?? 'any',
+    busTypeId: rule.busTypeId ?? 'any',
+    ruleType: rule.ruleType,
+    autoSelect: rule.autoSelect,
+    requiresDocument: rule.requiresDocument,
+    active: rule.active,
+    notes: rule.notes
+  };
+}
 
 export function seedFeatureOptionsCms(): FeatureOptionsCmsData {
   return {
@@ -91,7 +113,7 @@ export function toFeatureOptionsCmsData(payload: FeatureOptionsCmsPayload): Feat
   return {
     categories: payload.categories?.length ? payload.categories : seed.categories,
     options: payload.options?.length ? payload.options : seed.options,
-    contractRules: payload.contractRules ?? []
+    contractRules: payload.contractRules?.map((rule) => normalizeRule(rule)) ?? []
   };
 }
 
@@ -127,6 +149,6 @@ export async function saveFeatureOptionsCms(data: FeatureOptionsCmsData) {
   return parseFeatureOptionsResponse(await fetch('/api/cms-feature-options', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+    body: JSON.stringify({ ...data, contractRules: data.contractRules.map((rule) => normalizeRule(rule)) })
   }));
 }
