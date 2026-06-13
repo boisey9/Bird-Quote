@@ -1,5 +1,5 @@
 export type FloorPlanSide = 'curb' | 'street' | 'center' | 'full';
-export type FloorPlanZoneType = 'seat' | 'wheelchair' | 'foldaway' | 'entrance' | 'mid-door' | 'rear-lift' | 'luggage' | 'aisle' | 'empty' | 'driver' | 'clearance';
+export type FloorPlanZoneType = 'seat' | 'wheelchair' | 'foldaway' | 'entrance' | 'mid-door' | 'rear-lift' | 'luggage' | 'aisle' | 'empty' | 'driver' | 'clearance' | 'rear-bench';
 export type FloorPlanStatus = 'draft' | 'active' | 'retired';
 
 export interface FloorPlanMaster {
@@ -27,6 +27,12 @@ export interface FloorPlanZone {
   seatTypeId?: string;
   label: string;
   locked: boolean;
+  passengerCapacity?: number;
+  wheelchairCapacity?: number;
+  seatPositionsConsumed?: number;
+  countsAsPassenger?: boolean;
+  canConvertToWheelchair?: boolean;
+  requiresFoldawaySeats?: boolean;
   notes?: string;
 }
 
@@ -57,31 +63,31 @@ export const floorPlanMaster: FloorPlanMaster[] = [
 ];
 
 export const floorPlanZones: FloorPlanZone[] = [
-  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true },
-  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true },
-  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-c2', side: 'curb', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false },
-  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-s2', side: 'street', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false },
-  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-rear', side: 'full', rowStart: 8, rowEnd: 8, zoneType: 'clearance', label: 'Rear', locked: true },
+  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 0, countsAsPassenger: false },
+  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 0, countsAsPassenger: false },
+  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-c2', side: 'curb', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false, passengerCapacity: 12, wheelchairCapacity: 0, seatPositionsConsumed: 6, countsAsPassenger: true },
+  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-s2', side: 'street', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false, passengerCapacity: 12, wheelchairCapacity: 0, seatPositionsConsumed: 6, countsAsPassenger: true },
+  { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-rear', side: 'full', rowStart: 8, rowEnd: 8, zoneType: 'clearance', label: 'Rear', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 0, countsAsPassenger: false },
 
-  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true },
-  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true },
-  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-c2', side: 'curb', rowStart: 2, rowEnd: 5, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false },
-  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-s2', side: 'street', rowStart: 2, rowEnd: 4, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false },
-  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-fold', side: 'curb', rowStart: 6, rowEnd: 6, zoneType: 'foldaway', seatTypeId: 'foldaway', label: 'Foldaway', locked: false },
-  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-wc1', side: 'street', rowStart: 6, rowEnd: 7, zoneType: 'wheelchair', seatTypeId: 'wheelchair-space', label: 'W/C 1', locked: true, notes: 'Two-row span wheelchair position.' },
-  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-lift', side: 'curb', rowStart: 8, rowEnd: 9, zoneType: 'rear-lift', label: 'Lift', locked: true, notes: 'Rear lift clearance, row-span locked.' },
-  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-wc2', side: 'street', rowStart: 8, rowEnd: 9, zoneType: 'wheelchair', seatTypeId: 'wheelchair-space', label: 'W/C 2', locked: true },
+  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 0, countsAsPassenger: false },
+  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 0, countsAsPassenger: false },
+  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-c2', side: 'curb', rowStart: 2, rowEnd: 5, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false, passengerCapacity: 8, wheelchairCapacity: 0, seatPositionsConsumed: 4, countsAsPassenger: true },
+  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-s2', side: 'street', rowStart: 2, rowEnd: 4, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false, passengerCapacity: 6, wheelchairCapacity: 0, seatPositionsConsumed: 3, countsAsPassenger: true },
+  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-fold', side: 'curb', rowStart: 6, rowEnd: 6, zoneType: 'foldaway', seatTypeId: 'foldaway', label: 'Foldaway', locked: false, passengerCapacity: 2, wheelchairCapacity: 0, seatPositionsConsumed: 1, countsAsPassenger: true },
+  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-wc1', side: 'street', rowStart: 6, rowEnd: 7, zoneType: 'wheelchair', seatTypeId: 'wheelchair-space', label: '1 W/C', locked: true, passengerCapacity: 0, wheelchairCapacity: 1, seatPositionsConsumed: 2, countsAsPassenger: false, requiresFoldawaySeats: true, notes: 'Wheelchair floor-space zone. Consumes two passenger-seat positions and renders as one merged block.' },
+  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-lift', side: 'curb', rowStart: 8, rowEnd: 9, zoneType: 'rear-lift', label: 'Lift', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 2, countsAsPassenger: false, notes: 'Rear lift clearance, row-span locked.' },
+  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-wc2', side: 'street', rowStart: 8, rowEnd: 9, zoneType: 'wheelchair', seatTypeId: 'wheelchair-space', label: '1 W/C', locked: true, passengerCapacity: 0, wheelchairCapacity: 1, seatPositionsConsumed: 2, countsAsPassenger: false, requiresFoldawaySeats: true, notes: 'Wheelchair floor-space zone. Consumes two passenger-seat positions and renders as one merged block.' },
 
-  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true },
-  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true },
-  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-luggage', side: 'street', rowStart: 2, rowEnd: 4, zoneType: 'luggage', seatTypeId: 'luggage-rack', label: 'Luggage', locked: false },
-  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-door', side: 'curb', rowStart: 5, rowEnd: 6, zoneType: 'mid-door', label: 'Mid Door', locked: true },
-  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-street-seat', side: 'street', rowStart: 5, rowEnd: 7, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false },
+  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 0, countsAsPassenger: false },
+  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 0, countsAsPassenger: false },
+  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-luggage', side: 'street', rowStart: 2, rowEnd: 4, zoneType: 'luggage', seatTypeId: 'luggage-rack', label: 'Luggage', locked: false, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 3, countsAsPassenger: false },
+  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-door', side: 'curb', rowStart: 5, rowEnd: 6, zoneType: 'mid-door', label: 'Mid Door', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 2, countsAsPassenger: false },
+  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-street-seat', side: 'street', rowStart: 5, rowEnd: 7, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false, passengerCapacity: 6, wheelchairCapacity: 0, seatPositionsConsumed: 3, countsAsPassenger: true },
 
-  { floorPlanId: 'fp-school-3x2', zoneId: 'sch-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true },
-  { floorPlanId: 'fp-school-3x2', zoneId: 'sch-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true },
-  { floorPlanId: 'fp-school-3x2', zoneId: 'sch-c3', side: 'curb', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'school-bench-3', label: '3 school', locked: false },
-  { floorPlanId: 'fp-school-3x2', zoneId: 'sch-s2', side: 'street', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'school-bench-2', label: '2 school', locked: false }
+  { floorPlanId: 'fp-school-3x2', zoneId: 'sch-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 0, countsAsPassenger: false },
+  { floorPlanId: 'fp-school-3x2', zoneId: 'sch-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true, passengerCapacity: 0, wheelchairCapacity: 0, seatPositionsConsumed: 0, countsAsPassenger: false },
+  { floorPlanId: 'fp-school-3x2', zoneId: 'sch-c3', side: 'curb', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'school-bench-3', label: '3 school', locked: false, passengerCapacity: 18, wheelchairCapacity: 0, seatPositionsConsumed: 6, countsAsPassenger: true },
+  { floorPlanId: 'fp-school-3x2', zoneId: 'sch-s2', side: 'street', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'school-bench-2', label: '2 school', locked: false, passengerCapacity: 12, wheelchairCapacity: 0, seatPositionsConsumed: 6, countsAsPassenger: true }
 ];
 
 export const floorPlanSeatTypes: FloorPlanSeatType[] = [
@@ -89,8 +95,8 @@ export const floorPlanSeatTypes: FloorPlanSeatType[] = [
   { seatTypeId: 'school-bench-3', seatTypeName: 'School Bench - 3 Passenger', category: 'school', colorToken: 'yellow', defaultWidth: 3, defaultRowSpan: 1 },
   { seatTypeId: 'school-bench-2', seatTypeName: 'School Bench - 2 Passenger', category: 'school', colorToken: 'yellow', defaultWidth: 2, defaultRowSpan: 1 },
   { seatTypeId: 'foldaway', seatTypeName: 'Foldaway Seat', category: 'accessible', colorToken: 'green', defaultWidth: 2, defaultRowSpan: 1 },
-  { seatTypeId: 'wheelchair-space', seatTypeName: 'Wheelchair Space', category: 'accessible', colorToken: 'purple', defaultWidth: 1, defaultRowSpan: 2 },
-  { seatTypeId: 'luggage-rack', seatTypeName: 'Luggage Rack', category: 'storage', colorToken: 'gray', defaultWidth: 1, defaultRowSpan: 3 }
+  { seatTypeId: 'wheelchair-space', seatTypeName: 'Wheelchair Space', category: 'accessible', colorToken: 'purple', defaultWidth: 0, defaultRowSpan: 2 },
+  { seatTypeId: 'luggage-rack', seatTypeName: 'Luggage Rack', category: 'storage', colorToken: 'gray', defaultWidth: 0, defaultRowSpan: 3 }
 ];
 
 export const floorPlanCompatibilityRules: FloorPlanCompatibilityRule[] = [
