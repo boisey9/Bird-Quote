@@ -6,6 +6,7 @@ import './components/common/commonUi.css';
 import './components/Header.css';
 import './components/ui/ButtonSystem.css';
 import './components/pages/AdminCms.css';
+import './styles/productionPolish.css';
 
 const rootElement = document.getElementById('root');
 
