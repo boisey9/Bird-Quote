@@ -38,9 +38,8 @@ function buildRfqUrl(input?: RfqFetchScope) {
 }
 
 function buildHistoryUrl(rfqId: string, input?: RfqFetchScope) {
-  const params = new URLSearchParams({ rfqId });
+  const params = new URLSearchParams({ rfqId, scope: input?.scope ?? 'all' });
   if (input?.scope === 'dealer' && input.user) {
-    params.set('scope', 'dealer');
     params.set('userId', input.user.id);
     if (input.user.dealerId) params.set('dealerId', input.user.dealerId);
   }
