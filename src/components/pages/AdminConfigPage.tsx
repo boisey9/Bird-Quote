@@ -16,6 +16,7 @@ import { VehicleMatrixAdminEditor } from './VehicleMatrixAdminEditor';
 import { VehicleMediaAdminEditor } from './VehicleMediaAdminEditor';
 import { WeightBalanceAdminEditor } from './WeightBalanceAdminEditor';
 import './AdminCms.css';
+import './AdminConfigPolish.css';
 
 type CmsPageKey = 'contracts' | 'vehicle' | 'features' | 'floorplans' | 'routing' | 'roles';
 type CmsPage = { key: CmsPageKey; title: string; description: string; icon: ReactNode; status: string };
