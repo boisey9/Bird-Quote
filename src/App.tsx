@@ -87,10 +87,11 @@ export function App() {
   const progress = Math.round((step / 4) * 100);
 
   if (!user) return <LoginPage status={portalSession.status} onSignIn={portalSession.signInWithDemoUser} />;
+  const activeUser = user;
 
   const navigate = (targetPage: AppPage) => {
-    if (!canAccessPage(user, targetPage)) {
-      setPage(getDefaultPage(user));
+    if (!canAccessPage(activeUser, targetPage)) {
+      setPage(getDefaultPage(activeUser));
       return;
     }
     setPage(targetPage);
@@ -99,7 +100,7 @@ export function App() {
   const goNext = () => setStep((current) => Math.min(4, current + 1) as RfqStep);
   const goBack = () => setStep((current) => Math.max(1, current - 1) as RfqStep);
   const saveAndExit = () => {
-    localStorage.setItem(`birdQuoteDraft:${user.id}`, JSON.stringify({ userId: user.id, dealerId: user.dealerId, draft }));
+    localStorage.setItem(`birdQuoteDraft:${activeUser.id}`, JSON.stringify({ userId: activeUser.id, dealerId: activeUser.dealerId, draft }));
     setSubmitStatus('Draft saved locally. You can continue editing from this browser session.');
     setPage('my-requests');
   };
@@ -136,7 +137,7 @@ export function App() {
       const response = await fetch('/api/rfqs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, userId: user.id, dealerId: user.dealerId, submittedBy: user.email })
+        body: JSON.stringify({ ...payload, userId: activeUser.id, dealerId: activeUser.dealerId, submittedBy: activeUser.email })
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error ?? 'Unable to submit RFQ.');
@@ -153,7 +154,7 @@ export function App() {
 
   return (
     <div className="appShell">
-      <Header page={page} user={user} onNavigate={navigate} onSignOut={portalSession.signOut} onHelp={() => setShowHelp(true)} />
+      <Header page={page} user={activeUser} onNavigate={navigate} onSignOut={portalSession.signOut} onHelp={() => setShowHelp(true)} />
       {page === 'new-quote' && (
         <main className="quoteFormLayout productionQuoteLayout rfqNoRecentLayout">
           <section className="contentCard quoteFormCard">
