@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { ArrowRight, LockKeyhole, ShieldCheck, Users } from 'lucide-react';
 import { demoPortalUsers } from '../../session/demoUsers';
 import './LoginPage.css';
@@ -11,7 +11,7 @@ type LoginPageProps = {
 export function LoginPage({ status, onSignIn }: LoginPageProps) {
   const [email, setEmail] = useState('dealer@agirardin.com');
 
-  function submit(event: React.FormEvent) {
+  function submit(event: FormEvent) {
     event.preventDefault();
     onSignIn(email);
   }
