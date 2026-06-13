@@ -13,6 +13,8 @@ import { ConfirmationPage } from './components/pages/ConfirmationPage';
 import { LoginPage } from './components/pages/LoginPage';
 import { canAccessPage, getDefaultPage } from './session/permissionRules';
 import { usePortalSession } from './session/usePortalSession';
+import { updateDealerRfqDraft, type RfqApiRow } from './services/rfqApi';
+import { hydrateDraftFromRfqRow } from './utils/rfqDraftHydration';
 import './components/pages/PageStyles.css';
 import './components/pages/LayoutFixes.css';
 import './components/steps/RfqCleanup.css';
@@ -42,6 +44,7 @@ export function App() {
   const [page, setPage] = useState<AppPage>('new-quote');
   const [step, setStep] = useState<RfqStep>(1);
   const [draft, setDraft] = useState<RfqDraft>(initialDraft);
+  const [activeRfqId, setActiveRfqId] = useState('');
   const [submittedDraft, setSubmittedDraft] = useState<RfqDraft | null>(null);
   const [submittedRfqId, setSubmittedRfqId] = useState('');
   const [submitStatus, setSubmitStatus] = useState('');
@@ -60,13 +63,16 @@ export function App() {
 
   if (!user) return <LoginPage status={portalSession.status} onSignIn={portalSession.signInWithDemoUser} />;
   const activeUser = user;
+  const submitLabel = activeRfqId && step === 4 ? 'Update RFQ Request' : nextButtonLabels[step];
 
   const navigate = (targetPage: AppPage) => { if (!canAccessPage(activeUser, targetPage)) { setPage(getDefaultPage(activeUser)); return; } setPage(targetPage); };
   const goNext = () => setStep((current) => Math.min(4, current + 1) as RfqStep);
   const goBack = () => setStep((current) => Math.max(1, current - 1) as RfqStep);
-  const saveAndExit = () => { localStorage.setItem(`birdQuoteDraft:${activeUser.id}`, JSON.stringify({ userId: activeUser.id, dealerId: activeUser.dealerId, draft })); setSubmitStatus('Draft saved locally. You can continue editing from this browser session.'); setPage('my-requests'); };
+  const saveAndExit = () => { localStorage.setItem(`birdQuoteDraft:${activeUser.id}`, JSON.stringify({ userId: activeUser.id, dealerId: activeUser.dealerId, activeRfqId, draft })); setSubmitStatus('Draft saved locally. You can continue editing from this browser session.'); setPage('my-requests'); };
   const jumpToStep = (targetStep: RfqStep) => { setPage('new-quote'); setStep(targetStep); setSubmitStatus(''); };
-  const startNewRfq = () => { setDraft(initialDraft); setSubmittedDraft(null); setSubmittedRfqId(''); setStep(1); setSubmitStatus(''); setPage('new-quote'); };
+  const startNewRfq = () => { setDraft(initialDraft); setActiveRfqId(''); setSubmittedDraft(null); setSubmittedRfqId(''); setStep(1); setSubmitStatus(''); setPage('new-quote'); };
+  const editRequest = (row: RfqApiRow) => { setDraft(hydrateDraftFromRfqRow(row, 'edit')); setActiveRfqId(row.id); setStep(1); setSubmitStatus(`Loaded ${row.id}.`); setPage('new-quote'); };
+  const duplicateRequest = (row: RfqApiRow) => { setDraft(hydrateDraftFromRfqRow(row, 'duplicate')); setActiveRfqId(''); setStep(1); setSubmitStatus(`Copied ${row.id}.`); setPage('new-quote'); };
   const selectedChassisName = selectedChassis?.name ?? '';
   const selectedWheelbaseName = selectedWheelbase?.name ?? '';
   const selectedBusTypeName = selectedBusType?.name ?? '';
@@ -75,9 +81,18 @@ export function App() {
     const errors = getDraftValidationIssues(draft).filter((issue) => issue.severity === 'error');
     if (errors.length > 0) { setSubmitStatus(`Please fix ${errors.length} required item(s) before submitting.`); return; }
     setIsSubmitting(true);
-    setSubmitStatus('Submitting RFQ...');
+    setSubmitStatus(activeRfqId ? 'Updating RFQ...' : 'Submitting RFQ...');
     try {
       const payload = buildRfqSubmissionPayload(draft);
+      if (activeRfqId) {
+        const result = await updateDealerRfqDraft({ rfqId: activeRfqId, payload, user: activeUser, dealerCompanyName: activeUser.dealerName ?? activeUser.companyName });
+        setSubmittedRfqId(result.rfqId);
+        setSubmittedDraft(draft);
+        setActiveRfqId('');
+        setSubmitStatus('');
+        setPage('confirmation');
+        return;
+      }
       const response = await fetch('/api/rfqs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, userId: activeUser.id, dealerId: activeUser.dealerId, submittedBy: activeUser.email, submittedByName: activeUser.name, dealerCompanyName: activeUser.dealerName ?? activeUser.companyName }) });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error ?? 'Unable to submit RFQ.');
@@ -95,9 +110,9 @@ export function App() {
   return (
     <div className="appShell">
       <Header page={page} user={activeUser} onNavigate={navigate} onSignOut={portalSession.signOut} onHelp={() => setShowHelp(true)} />
-      {page === 'new-quote' && <main className="quoteFormLayout productionQuoteLayout rfqNoRecentLayout"><section className="contentCard quoteFormCard"><Hero step={step} /><Stepper step={step} />{step === 1 && <CompanyStep draft={draft} setDraft={setDraft} />}{step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}{step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}{step === 4 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}{submitStatus && <div className="submitStatus">{submitStatus}</div>}<div className="actions productionActions"><button className="secondary" type="button" onClick={step === 1 ? saveAndExit : goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button><button className="primary" disabled={isSubmitting} onClick={step === 4 ? submitRfq : goNext}>{isSubmitting ? 'Submitting...' : nextButtonLabels[step]} <ArrowRight size={18} /></button></div></section><QuoteSummary draft={draft} progress={progress} step={step} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} features={summaryFeatures} onEdit={jumpToStep} /></main>}
+      {page === 'new-quote' && <main className="quoteFormLayout productionQuoteLayout rfqNoRecentLayout"><section className="contentCard quoteFormCard"><Hero step={step} /><Stepper step={step} />{activeRfqId && <div className="submitStatus">Loaded RFQ {activeRfqId}</div>}{step === 1 && <CompanyStep draft={draft} setDraft={setDraft} />}{step === 2 && <SpecsStep draft={draft} setDraft={setDraft} />}{step === 3 && <FeaturesStep draft={draft} setDraft={setDraft} />}{step === 4 && <ReviewStep draft={draft} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} onEdit={jumpToStep} />}{submitStatus && <div className="submitStatus">{submitStatus}</div>}<div className="actions productionActions"><button className="secondary" type="button" onClick={step === 1 ? saveAndExit : goBack}>{step === 1 ? 'Save & Exit' : 'Previous'}</button><button className="primary" disabled={isSubmitting} onClick={step === 4 ? submitRfq : goNext}>{isSubmitting ? 'Saving...' : submitLabel} <ArrowRight size={18} /></button></div></section><QuoteSummary draft={draft} progress={progress} step={step} selectedChassis={selectedChassisName} selectedWheelbase={selectedWheelbaseName} selectedBusType={selectedBusTypeName} features={summaryFeatures} onEdit={jumpToStep} /></main>}
       {page === 'confirmation' && submittedDraft && <ConfirmationPage rfqId={submittedRfqId} draft={submittedDraft} onStartNew={startNewRfq} onViewRequests={() => setPage('my-requests')} />}
-      {page === 'my-requests' && <main className="pageLayout"><MyRequestsPage user={activeUser} onStartNew={startNewRfq} /></main>}
+      {page === 'my-requests' && <main className="pageLayout"><MyRequestsPage user={activeUser} onStartNew={startNewRfq} onEditRequest={editRequest} onDuplicateRequest={duplicateRequest} /></main>}
       {page === 'quote-status' && <main className="pageLayout"><QuoteStatusPage user={activeUser} /></main>}
       {page === 'rfq-queue' && <main className="pageLayout"><InternalQueuePage user={activeUser} /></main>}
       {page === 'admin-config' && <main className="pageLayout"><AdminConfigPage /></main>}
