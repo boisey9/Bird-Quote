@@ -1,5 +1,6 @@
 import { Pencil } from 'lucide-react';
 import { seatCmsConfig } from '../data/featureOptionMatrix';
+import { useRfqWeightEstimate } from '../hooks/useWeightBalanceCms';
 import type { FeatureSelection, RfqDraft, RfqStep } from '../types/rfq';
 
 type QuoteSummaryProps = {
@@ -20,6 +21,14 @@ const stepNames: Record<RfqStep, string> = {
   4: 'Review & Submit'
 };
 
+const weightLabels = {
+  ok: 'Weight OK',
+  warning: 'Weight Watch',
+  overweight: 'Potential Overweight',
+  'review-required': 'Review Required',
+  unknown: 'Weight Unknown'
+};
+
 function getSelectedSeatLayoutLabel(layoutId: string) {
   const staticLayout = seatCmsConfig.layouts.find((layout) => layout.id === layoutId)?.title;
   if (staticLayout) return staticLayout;
@@ -27,10 +36,16 @@ function getSelectedSeatLayoutLabel(layoutId: string) {
   return layoutId || 'Not selected';
 }
 
+function formatLbs(value: number) {
+  return `${Math.round(value).toLocaleString()} lb`;
+}
+
 export function QuoteSummary(props: QuoteSummaryProps) {
   const { draft, progress, step, selectedChassis, selectedWheelbase, selectedBusType, features, onEdit } = props;
   const selectedSeatLayout = getSelectedSeatLayoutLabel(draft.seatPackage.layoutId);
   const displayFeatures = features.filter((feature) => feature.category !== 'Seats' && feature.category !== 'Layout');
+  const weight = useRfqWeightEstimate(draft);
+  const estimate = weight.estimate;
 
   return (
     <aside className="summary productionSummary">
@@ -70,6 +85,14 @@ export function QuoteSummary(props: QuoteSummaryProps) {
           {displayFeatures.slice(0, 4).map((feature) => (
             <p className="featureSummary" key={feature.category + '-' + feature.label}>{feature.label}</p>
           ))}
+          <div className={`weightEstimateCard ${estimate.status}`}>
+            <small>RFQ WEIGHT ESTIMATE</small>
+            <strong>{weightLabels[estimate.status]}</strong>
+            <span>Estimated remaining</span>
+            <b>{estimate.profile ? formatLbs(estimate.estimatedRemainingWeightLbs) : 'Profile needed'}</b>
+            <p>{estimate.status === 'ok' ? 'Within sales-estimate threshold.' : 'Micro Bird review required before final configuration.'}</p>
+            <em>Seats {formatLbs(estimate.selectedSeatsWeightLbs)} • Options {formatLbs(estimate.selectedOptionsWeightLbs)}</em>
+          </div>
         </>
       )}
       <hr />
