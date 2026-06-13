@@ -50,62 +50,10 @@ export interface FloorPlanCompatibilityRule {
 }
 
 export const floorPlanMaster: FloorPlanMaster[] = [
-  {
-    floorPlanId: 'fp-commercial-2x2-standard',
-    floorPlanName: 'Commercial 2x2 Standard Grid',
-    market: 'commercial',
-    shellType: 'standard',
-    entranceType: 'front',
-    liftType: 'none',
-    rowCount: 8,
-    status: 'active',
-    dealerVisible: true,
-    capacityHint: 24,
-    wheelchairCapacityHint: 0,
-    notes: 'Baseline front-facing commercial layout. Dealer-facing preview remains reference only.'
-  },
-  {
-    floorPlanId: 'fp-accessible-rear-lift',
-    floorPlanName: 'Accessible Rear Lift Grid',
-    market: 'commercial',
-    shellType: 'rear_lift',
-    entranceType: 'front',
-    liftType: 'rear',
-    rowCount: 9,
-    status: 'active',
-    dealerVisible: true,
-    capacityHint: 16,
-    wheelchairCapacityHint: 2,
-    notes: 'Uses row-span zones for lift clearance and wheelchair positions.'
-  },
-  {
-    floorPlanId: 'fp-shuttle-mid-door',
-    floorPlanName: 'Shuttle Mid-Door Grid',
-    market: 'commercial',
-    shellType: 'mid_door',
-    entranceType: 'front_mid',
-    liftType: 'none',
-    rowCount: 8,
-    status: 'draft',
-    dealerVisible: false,
-    capacityHint: 18,
-    wheelchairCapacityHint: 0,
-    notes: 'Prepared for shuttle/customer transport layouts with a mid-door clearance block.'
-  },
-  {
-    floorPlanId: 'fp-school-3x2',
-    floorPlanName: 'School 3x2 Grid',
-    market: 'school',
-    shellType: 'standard',
-    entranceType: 'front',
-    liftType: 'none',
-    rowCount: 7,
-    status: 'active',
-    dealerVisible: true,
-    capacityHint: 35,
-    wheelchairCapacityHint: 0,
-    notes: 'School-capacity intake template for reference selection only.'
-  }
+  { floorPlanId: 'fp-commercial-2x2-standard', floorPlanName: 'Commercial 2x2 Standard Grid', market: 'commercial', shellType: 'standard', entranceType: 'front', liftType: 'none', rowCount: 8, status: 'active', dealerVisible: true, capacityHint: 24, wheelchairCapacityHint: 0, notes: 'Baseline front-facing commercial layout. Dealer-facing preview remains reference only.' },
+  { floorPlanId: 'fp-accessible-rear-lift', floorPlanName: 'Accessible Rear Lift Grid', market: 'commercial', shellType: 'rear_lift', entranceType: 'front', liftType: 'rear', rowCount: 9, status: 'active', dealerVisible: true, capacityHint: 16, wheelchairCapacityHint: 2, notes: 'Uses row-span zones for lift clearance and wheelchair positions.' },
+  { floorPlanId: 'fp-shuttle-mid-door', floorPlanName: 'Shuttle Mid-Door Grid', market: 'commercial', shellType: 'mid_door', entranceType: 'front_mid', liftType: 'none', rowCount: 8, status: 'draft', dealerVisible: false, capacityHint: 18, wheelchairCapacityHint: 0, notes: 'Prepared for shuttle/customer transport layouts with a mid-door clearance block.' },
+  { floorPlanId: 'fp-school-3x2', floorPlanName: 'School 3x2 Grid', market: 'school', shellType: 'standard', entranceType: 'front', liftType: 'none', rowCount: 7, status: 'active', dealerVisible: true, capacityHint: 35, wheelchairCapacityHint: 0, notes: 'School-capacity intake template for reference selection only.' }
 ];
 
 export const floorPlanZones: FloorPlanZone[] = [
@@ -116,6 +64,7 @@ export const floorPlanZones: FloorPlanZone[] = [
   { floorPlanId: 'fp-commercial-2x2-standard', zoneId: 'std-rear', side: 'full', rowStart: 8, rowEnd: 8, zoneType: 'clearance', label: 'Rear', locked: true },
 
   { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true },
+  { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true },
   { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-c2', side: 'curb', rowStart: 2, rowEnd: 5, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false },
   { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-s2', side: 'street', rowStart: 2, rowEnd: 4, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false },
   { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-fold', side: 'curb', rowStart: 6, rowEnd: 6, zoneType: 'foldaway', seatTypeId: 'foldaway', label: 'Foldaway', locked: false },
@@ -124,11 +73,13 @@ export const floorPlanZones: FloorPlanZone[] = [
   { floorPlanId: 'fp-accessible-rear-lift', zoneId: 'arl-wc2', side: 'street', rowStart: 8, rowEnd: 9, zoneType: 'wheelchair', seatTypeId: 'wheelchair-space', label: 'W/C 2', locked: true },
 
   { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true },
+  { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true },
   { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-luggage', side: 'street', rowStart: 2, rowEnd: 4, zoneType: 'luggage', seatTypeId: 'luggage-rack', label: 'Luggage', locked: false },
   { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-door', side: 'curb', rowStart: 5, rowEnd: 6, zoneType: 'mid-door', label: 'Mid Door', locked: true },
   { floorPlanId: 'fp-shuttle-mid-door', zoneId: 'mid-street-seat', side: 'street', rowStart: 5, rowEnd: 7, zoneType: 'seat', seatTypeId: 'commercial-high-back', label: '2 seats', locked: false },
 
   { floorPlanId: 'fp-school-3x2', zoneId: 'sch-entry', side: 'curb', rowStart: 1, rowEnd: 1, zoneType: 'entrance', label: 'Entrance', locked: true },
+  { floorPlanId: 'fp-school-3x2', zoneId: 'sch-driver', side: 'street', rowStart: 1, rowEnd: 1, zoneType: 'driver', label: 'Driver', locked: true },
   { floorPlanId: 'fp-school-3x2', zoneId: 'sch-c3', side: 'curb', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'school-bench-3', label: '3 school', locked: false },
   { floorPlanId: 'fp-school-3x2', zoneId: 'sch-s2', side: 'street', rowStart: 2, rowEnd: 7, zoneType: 'seat', seatTypeId: 'school-bench-2', label: '2 school', locked: false }
 ];
@@ -152,9 +103,7 @@ export const floorPlanCompatibilityRules: FloorPlanCompatibilityRule[] = [
 ];
 
 export function getFloorPlanZones(floorPlanId: string) {
-  return floorPlanZones
-    .filter((zone) => zone.floorPlanId === floorPlanId)
-    .sort((a, b) => a.rowStart - b.rowStart || a.side.localeCompare(b.side));
+  return floorPlanZones.filter((zone) => zone.floorPlanId === floorPlanId).sort((a, b) => a.rowStart - b.rowStart || a.side.localeCompare(b.side));
 }
 
 export function getFloorPlanSeatTypeName(seatTypeId?: string) {
