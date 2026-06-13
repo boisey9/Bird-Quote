@@ -1,103 +1,31 @@
-import { useEffect, useState } from 'react';
-import { Download, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Download, FileSpreadsheet, Plus, RefreshCw, Save, Trash2, Upload } from 'lucide-react';
 import { savePortalProfiles, seedPortalProfiles, type PortalProfile } from '../../session/usePortalProfiles';
 import type { UserRole } from '../../session/sessionTypes';
+import { booleanCell, exportCmsExcel, importCmsExcel, sheetRows, textCell } from '../../utils/excelCms';
 import './FeatureOptionsAdminEditor.css';
 
 type ProfilePayload = { ok?: boolean; source?: string; error?: string; profiles?: PortalProfile[]; counts?: Record<string, number> };
 
-async function parseProfileResponse(response: Response): Promise<ProfilePayload> {
-  const text = await response.text();
-  let payload: ProfilePayload;
-  try { payload = text ? JSON.parse(text) as ProfilePayload : {}; }
-  catch { throw new Error(`Portal profiles returned invalid response (${response.status}).`); }
-  if (!response.ok || payload.ok === false) throw new Error(payload.error ?? `Portal profiles request failed (${response.status}).`);
-  return payload;
-}
-
-function makeInitials(name: string) {
-  return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'U';
-}
+async function parseProfileResponse(response: Response): Promise<ProfilePayload> { const text = await response.text(); let payload: ProfilePayload; try { payload = text ? JSON.parse(text) as ProfilePayload : {}; } catch { throw new Error(`Portal profiles returned invalid response (${response.status}).`); } if (!response.ok || payload.ok === false) throw new Error(payload.error ?? `Portal profiles request failed (${response.status}).`); return payload; }
+function makeInitials(name: string) { return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'U'; }
+function rowToProfile(row: Record<string, unknown>): PortalProfile { const fullName = textCell(row, 'fullName', 'Imported User'); return { id: textCell(row, 'id', `user-${Date.now()}`), email: textCell(row, 'email'), fullName, initials: textCell(row, 'initials', makeInitials(fullName)), roleId: textCell(row, 'roleId', 'dealer') as UserRole, companyName: textCell(row, 'companyName'), dealerId: textCell(row, 'dealerId'), dealerName: textCell(row, 'dealerName'), active: booleanCell(row, 'active', true), notes: textCell(row, 'notes') }; }
 
 export function PortalProfilesAdminEditor() {
   const [profiles, setProfiles] = useState<PortalProfile[]>(() => seedPortalProfiles());
   const [status, setStatus] = useState('Loading portal profiles...');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  async function loadData() {
-    setStatus('Loading portal profiles...');
-    try {
-      const payload = await parseProfileResponse(await fetch('/api/cms-user-profiles'));
-      setProfiles(payload.profiles?.length ? payload.profiles : seedPortalProfiles());
-      setStatus(payload.source === 'empty-neon' ? 'No saved profiles yet. Showing seed profiles; click Save to initialize backend.' : 'Loaded portal profiles from Neon.');
-    } catch (error) {
-      setProfiles(seedPortalProfiles());
-      setStatus(error instanceof Error ? `${error.message} Showing seed profiles.` : 'Unable to load portal profiles.');
-    }
-  }
-
+  async function loadData() { setStatus('Loading portal profiles...'); try { const payload = await parseProfileResponse(await fetch('/api/cms-user-profiles')); setProfiles(payload.profiles?.length ? payload.profiles : seedPortalProfiles()); setStatus(payload.source === 'empty-neon' ? 'No saved profiles yet. Showing seed profiles; click Save to initialize backend.' : 'Loaded portal profiles from Neon.'); } catch (error) { setProfiles(seedPortalProfiles()); setStatus(error instanceof Error ? `${error.message} Showing seed profiles.` : 'Unable to load portal profiles.'); } }
   useEffect(() => { loadData(); }, []);
+  function updateProfiles(next: PortalProfile[]) { setProfiles(next); setStatus('Unsaved portal profile changes.'); }
+  function addProfile() { updateProfiles([...profiles, { id: `user-${Date.now()}`, email: 'new.user@microbird.com', fullName: 'New User', initials: 'NU', roleId: 'dealer', companyName: '', dealerId: '', dealerName: '', active: false, notes: '' }]); }
+  function updateProfile(id: string, updates: Partial<PortalProfile>) { updateProfiles(profiles.map((profile) => profile.id === id ? { ...profile, ...updates } : profile)); }
+  function deleteProfile(id: string) { updateProfiles(profiles.filter((profile) => profile.id !== id)); }
+  async function save() { setStatus('Saving portal profiles...'); try { const normalized = profiles.map((profile) => ({ ...profile, initials: profile.initials || makeInitials(profile.fullName) })); const result = await savePortalProfiles(normalized); setProfiles(result.profiles?.length ? result.profiles : normalized); setStatus(`Saved. ${result.counts?.profiles ?? normalized.length} profile(s).`); } catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to save portal profiles.'); } }
+  function exportJson() { navigator.clipboard?.writeText(JSON.stringify(profiles, null, 2)); setStatus('Portal profiles JSON copied to clipboard.'); }
+  function exportExcel() { exportCmsExcel('portal-profiles-cms.xlsx', { PortalProfiles: profiles }); setStatus('Portal profiles Excel workbook exported.'); }
+  async function importExcel(file: File | null) { if (!file) return; try { const workbook = await importCmsExcel(file); const imported = sheetRows(workbook, 'PortalProfiles').map(rowToProfile); if (!imported.length) throw new Error('Workbook does not contain a PortalProfiles sheet.'); setProfiles(imported); setStatus('Portal profiles Excel imported. Review rows, then click Save.'); } catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to import portal profiles Excel.'); } finally { if (fileInputRef.current) fileInputRef.current.value = ''; } }
 
-  function updateProfiles(next: PortalProfile[]) {
-    setProfiles(next);
-    setStatus('Unsaved portal profile changes.');
-  }
-
-  function addProfile() {
-    updateProfiles([...profiles, { id: `user-${Date.now()}`, email: 'new.user@microbird.com', fullName: 'New User', initials: 'NU', roleId: 'dealer', companyName: '', dealerId: '', dealerName: '', active: false, notes: '' }]);
-  }
-
-  function updateProfile(id: string, updates: Partial<PortalProfile>) {
-    updateProfiles(profiles.map((profile) => profile.id === id ? { ...profile, ...updates } : profile));
-  }
-
-  function deleteProfile(id: string) {
-    updateProfiles(profiles.filter((profile) => profile.id !== id));
-  }
-
-  async function save() {
-    setStatus('Saving portal profiles...');
-    try {
-      const normalized = profiles.map((profile) => ({ ...profile, initials: profile.initials || makeInitials(profile.fullName) }));
-      const result = await savePortalProfiles(normalized);
-      setProfiles(result.profiles?.length ? result.profiles : normalized);
-      setStatus(`Saved. ${result.counts?.profiles ?? normalized.length} profile(s).`);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Unable to save portal profiles.');
-    }
-  }
-
-  function exportJson() {
-    navigator.clipboard?.writeText(JSON.stringify(profiles, null, 2));
-    setStatus('Portal profiles JSON copied to clipboard.');
-  }
-
-  return (
-    <div className="featureOptionsEditor portalProfilesEditor">
-      <div className="floorPlanHeader featureEditorHeader">
-        <div>
-          <small>Portal Profiles</small>
-          <strong>User Profile Management</strong>
-          <p>Manage the profile records that will connect production login users to roles, dealers, and companies.</p>
-        </div>
-        <div className="floorPlanAdminActions">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={loadData}><RefreshCw size={14} /> Reload</button>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={exportJson}><Download size={14} /> Export JSON</button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={save}><Save size={14} /> Save</button>
-        </div>
-      </div>
-      <div className="submitStatus cmsSaveStatus">{status}</div>
-      <div className="featureCmsStats">
-        <div className="featureCmsStat"><strong>{profiles.length}</strong><span>Profiles</span></div>
-        <div className="featureCmsStat"><strong>{profiles.filter((item) => item.active).length}</strong><span>Active</span></div>
-        <div className="featureCmsStat"><strong>{profiles.filter((item) => item.roleId === 'dealer').length}</strong><span>Dealers</span></div>
-        <div className="featureCmsStat"><strong>{profiles.filter((item) => item.roleId === 'admin').length}</strong><span>Admins</span></div>
-        <div className="featureCmsStat"><strong>{profiles.filter((item) => !item.active).length}</strong><span>Inactive</span></div>
-      </div>
-      <div className="featureEditorTable portalProfileTable">
-        <div className="featureEditorTableHeader"><h4>Portal User Profiles</h4><button type="button" className="btn btn-secondary btn-sm" onClick={addProfile}><Plus size={14} /> Add Profile</button></div>
-        <div className="featureGrid portalProfileRows head"><span>ID</span><span>Email</span><span>Name</span><span>Role</span><span>Company</span><span>Dealer ID</span><span>Dealer Name</span><span>Active</span><span>Notes</span><span>Action</span></div>
-        {profiles.map((profile) => <div className="featureGrid portalProfileRows" key={profile.id}><input value={profile.id} onChange={(event) => updateProfile(profile.id, { id: event.target.value })} /><input value={profile.email} onChange={(event) => updateProfile(profile.id, { email: event.target.value })} /><input value={profile.fullName} onChange={(event) => updateProfile(profile.id, { fullName: event.target.value, initials: makeInitials(event.target.value) })} /><select value={profile.roleId} onChange={(event) => updateProfile(profile.id, { roleId: event.target.value as UserRole })}><option value="dealer">Dealer</option><option value="internal">Internal</option><option value="manager">Manager</option><option value="admin">Admin</option></select><input value={profile.companyName} onChange={(event) => updateProfile(profile.id, { companyName: event.target.value })} /><input value={profile.dealerId} onChange={(event) => updateProfile(profile.id, { dealerId: event.target.value })} /><input value={profile.dealerName} onChange={(event) => updateProfile(profile.id, { dealerName: event.target.value })} /><select value={profile.active ? 'yes' : 'no'} onChange={(event) => updateProfile(profile.id, { active: event.target.value === 'yes' })}><option value="yes">Yes</option><option value="no">No</option></select><input value={profile.notes} onChange={(event) => updateProfile(profile.id, { notes: event.target.value })} /><button type="button" className="iconMiniButton danger" onClick={() => deleteProfile(profile.id)}><Trash2 size={14} /></button></div>)}
-      </div>
-    </div>
-  );
+  return <div className="featureOptionsEditor portalProfilesEditor"><div className="floorPlanHeader featureEditorHeader"><div><small>Portal Profiles</small><strong>User Profile Management</strong><p>Manage the profile records that will connect production login users to roles, dealers, and companies.</p></div><div className="floorPlanAdminActions"><input ref={fileInputRef} type="file" accept=".xlsx,.xls" hidden onChange={(event) => importExcel(event.target.files?.[0] ?? null)} /><button type="button" className="btn btn-secondary btn-sm" onClick={loadData}><RefreshCw size={14} /> Reload</button><button type="button" className="btn btn-secondary btn-sm" onClick={exportJson}><Download size={14} /> Export JSON</button><button type="button" className="btn btn-secondary btn-sm" onClick={exportExcel}><FileSpreadsheet size={14} /> Export Excel</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()}><Upload size={14} /> Import Excel</button><button type="button" className="btn btn-primary btn-sm" onClick={save}><Save size={14} /> Save</button></div></div><div className="submitStatus cmsSaveStatus">{status}</div><div className="featureCmsStats"><div className="featureCmsStat"><strong>{profiles.length}</strong><span>Profiles</span></div><div className="featureCmsStat"><strong>{profiles.filter((item) => item.active).length}</strong><span>Active</span></div><div className="featureCmsStat"><strong>{profiles.filter((item) => item.roleId === 'dealer').length}</strong><span>Dealers</span></div><div className="featureCmsStat"><strong>{profiles.filter((item) => item.roleId === 'admin').length}</strong><span>Admins</span></div><div className="featureCmsStat"><strong>{profiles.filter((item) => !item.active).length}</strong><span>Inactive</span></div></div><div className="featureEditorTable portalProfileTable"><div className="featureEditorTableHeader"><h4>Portal User Profiles</h4><button type="button" className="btn btn-secondary btn-sm" onClick={addProfile}><Plus size={14} /> Add Profile</button></div><div className="featureGrid portalProfileRows head"><span>ID</span><span>Email</span><span>Name</span><span>Role</span><span>Company</span><span>Dealer ID</span><span>Dealer Name</span><span>Active</span><span>Notes</span><span>Action</span></div>{profiles.map((profile) => <div className="featureGrid portalProfileRows" key={profile.id}><input value={profile.id} onChange={(event) => updateProfile(profile.id, { id: event.target.value })} /><input value={profile.email} onChange={(event) => updateProfile(profile.id, { email: event.target.value })} /><input value={profile.fullName} onChange={(event) => updateProfile(profile.id, { fullName: event.target.value, initials: makeInitials(event.target.value) })} /><select value={profile.roleId} onChange={(event) => updateProfile(profile.id, { roleId: event.target.value as UserRole })}><option value="dealer">Dealer</option><option value="internal">Internal</option><option value="manager">Manager</option><option value="admin">Admin</option></select><input value={profile.companyName} onChange={(event) => updateProfile(profile.id, { companyName: event.target.value })} /><input value={profile.dealerId} onChange={(event) => updateProfile(profile.id, { dealerId: event.target.value })} /><input value={profile.dealerName} onChange={(event) => updateProfile(profile.id, { dealerName: event.target.value })} /><select value={profile.active ? 'yes' : 'no'} onChange={(event) => updateProfile(profile.id, { active: event.target.value === 'yes' })}><option value="yes">Yes</option><option value="no">No</option></select><input value={profile.notes} onChange={(event) => updateProfile(profile.id, { notes: event.target.value })} /><button type="button" className="iconMiniButton danger" onClick={() => deleteProfile(profile.id)}><Trash2 size={14} /></button></div>)}</div></div>;
 }
