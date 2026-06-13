@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Download, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Download, FileSpreadsheet, Plus, RefreshCw, Save, Trash2, Upload } from 'lucide-react';
 import { saveWeightBalanceCms, seedWeightBalanceCms, toWeightBalanceData, type BalanceZone, type OptionWeightItem, type VehicleWeightProfile, type WeightBalanceCmsData } from '../../hooks/useWeightBalanceCms';
+import { booleanCell, exportCmsExcel, importCmsExcel, numberCell, sheetRows, textCell } from '../../utils/excelCms';
 import './FeatureOptionsAdminEditor.css';
 
 type WeightTab = 'vehicles' | 'options' | 'zones';
@@ -15,73 +16,39 @@ async function parseWeightResponse(response: Response): Promise<WeightPayload> {
   return payload;
 }
 
+function rowToVehicle(row: Record<string, unknown>): VehicleWeightProfile {
+  return { id: textCell(row, 'id', `profile-${Date.now()}`), chassisMake: textCell(row, 'chassisMake'), chassisModel: textCell(row, 'chassisModel'), wheelbase: textCell(row, 'wheelbase'), certification: textCell(row, 'certification'), busModel: textCell(row, 'busModel'), gvwrLbs: numberCell(row, 'gvwrLbs'), frontGawrLbs: numberCell(row, 'frontGawrLbs'), rearGawrLbs: numberCell(row, 'rearGawrLbs'), baseCurbWeightLbs: numberCell(row, 'baseCurbWeightLbs'), baseFrontAxleWeightLbs: numberCell(row, 'baseFrontAxleWeightLbs'), baseRearAxleWeightLbs: numberCell(row, 'baseRearAxleWeightLbs'), remainingConfigurableWeightLbs: numberCell(row, 'remainingConfigurableWeightLbs'), source: textCell(row, 'source', 'manual') as VehicleWeightProfile['source'], effectiveDate: textCell(row, 'effectiveDate'), active: booleanCell(row, 'active', true), notes: textCell(row, 'notes') };
+}
+function rowToOption(row: Record<string, unknown>): OptionWeightItem { return { id: textCell(row, 'id', `weight-${Date.now()}`), optionCode: textCell(row, 'optionCode'), optionName: textCell(row, 'optionName', 'Imported Weight Item'), category: textCell(row, 'category', 'custom') as OptionWeightItem['category'], defaultWeightLbs: numberCell(row, 'defaultWeightLbs'), quantityBasis: textCell(row, 'quantityBasis', 'each') as OptionWeightItem['quantityBasis'], defaultBalanceZoneId: textCell(row, 'defaultBalanceZoneId', 'mid'), active: booleanCell(row, 'active', true), source: textCell(row, 'source', 'imported'), notes: textCell(row, 'notes') }; }
+function rowToZone(row: Record<string, unknown>): BalanceZone { return { id: textCell(row, 'id', `zone-${Date.now()}`), name: textCell(row, 'name', 'Imported Balance Zone'), zoneType: textCell(row, 'zoneType', 'mid') as BalanceZone['zoneType'], frontAxlePercent: numberCell(row, 'frontAxlePercent'), rearAxlePercent: numberCell(row, 'rearAxlePercent'), notes: textCell(row, 'notes') }; }
+
 export function WeightBalanceAdminEditor() {
   const [tab, setTab] = useState<WeightTab>('vehicles');
   const [data, setData] = useState<WeightBalanceCmsData>(() => seedWeightBalanceCms());
   const [status, setStatus] = useState('Loading weight and balance CMS...');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   async function loadData() {
     setStatus('Loading weight and balance CMS...');
-    try {
-      const payload = await parseWeightResponse(await fetch('/api/cms-weight-balance'));
-      setData(toWeightBalanceData(payload));
-      setStatus(payload.source === 'empty-neon' ? 'No saved weight data yet. Showing seed values; click Save to initialize backend.' : 'Loaded weight and balance data from Neon.');
-    } catch (error) {
-      setData(seedWeightBalanceCms());
-      setStatus(error instanceof Error ? `${error.message} Showing seed values.` : 'Unable to load weight data.');
-    }
+    try { const payload = await parseWeightResponse(await fetch('/api/cms-weight-balance')); setData(toWeightBalanceData(payload)); setStatus(payload.source === 'empty-neon' ? 'No saved weight data yet. Showing seed values; click Save to initialize backend.' : 'Loaded weight and balance data from Neon.'); }
+    catch (error) { setData(seedWeightBalanceCms()); setStatus(error instanceof Error ? `${error.message} Showing seed values.` : 'Unable to load weight data.'); }
   }
-
   useEffect(() => { loadData(); }, []);
-
-  function updateData(next: WeightBalanceCmsData) {
-    setData(next);
-    setStatus('Unsaved weight and balance changes.');
-  }
-
-  function updateVehicle(id: string, updates: Partial<VehicleWeightProfile>) {
-    updateData({ ...data, vehicleWeightProfiles: data.vehicleWeightProfiles.map((item) => item.id === id ? { ...item, ...updates } : item) });
-  }
-
-  function updateOption(id: string, updates: Partial<OptionWeightItem>) {
-    updateData({ ...data, optionWeightItems: data.optionWeightItems.map((item) => item.id === id ? { ...item, ...updates } : item) });
-  }
-
-  function updateZone(id: string, updates: Partial<BalanceZone>) {
-    updateData({ ...data, balanceZones: data.balanceZones.map((item) => item.id === id ? { ...item, ...updates } : item) });
-  }
-
-  function addVehicle() {
-    updateData({ ...data, vehicleWeightProfiles: [...data.vehicleWeightProfiles, { id: `profile-${Date.now()}`, chassisMake: '', chassisModel: '', wheelbase: '', certification: '', busModel: '', gvwrLbs: 0, frontGawrLbs: 0, rearGawrLbs: 0, baseCurbWeightLbs: 0, baseFrontAxleWeightLbs: 0, baseRearAxleWeightLbs: 0, remainingConfigurableWeightLbs: 0, source: 'manual', effectiveDate: '', active: false, notes: '' }] });
-  }
-
-  function addOption() {
-    updateData({ ...data, optionWeightItems: [...data.optionWeightItems, { id: `weight-${Date.now()}`, optionCode: '', optionName: 'New Weight Item', category: 'custom', defaultWeightLbs: 0, quantityBasis: 'each', defaultBalanceZoneId: 'mid', active: true, source: 'manual', notes: '' }] });
-  }
-
-  function addZone() {
-    updateData({ ...data, balanceZones: [...data.balanceZones, { id: `zone-${Date.now()}`, name: 'New Balance Zone', zoneType: 'mid', frontAxlePercent: 50, rearAxlePercent: 50, notes: '' }] });
-  }
-
-  async function save() {
-    setStatus('Saving weight and balance CMS...');
-    try {
-      const result = await saveWeightBalanceCms(data);
-      setData(toWeightBalanceData(result));
-      setStatus(`Saved. ${result.counts?.vehicleWeightProfiles ?? data.vehicleWeightProfiles.length} vehicle profile(s), ${result.counts?.optionWeightItems ?? data.optionWeightItems.length} weight item(s), ${result.counts?.balanceZones ?? data.balanceZones.length} balance zone(s).`);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Unable to save weight data.');
-    }
-  }
-
-  function exportJson() {
-    navigator.clipboard?.writeText(JSON.stringify(data, null, 2));
-    setStatus('Weight and balance JSON copied to clipboard.');
-  }
+  function updateData(next: WeightBalanceCmsData) { setData(next); setStatus('Unsaved weight and balance changes.'); }
+  function updateVehicle(id: string, updates: Partial<VehicleWeightProfile>) { updateData({ ...data, vehicleWeightProfiles: data.vehicleWeightProfiles.map((item) => item.id === id ? { ...item, ...updates } : item) }); }
+  function updateOption(id: string, updates: Partial<OptionWeightItem>) { updateData({ ...data, optionWeightItems: data.optionWeightItems.map((item) => item.id === id ? { ...item, ...updates } : item) }); }
+  function updateZone(id: string, updates: Partial<BalanceZone>) { updateData({ ...data, balanceZones: data.balanceZones.map((item) => item.id === id ? { ...item, ...updates } : item) }); }
+  function addVehicle() { updateData({ ...data, vehicleWeightProfiles: [...data.vehicleWeightProfiles, { id: `profile-${Date.now()}`, chassisMake: '', chassisModel: '', wheelbase: '', certification: '', busModel: '', gvwrLbs: 0, frontGawrLbs: 0, rearGawrLbs: 0, baseCurbWeightLbs: 0, baseFrontAxleWeightLbs: 0, baseRearAxleWeightLbs: 0, remainingConfigurableWeightLbs: 0, source: 'manual', effectiveDate: '', active: false, notes: '' }] }); }
+  function addOption() { updateData({ ...data, optionWeightItems: [...data.optionWeightItems, { id: `weight-${Date.now()}`, optionCode: '', optionName: 'New Weight Item', category: 'custom', defaultWeightLbs: 0, quantityBasis: 'each', defaultBalanceZoneId: 'mid', active: true, source: 'manual', notes: '' }] }); }
+  function addZone() { updateData({ ...data, balanceZones: [...data.balanceZones, { id: `zone-${Date.now()}`, name: 'New Balance Zone', zoneType: 'mid', frontAxlePercent: 50, rearAxlePercent: 50, notes: '' }] }); }
+  async function save() { setStatus('Saving weight and balance CMS...'); try { const result = await saveWeightBalanceCms(data); setData(toWeightBalanceData(result)); setStatus(`Saved. ${result.counts?.vehicleWeightProfiles ?? data.vehicleWeightProfiles.length} vehicle profile(s), ${result.counts?.optionWeightItems ?? data.optionWeightItems.length} weight item(s), ${result.counts?.balanceZones ?? data.balanceZones.length} balance zone(s).`); } catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to save weight data.'); } }
+  function exportJson() { navigator.clipboard?.writeText(JSON.stringify(data, null, 2)); setStatus('Weight and balance JSON copied to clipboard.'); }
+  function exportExcel() { exportCmsExcel('weight-balance-cms.xlsx', { VehicleProfiles: data.vehicleWeightProfiles, OptionWeights: data.optionWeightItems, BalanceZones: data.balanceZones }); setStatus('Weight and balance Excel workbook exported.'); }
+  async function importExcel(file: File | null) { if (!file) return; try { const workbook = await importCmsExcel(file); const vehicleWeightProfiles = sheetRows(workbook, 'VehicleProfiles').map(rowToVehicle); const optionWeightItems = sheetRows(workbook, 'OptionWeights').map(rowToOption); const balanceZones = sheetRows(workbook, 'BalanceZones').map(rowToZone); if (!vehicleWeightProfiles.length && !optionWeightItems.length && !balanceZones.length) throw new Error('Workbook does not contain VehicleProfiles, OptionWeights, or BalanceZones sheets.'); setData({ vehicleWeightProfiles: vehicleWeightProfiles.length ? vehicleWeightProfiles : data.vehicleWeightProfiles, optionWeightItems: optionWeightItems.length ? optionWeightItems : data.optionWeightItems, balanceZones: balanceZones.length ? balanceZones : data.balanceZones }); setStatus('Excel workbook imported. Review the rows, then click Save to persist to backend.'); } catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to import Excel workbook.'); } finally { if (fileInputRef.current) fileInputRef.current.value = ''; } }
 
   return (
     <div className="featureOptionsEditor weightBalanceEditor">
-      <div className="floorPlanHeader featureEditorHeader"><div><small>Weight & Balance</small><strong>RFQ Risk Estimate CMS</strong><p>Manage sales-estimate weights. This does not replace engineering validation.</p></div><div className="floorPlanAdminActions"><button type="button" className="btn btn-secondary btn-sm" onClick={loadData}><RefreshCw size={14} /> Reload</button><button type="button" className="btn btn-secondary btn-sm" onClick={exportJson}><Download size={14} /> Export JSON</button><button type="button" className="btn btn-primary btn-sm" onClick={save}><Save size={14} /> Save</button></div></div>
+      <div className="floorPlanHeader featureEditorHeader"><div><small>Weight & Balance</small><strong>RFQ Risk Estimate CMS</strong><p>Manage sales-estimate weights. This does not replace engineering validation.</p></div><div className="floorPlanAdminActions"><input ref={fileInputRef} type="file" accept=".xlsx,.xls" hidden onChange={(event) => importExcel(event.target.files?.[0] ?? null)} /><button type="button" className="btn btn-secondary btn-sm" onClick={loadData}><RefreshCw size={14} /> Reload</button><button type="button" className="btn btn-secondary btn-sm" onClick={exportJson}><Download size={14} /> Export JSON</button><button type="button" className="btn btn-secondary btn-sm" onClick={exportExcel}><FileSpreadsheet size={14} /> Export Excel</button><button type="button" className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()}><Upload size={14} /> Import Excel</button><button type="button" className="btn btn-primary btn-sm" onClick={save}><Save size={14} /> Save</button></div></div>
       <div className="submitStatus cmsSaveStatus">{status}</div>
       <div className="featureCmsStats"><div className="featureCmsStat"><strong>{data.vehicleWeightProfiles.length}</strong><span>Vehicle Profiles</span></div><div className="featureCmsStat"><strong>{data.optionWeightItems.length}</strong><span>Weight Items</span></div><div className="featureCmsStat"><strong>{data.balanceZones.length}</strong><span>Balance Zones</span></div><div className="featureCmsStat"><strong>{data.optionWeightItems.filter((item) => item.category === 'seat').length}</strong><span>Seat Weights</span></div><div className="featureCmsStat"><strong>{data.vehicleWeightProfiles.filter((item) => item.active).length}</strong><span>Active Profiles</span></div></div>
       <div className="featureEditorTabs"><button type="button" className={tab === 'vehicles' ? 'active' : ''} onClick={() => setTab('vehicles')}>Vehicle Profiles</button><button type="button" className={tab === 'options' ? 'active' : ''} onClick={() => setTab('options')}>Option / Seat Weights</button><button type="button" className={tab === 'zones' ? 'active' : ''} onClick={() => setTab('zones')}>Balance Zones</button></div>
