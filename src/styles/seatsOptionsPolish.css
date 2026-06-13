@@ -1,0 +1,10 @@
+.seatUxV2 .seatTypeCardGrid{gap:12px!important;}
+.seatUxV2 .seatDetailsPanel,.seatPackagePanel,.featureOptionsPanel{border-radius:16px!important;border-color:#d9e3f0!important;background:#fff!important;}
+.referencePreviewCard,.seatPreviewCard{border-radius:16px!important;border-color:#d9e3f0!important;background:#fff!important;}
+.largeFrameWrap{border-radius:16px;background:#f8fbff;border:1px solid #e8eef6;padding:14px;}
+.seatCardBadges span,.dealerSeatBadges span,.featureOptionBadges em{border-radius:999px;}
+.miniCardImage,.featureOptionImage{border-radius:14px!important;background:#f8fbff!important;border-color:#d9e3f0!important;}
+.emptyPreviewMessage{border-radius:14px;background:#f8fbff;border-color:#cfd9e8;color:#475569;}
+.noLayoutPreview{opacity:.96;}
+.weightEstimateCard{box-shadow:0 8px 18px rgba(6,27,79,.04);}
+@media(max-width:760px){.seatUxV2 .seatTypeCardGrid{grid-template-columns:1fr 1fr!important;}.largeFrameWrap{padding:10px;}}
