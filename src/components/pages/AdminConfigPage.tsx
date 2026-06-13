@@ -13,17 +13,17 @@ import { RoutingSlaAdminEditor } from './RoutingSlaAdminEditor';
 import { SeatOptionListsAdminEditor } from './SeatOptionListsAdminEditor';
 import { VehicleMatrixAdminEditor } from './VehicleMatrixAdminEditor';
 import { VehicleMediaAdminEditor } from './VehicleMediaAdminEditor';
+import { WeightBalanceAdminEditor } from './WeightBalanceAdminEditor';
 import './AdminCms.css';
 
 type CmsPageKey = 'contracts' | 'vehicle' | 'features' | 'floorplans' | 'routing' | 'roles';
-
 type CmsPage = { key: CmsPageKey; title: string; description: string; icon: ReactNode; status: string };
 
 const cmsPages: CmsPage[] = [
   { key: 'contracts', title: 'Contract Program Management', description: 'Contract keys and program rules.', icon: <Route size={20} />, status: 'Foundation' },
   { key: 'vehicle', title: 'Vehicle / Chassis Matrix Management', description: 'Chassis, certifications, wheelbases, and bus types.', icon: <Database size={20} />, status: 'Backend CMS' },
   { key: 'features', title: 'Features & Options Management', description: 'Options and compatibility rules.', icon: <Settings size={20} />, status: 'Backend CMS' },
-  { key: 'floorplans', title: 'Floorplan Management', description: 'Floorplans and seat option lists.', icon: <Grid3X3 size={20} />, status: 'Backend CMS' },
+  { key: 'floorplans', title: 'Floorplan Management', description: 'Floorplans, seat lists, and weight estimates.', icon: <Grid3X3 size={20} />, status: 'Backend CMS' },
   { key: 'routing', title: 'Routing Rules & SLA Rules', description: 'Assignment, priority, and SLA targets.', icon: <Timer size={20} />, status: 'Backend CMS' },
   { key: 'roles', title: 'Roles & Permissions', description: 'Profiles, roles, permissions, and assignments.', icon: <Users size={20} />, status: 'Backend CMS' }
 ];
@@ -33,7 +33,7 @@ function ConfigSection({ icon, title, description, children, status = 'Config ar
 function ContractProgramPage() { return <div className="cmsPageStack"><ConfigSection icon={<Route size={22} />} title="Contract Programs" description="Manage contract keys used across the RFQ app." status="Backend CMS"><ContractProgramAdminEditor /></ConfigSection></div>; }
 function VehicleMatrixPage() { return <div className="cmsPageStack"><ConfigSection icon={<Database size={22} />} title="Vehicle / Chassis Matrix" description="Manage vehicle selection data." status="Backend CMS"><VehicleMatrixAdminEditor /></ConfigSection><ConfigSection icon={<Database size={22} />} title="Vehicle Images / Media" description="Manage image URLs used on selection cards." status="CMS media fields"><VehicleMediaAdminEditor /></ConfigSection></div>; }
 function FeaturesOptionsPage() { return <ConfigSection icon={<Settings size={22} />} title="Features & Options CMS" description="Manage feature options and rules." status="Backend CMS"><FeatureOptionsAdminEditor /></ConfigSection>; }
-function FloorplanManagementPage() { return <div className="cmsPageStack"><ConfigSection icon={<Grid3X3 size={22} />} title="Floorplan Grid Editor" description="Manage customer-facing seat layout templates." status="Backend CMS"><FloorPlanAdminEditor /></ConfigSection><ConfigSection icon={<Database size={22} />} title="Seat Option Lists" description="Manage reusable seat dropdown values." status="Backend CMS"><SeatOptionListsAdminEditor /></ConfigSection></div>; }
+function FloorplanManagementPage() { return <div className="cmsPageStack"><ConfigSection icon={<Grid3X3 size={22} />} title="Floorplan Grid Editor" description="Manage customer-facing seat layout templates." status="Backend CMS"><FloorPlanAdminEditor /></ConfigSection><ConfigSection icon={<Database size={22} />} title="Seat Option Lists" description="Manage reusable seat dropdown values." status="Backend CMS"><SeatOptionListsAdminEditor /></ConfigSection><ConfigSection icon={<Database size={22} />} title="Weight & Balance" description="Manage sales-estimate weight profiles, option weights, and balance zones." status="Backend CMS"><WeightBalanceAdminEditor /></ConfigSection></div>; }
 function RoutingSlaPage() { return <ConfigSection icon={<Timer size={22} />} title="Routing Rules & SLA Rules" description="Manage RFQ routing and SLA targets." status="Backend CMS"><RoutingSlaAdminEditor /></ConfigSection>; }
 function RolesPermissionsPage() { return <div className="cmsPageStack"><ConfigSection icon={<Users size={22} />} title="Portal Profiles" description="Map login profiles to roles and dealers." status="Backend CMS"><PortalProfilesAdminEditor /></ConfigSection><ConfigSection icon={<Users size={22} />} title="Roles & Permissions" description="Manage roles, permissions, and assignments." status="Backend CMS"><RolesPermissionsAdminEditor /></ConfigSection></div>; }
 function ActiveCmsPage({ page }: { page: CmsPageKey }) { if (page === 'contracts') return <ContractProgramPage />; if (page === 'vehicle') return <VehicleMatrixPage />; if (page === 'features') return <FeaturesOptionsPage />; if (page === 'floorplans') return <FloorplanManagementPage />; if (page === 'routing') return <RoutingSlaPage />; return <RolesPermissionsPage />; }
