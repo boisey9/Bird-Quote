@@ -5,7 +5,7 @@ type VercelResponse = { status: (code: number) => VercelResponse; json: (body: u
 
 type FeatureCategoryRecord = { id: number; title: string; description: string; sortOrder: number; active: boolean; comments: string; customerVisible?: boolean; status?: string };
 type FeatureOptionRecord = { id: number; categoryId: number; title: string; description: string; sortOrder: number; active: boolean; imageExt: string; imageUrl?: string; requiresDocument?: boolean; status?: string; notes?: string };
-type FeatureContractRule = { id: string; contractId: string; categoryId: number | null; optionId: number | null; ruleType: 'available' | 'hidden' | 'required' | 'recommended'; autoSelect: boolean; requiresDocument: boolean; active: boolean; notes: string };
+type FeatureContractRule = { id: string; contractId: string; categoryId: number | null; optionId: number | null; chassisId: string; certificationId: string; wheelbaseId: string; busTypeId: string; ruleType: 'available' | 'hidden' | 'required' | 'recommended'; autoSelect: boolean; requiresDocument: boolean; active: boolean; notes: string };
 type FeatureOptionsPayload = { categories?: FeatureCategoryRecord[]; options?: FeatureOptionRecord[]; contractRules?: FeatureContractRule[] };
 
 const seedFeatureOptions = {
@@ -52,31 +52,27 @@ function getPayload(body: unknown) {
   if (typeof body === 'string') return JSON.parse(body) as FeatureOptionsPayload;
   return body as FeatureOptionsPayload;
 }
-
-function jsonError(res: VercelResponse, status: number, message: string, extra: Record<string, unknown> = {}) {
-  return res.status(status).json({ ok: false, error: message, ...extra });
+function jsonError(res: VercelResponse, status: number, message: string, extra: Record<string, unknown> = {}) { return res.status(status).json({ ok: false, error: message, ...extra }); }
+function normalizeRule(rule: Partial<FeatureContractRule> & Pick<FeatureContractRule, 'id' | 'contractId' | 'ruleType' | 'autoSelect' | 'requiresDocument' | 'active' | 'notes'>): FeatureContractRule {
+  return { id: rule.id, contractId: rule.contractId, categoryId: rule.categoryId ?? null, optionId: rule.optionId ?? null, chassisId: rule.chassisId ?? 'any', certificationId: rule.certificationId ?? 'any', wheelbaseId: rule.wheelbaseId ?? 'any', busTypeId: rule.busTypeId ?? 'any', ruleType: rule.ruleType, autoSelect: rule.autoSelect, requiresDocument: rule.requiresDocument, active: rule.active, notes: rule.notes };
 }
 
 async function ensureSchema(sql: ReturnType<typeof neon>) {
   await sql`CREATE TABLE IF NOT EXISTS cms_feature_categories (category_id integer PRIMARY KEY, title text NOT NULL, description text NOT NULL DEFAULT '', sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, customer_visible boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', comments text NOT NULL DEFAULT '', updated_at timestamptz NOT NULL DEFAULT now())`;
   await sql`CREATE TABLE IF NOT EXISTS cms_feature_options (option_id integer PRIMARY KEY, category_id integer NOT NULL, title text NOT NULL, description text NOT NULL DEFAULT '', image_ext text NOT NULL DEFAULT '', image_url text NOT NULL DEFAULT '', requires_document boolean NOT NULL DEFAULT false, sort_order integer NOT NULL DEFAULT 100, active boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'active', notes text NOT NULL DEFAULT '', updated_at timestamptz NOT NULL DEFAULT now())`;
-  await sql`CREATE TABLE IF NOT EXISTS cms_feature_contract_rules (id text PRIMARY KEY, contract_id text NOT NULL, category_id integer, option_id integer, rule_type text NOT NULL DEFAULT 'available', auto_select boolean NOT NULL DEFAULT false, requires_document boolean NOT NULL DEFAULT false, active boolean NOT NULL DEFAULT true, notes text NOT NULL DEFAULT '', updated_at timestamptz NOT NULL DEFAULT now())`;
+  await sql`CREATE TABLE IF NOT EXISTS cms_feature_contract_rules (id text PRIMARY KEY, contract_id text NOT NULL, category_id integer, option_id integer, chassis_id text NOT NULL DEFAULT 'any', certification_id text NOT NULL DEFAULT 'any', wheelbase_id text NOT NULL DEFAULT 'any', bus_type_id text NOT NULL DEFAULT 'any', rule_type text NOT NULL DEFAULT 'available', auto_select boolean NOT NULL DEFAULT false, requires_document boolean NOT NULL DEFAULT false, active boolean NOT NULL DEFAULT true, notes text NOT NULL DEFAULT '', updated_at timestamptz NOT NULL DEFAULT now())`;
+  await sql`ALTER TABLE cms_feature_contract_rules ADD COLUMN IF NOT EXISTS chassis_id text NOT NULL DEFAULT 'any'`;
+  await sql`ALTER TABLE cms_feature_contract_rules ADD COLUMN IF NOT EXISTS certification_id text NOT NULL DEFAULT 'any'`;
+  await sql`ALTER TABLE cms_feature_contract_rules ADD COLUMN IF NOT EXISTS wheelbase_id text NOT NULL DEFAULT 'any'`;
+  await sql`ALTER TABLE cms_feature_contract_rules ADD COLUMN IF NOT EXISTS bus_type_id text NOT NULL DEFAULT 'any'`;
 }
-
-function mapCategory(row: Record<string, unknown>): FeatureCategoryRecord {
-  return { id: Number(row.category_id), title: String(row.title ?? ''), description: String(row.description ?? ''), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true), customerVisible: Boolean(row.customer_visible ?? true), status: String(row.status ?? 'active'), comments: String(row.comments ?? '') };
-}
-function mapOption(row: Record<string, unknown>): FeatureOptionRecord {
-  return { id: Number(row.option_id), categoryId: Number(row.category_id), title: String(row.title ?? ''), description: String(row.description ?? ''), imageExt: String(row.image_ext ?? ''), imageUrl: String(row.image_url ?? ''), requiresDocument: Boolean(row.requires_document ?? false), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true), status: String(row.status ?? 'active'), notes: String(row.notes ?? '') };
-}
+function mapCategory(row: Record<string, unknown>): FeatureCategoryRecord { return { id: Number(row.category_id), title: String(row.title ?? ''), description: String(row.description ?? ''), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true), customerVisible: Boolean(row.customer_visible ?? true), status: String(row.status ?? 'active'), comments: String(row.comments ?? '') }; }
+function mapOption(row: Record<string, unknown>): FeatureOptionRecord { return { id: Number(row.option_id), categoryId: Number(row.category_id), title: String(row.title ?? ''), description: String(row.description ?? ''), imageExt: String(row.image_ext ?? ''), imageUrl: String(row.image_url ?? ''), requiresDocument: Boolean(row.requires_document ?? false), sortOrder: Number(row.sort_order ?? 100), active: Boolean(row.active ?? true), status: String(row.status ?? 'active'), notes: String(row.notes ?? '') }; }
 function mapRule(row: Record<string, unknown>): FeatureContractRule {
   const ruleType = String(row.rule_type ?? 'available');
-  return { id: String(row.id), contractId: String(row.contract_id), categoryId: row.category_id === null ? null : Number(row.category_id), optionId: row.option_id === null ? null : Number(row.option_id), ruleType: ['available', 'hidden', 'required', 'recommended'].includes(ruleType) ? ruleType as FeatureContractRule['ruleType'] : 'available', autoSelect: Boolean(row.auto_select ?? false), requiresDocument: Boolean(row.requires_document ?? false), active: Boolean(row.active ?? true), notes: String(row.notes ?? '') };
+  return normalizeRule({ id: String(row.id), contractId: String(row.contract_id), categoryId: row.category_id === null ? null : Number(row.category_id), optionId: row.option_id === null ? null : Number(row.option_id), chassisId: String(row.chassis_id ?? 'any'), certificationId: String(row.certification_id ?? 'any'), wheelbaseId: String(row.wheelbase_id ?? 'any'), busTypeId: String(row.bus_type_id ?? 'any'), ruleType: ['available', 'hidden', 'required', 'recommended'].includes(ruleType) ? ruleType as FeatureContractRule['ruleType'] : 'available', autoSelect: Boolean(row.auto_select ?? false), requiresDocument: Boolean(row.requires_document ?? false), active: Boolean(row.active ?? true), notes: String(row.notes ?? '') });
 }
-function validatePayload(payload: Required<FeatureOptionsPayload>) {
-  for (const category of payload.categories) if (!category.id || !category.title) throw new Error('Every feature category requires id and title.');
-  for (const option of payload.options) if (!option.id || !option.categoryId || !option.title) throw new Error('Every feature option requires id, category, and title.');
-}
+function validatePayload(payload: Required<FeatureOptionsPayload>) { for (const category of payload.categories) if (!category.id || !category.title) throw new Error('Every feature category requires id and title.'); for (const option of payload.options) if (!option.id || !option.categoryId || !option.title) throw new Error('Every feature option requires id, category, and title.'); }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -84,43 +80,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).json({ ok: true });
   if (!process.env.DATABASE_URL) return jsonError(res, 500, 'DATABASE_URL is not configured.', { source: 'seed-fallback', ...seedFeatureOptions });
-
   try {
     const sql = neon(process.env.DATABASE_URL);
-    try {
-      await ensureSchema(sql);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to initialize feature options schema.';
-      if (req.method === 'GET') return res.status(200).json({ ok: true, source: 'schema-fallback', warning: message, ...seedFeatureOptions });
-      return jsonError(res, 500, message);
-    }
-
+    try { await ensureSchema(sql); } catch (error) { const message = error instanceof Error ? error.message : 'Unable to initialize feature options schema.'; if (req.method === 'GET') return res.status(200).json({ ok: true, source: 'schema-fallback', warning: message, ...seedFeatureOptions }); return jsonError(res, 500, message); }
     if (req.method === 'GET') {
       const categoryRows = await sql`SELECT category_id, title, description, sort_order, active, customer_visible, status, comments FROM cms_feature_categories ORDER BY sort_order, title`;
       const optionRows = await sql`SELECT option_id, category_id, title, description, image_ext, image_url, requires_document, sort_order, active, status, notes FROM cms_feature_options ORDER BY category_id, sort_order, title`;
-      const ruleRows = await sql`SELECT id, contract_id, category_id, option_id, rule_type, auto_select, requires_document, active, notes FROM cms_feature_contract_rules ORDER BY contract_id, category_id, option_id`;
+      const ruleRows = await sql`SELECT id, contract_id, category_id, option_id, chassis_id, certification_id, wheelbase_id, bus_type_id, rule_type, auto_select, requires_document, active, notes FROM cms_feature_contract_rules ORDER BY contract_id, chassis_id, wheelbase_id, bus_type_id, category_id, option_id`;
       if (categoryRows.length === 0) return res.status(200).json({ ok: true, source: 'empty-neon', ...seedFeatureOptions });
       return res.status(200).json({ ok: true, source: 'neon', categories: categoryRows.map((row) => mapCategory(row as Record<string, unknown>)), options: optionRows.map((row) => mapOption(row as Record<string, unknown>)), contractRules: ruleRows.map((row) => mapRule(row as Record<string, unknown>)) });
     }
-
     if (req.method === 'PUT') {
       const payload = getPayload(req.body);
-      const next = { categories: payload.categories ?? [], options: payload.options ?? [], contractRules: payload.contractRules ?? [] };
+      const next = { categories: payload.categories ?? [], options: payload.options ?? [], contractRules: (payload.contractRules ?? []).map((rule) => normalizeRule(rule)) };
       validatePayload(next);
-
-      await sql`DELETE FROM cms_feature_contract_rules`;
-      await sql`DELETE FROM cms_feature_options`;
-      await sql`DELETE FROM cms_feature_categories`;
-
+      await sql`DELETE FROM cms_feature_contract_rules`; await sql`DELETE FROM cms_feature_options`; await sql`DELETE FROM cms_feature_categories`;
       for (const item of next.categories) await sql`INSERT INTO cms_feature_categories (category_id, title, description, sort_order, active, customer_visible, status, comments, updated_at) VALUES (${item.id}, ${item.title}, ${item.description}, ${item.sortOrder}, ${item.active}, ${item.customerVisible ?? item.active}, ${item.status ?? (item.active ? 'active' : 'inactive')}, ${item.comments ?? ''}, now())`;
       for (const item of next.options) await sql`INSERT INTO cms_feature_options (option_id, category_id, title, description, image_ext, image_url, requires_document, sort_order, active, status, notes, updated_at) VALUES (${item.id}, ${item.categoryId}, ${item.title}, ${item.description}, ${item.imageExt ?? ''}, ${item.imageUrl ?? ''}, ${item.requiresDocument ?? false}, ${item.sortOrder}, ${item.active}, ${item.status ?? (item.active ? 'active' : 'inactive')}, ${item.notes ?? ''}, now())`;
-      for (const item of next.contractRules) await sql`INSERT INTO cms_feature_contract_rules (id, contract_id, category_id, option_id, rule_type, auto_select, requires_document, active, notes, updated_at) VALUES (${item.id}, ${item.contractId}, ${item.categoryId}, ${item.optionId}, ${item.ruleType}, ${item.autoSelect}, ${item.requiresDocument}, ${item.active}, ${item.notes}, now())`;
-
+      for (const item of next.contractRules) await sql`INSERT INTO cms_feature_contract_rules (id, contract_id, category_id, option_id, chassis_id, certification_id, wheelbase_id, bus_type_id, rule_type, auto_select, requires_document, active, notes, updated_at) VALUES (${item.id}, ${item.contractId}, ${item.categoryId}, ${item.optionId}, ${item.chassisId}, ${item.certificationId}, ${item.wheelbaseId}, ${item.busTypeId}, ${item.ruleType}, ${item.autoSelect}, ${item.requiresDocument}, ${item.active}, ${item.notes}, now())`;
       return res.status(200).json({ ok: true, source: 'neon', ...next, counts: { categories: next.categories.length, options: next.options.length, contractRules: next.contractRules.length } });
     }
-
     return jsonError(res, 405, 'Method not allowed.');
-  } catch (error) {
-    return jsonError(res, 500, error instanceof Error ? error.message : 'Feature Options CMS function failed.');
-  }
+  } catch (error) { return jsonError(res, 500, error instanceof Error ? error.message : 'Feature Options CMS function failed.'); }
 }
