@@ -1,0 +1,17 @@
+:root{
+  --ui-navy:#061b4f;
+  --ui-blue:#004cca;
+  --ui-blue-soft:#eef4ff;
+  --ui-green:#0f8a3b;
+  --ui-green-soft:#ecfdf3;
+  --ui-amber:#a16207;
+  --ui-amber-soft:#fffbeb;
+  --ui-red:#b42318;
+  --ui-red-soft:#fff1f2;
+  --ui-gray:#667085;
+  --ui-border:#d7dee8;
+  --ui-card:#ffffff;
+  --ui-page:#f4f7fb;
+  --ui-radius:14px;
+  --ui-shadow:0 12px 30px rgba(6,27,79,.10);
+}
