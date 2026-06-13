@@ -10,6 +10,7 @@ import './styles/productionPolish.css';
 import './styles/formCardPolish.css';
 import './styles/seatsOptionsPolish.css';
 import './styles/adminTablePolish.css';
+import './styles/targetedProductionPass.css';
 
 const rootElement = document.getElementById('root');
 
