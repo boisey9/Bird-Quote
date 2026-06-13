@@ -1,36 +1,37 @@
 import { useEffect, useMemo, useState } from 'react';
 import { mockRequests, statusSteps, type MockRequest } from '../../data/mockRequests';
 import { fetchRfqRequests } from '../../services/rfqApi';
+import type { PortalUser } from '../../session/sessionTypes';
 
-export function QuoteStatusPage() {
+type QuoteStatusPageProps = {
+  user: PortalUser;
+};
+
+export function QuoteStatusPage({ user }: QuoteStatusPageProps) {
   const [requests, setRequests] = useState<MockRequest[]>(mockRequests);
   const [selectedId, setSelectedId] = useState(mockRequests[0]?.id ?? '');
   const [loadStatus, setLoadStatus] = useState('Loading live RFQs...');
+  const isDealerView = user.role === 'dealer';
 
   useEffect(() => {
     let mounted = true;
-    fetchRfqRequests()
+    fetchRfqRequests(isDealerView ? { scope: 'dealer', user } : { scope: 'all', user })
       .then((items) => {
         if (!mounted) return;
         const nextRequests = items.length > 0 ? items : mockRequests;
         setRequests(nextRequests);
         setSelectedId(nextRequests[0]?.id ?? '');
-        setLoadStatus(items.length > 0 ? 'Live RFQ status loaded from Neon.' : 'No live RFQs yet. Showing sample status.');
+        setLoadStatus(items.length > 0 ? (isDealerView ? 'Live quote status loaded for your dealer account.' : 'Live RFQ status loaded from Neon.') : 'No live RFQs yet. Showing sample status.');
       })
       .catch((error) => {
         if (!mounted) return;
         const message = error instanceof Error ? error.message : 'Unable to load RFQ status.';
         setLoadStatus(`${message} Showing sample status.`);
       });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    return () => { mounted = false; };
+  }, [isDealerView, user]);
 
-  const selectedRequest = useMemo(() => {
-    return requests.find((request) => request.id === selectedId) ?? requests[0] ?? mockRequests[0];
-  }, [requests, selectedId]);
-
+  const selectedRequest = useMemo(() => requests.find((request) => request.id === selectedId) ?? requests[0] ?? mockRequests[0], [requests, selectedId]);
   const currentIndex = statusSteps.indexOf(selectedRequest.status) >= 0 ? statusSteps.indexOf(selectedRequest.status) : 0;
 
   return (
@@ -38,7 +39,7 @@ export function QuoteStatusPage() {
       <div className="pageHero">
         <div>
           <h1>Quote Status</h1>
-          <p>Follow each RFQ across dealer intake, sales review, quote creation, approval, and conversion.</p>
+          <p>{isDealerView ? 'Follow quote status for RFQs submitted by your dealer account.' : 'Follow each RFQ across dealer intake, sales review, quote creation, approval, and conversion.'}</p>
         </div>
         <select className="statusSearch" value={selectedRequest.id} onChange={(event) => setSelectedId(event.target.value)}>
           {requests.map((request) => <option key={request.id} value={request.id}>{request.id}</option>)}
