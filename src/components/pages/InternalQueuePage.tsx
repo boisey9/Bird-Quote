@@ -5,6 +5,7 @@ import { fetchRfqRequests, fetchRfqRows, updateRfqRequest, type RfqApiRow } from
 import type { PortalUser } from '../../session/sessionTypes';
 import { canMoveToStatus, getSlaPriority, getSlaStatus } from '../../utils/rfqSla';
 import { RfqDetailDrawer } from './RfqDetailDrawer';
+import './RequestTablePolish.css';
 
 const owners = ['Unassigned', 'Sales Ops', 'Jason Watson', 'Melissa Nadeau', 'Estimating Team'];
 const statuses: RequestStatus[] = ['Submitted', 'In Review', 'Assigned', 'Quote In Progress', 'Quote Sent', 'Converted to Order'];
