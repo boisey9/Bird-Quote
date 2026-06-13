@@ -1,23 +1,19 @@
 import { useState } from 'react';
-import { Clock, FileText, HelpCircle, Menu, Plus, Settings, X } from 'lucide-react';
+import { Clock, FileText, HelpCircle, LogOut, Menu, Plus, Settings, X } from 'lucide-react';
+import { permittedPagesByRole } from '../session/permissionRules';
+import type { PortalUser, UserRole } from '../session/sessionTypes';
 
 export type AppPage = 'new-quote' | 'my-requests' | 'quote-status' | 'rfq-queue' | 'admin-config' | 'confirmation';
-export type UserRole = 'dealer' | 'internal' | 'admin';
+export type { UserRole };
 
 const microBirdLogo = '/assets/micro-bird-logo.png';
 
 type HeaderProps = {
   page: AppPage;
-  role: UserRole;
+  user: PortalUser;
   onNavigate: (page: AppPage) => void;
-  onRoleChange: (role: UserRole) => void;
+  onSignOut: () => void;
   onHelp: () => void;
-};
-
-const rolePages: Record<UserRole, AppPage[]> = {
-  dealer: ['new-quote', 'my-requests', 'quote-status', 'confirmation'],
-  internal: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'confirmation'],
-  admin: ['new-quote', 'my-requests', 'quote-status', 'rfq-queue', 'admin-config', 'confirmation']
 };
 
 function pageLabel(page: AppPage) {
@@ -36,18 +32,19 @@ function pageIcon(page: AppPage) {
   return <FileText size={18} />;
 }
 
-export function Header({ page, role, onNavigate, onRoleChange, onHelp }: HeaderProps) {
+function roleLabel(role: UserRole) {
+  if (role === 'dealer') return 'Dealer';
+  if (role === 'internal') return 'Internal';
+  if (role === 'manager') return 'Manager';
+  return 'Admin';
+}
+
+export function Header({ page, user, onNavigate, onSignOut, onHelp }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const canSee = (target: AppPage) => rolePages[role].includes(target);
-  const visiblePages = rolePages[role].filter((target) => target !== 'confirmation');
+  const visiblePages = permittedPagesByRole[user.role].filter((target) => target !== 'confirmation');
 
   const navigate = (target: AppPage) => {
     onNavigate(target);
-    setMobileMenuOpen(false);
-  };
-
-  const changeRole = (nextRole: UserRole) => {
-    onRoleChange(nextRole);
     setMobileMenuOpen(false);
   };
 
@@ -58,25 +55,17 @@ export function Header({ page, role, onNavigate, onRoleChange, onHelp }: HeaderP
       </button>
 
       <nav className="tabs desktopTabs" aria-label="Primary navigation">
-        {canSee('new-quote') && <button className={page === 'new-quote' ? 'active' : ''} onClick={() => navigate('new-quote')}><Plus size={18} /> New Quote</button>}
-        {canSee('my-requests') && <button className={page === 'my-requests' ? 'active' : ''} onClick={() => navigate('my-requests')}><FileText size={18} /> My Requests</button>}
-        {canSee('quote-status') && <button className={page === 'quote-status' ? 'active' : ''} onClick={() => navigate('quote-status')}><Clock size={18} /> Quote Status</button>}
-        {canSee('rfq-queue') && <button className={page === 'rfq-queue' ? 'active' : ''} onClick={() => navigate('rfq-queue')}><FileText size={18} /> RFQ Queue</button>}
-        {canSee('admin-config') && <button className={page === 'admin-config' ? 'active' : ''} onClick={() => navigate('admin-config')}><Settings size={18} /> Config</button>}
+        {visiblePages.map((target) => <button key={target} className={page === target ? 'active' : ''} onClick={() => navigate(target)}>{pageIcon(target)} {pageLabel(target)}</button>)}
       </nav>
 
-      <div className="profile">
+      <div className="profile signedInProfile">
         <button type="button" className="iconButton" onClick={onHelp} aria-label="Open help"><HelpCircle size={22} /></button>
-        <div className="avatar">EB</div>
+        <div className="avatar">{user.initials}</div>
         <div className="profileText">
-          <strong>Erik Boisvert</strong>
-          <small>A. Girardin Inc.</small>
+          <strong>{user.name}</strong>
+          <small>{user.companyName} • {roleLabel(user.role)}</small>
         </div>
-        <select className="roleSelect" value={role} onChange={(event) => changeRole(event.target.value as UserRole)} aria-label="Select current role">
-          <option value="dealer">Dealer</option>
-          <option value="internal">Internal</option>
-          <option value="admin">Admin</option>
-        </select>
+        <button type="button" className="signOutButton" onClick={onSignOut}><LogOut size={16} /> Sign out</button>
         <button type="button" className="mobileMenuButton" onClick={() => setMobileMenuOpen((current) => !current)} aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileMenuOpen}>
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -85,20 +74,13 @@ export function Header({ page, role, onNavigate, onRoleChange, onHelp }: HeaderP
       {mobileMenuOpen && (
         <div className="mobileNavPanel">
           <nav className="mobileTabs" aria-label="Mobile navigation">
-            {visiblePages.map((target) => (
-              <button key={target} className={page === target ? 'active' : ''} type="button" onClick={() => navigate(target)}>
-                {pageIcon(target)}
-                <span>{pageLabel(target)}</span>
-              </button>
-            ))}
+            {visiblePages.map((target) => <button key={target} className={page === target ? 'active' : ''} type="button" onClick={() => navigate(target)}>{pageIcon(target)}<span>{pageLabel(target)}</span></button>)}
           </nav>
           <div className="mobileRoleBlock">
-            <span>Current view</span>
-            <select value={role} onChange={(event) => changeRole(event.target.value as UserRole)} aria-label="Select current role mobile">
-              <option value="dealer">Dealer</option>
-              <option value="internal">Internal</option>
-              <option value="admin">Admin</option>
-            </select>
+            <span>Signed in as</span>
+            <strong>{user.name}</strong>
+            <small>{user.companyName} • {roleLabel(user.role)}</small>
+            <button type="button" onClick={onSignOut}><LogOut size={16} /> Sign out</button>
           </div>
         </div>
       )}
