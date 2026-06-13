@@ -1,0 +1,105 @@
+/* Production visual polish layer: imported last on purpose. */
+:root{
+  --prod-page:#f3f6fb;
+  --prod-card:#ffffff;
+  --prod-border:#d9e3f0;
+  --prod-border-soft:#e8eef6;
+  --prod-navy:#061b4f;
+  --prod-blue:#004cca;
+  --prod-yellow:#ffc72c;
+  --prod-muted:#667085;
+  --prod-radius:16px;
+  --prod-shadow:0 12px 28px rgba(6,27,79,.075);
+  --prod-shadow-soft:0 8px 20px rgba(6,27,79,.055);
+}
+
+body{background:var(--prod-page);}
+.appShell{background:var(--prod-page);}
+
+.topbar.productionTopbar{height:76px;padding:0 28px;border-bottom:1px solid var(--prod-border);box-shadow:0 3px 14px rgba(6,27,79,.045);background:#fff;position:sticky;top:0;z-index:30;}
+.logoBrand img{width:236px;}
+.desktopTabs{height:100%;align-items:stretch;gap:2px;}
+.desktopTabs button{height:100%;padding:0 22px;border-radius:0;border:0;border-bottom:3px solid transparent;background:#fff;color:#07133f;font-weight:900;gap:9px;}
+.desktopTabs button:hover{background:#f8fbff;color:var(--prod-blue);}
+.desktopTabs button.active{background:#f8fbff;border-bottom-color:var(--prod-blue);color:var(--prod-blue);box-shadow:none;}
+.signedInProfile{gap:12px;min-width:max-content;}
+.signedInProfile .avatar{box-shadow:0 4px 12px rgba(0,76,202,.16);}
+.profileText strong{color:#07133f;}
+.profileText small{color:var(--prod-muted);}
+.iconButton{border-color:#d7e2f1;background:#f8fbff;color:var(--prod-blue);}
+
+.quoteFormLayout,.pageLayout{width:min(1500px,calc(100vw - 56px));margin:28px auto;}
+.productionQuoteLayout{grid-template-columns:minmax(0,1fr) 350px;gap:30px;align-items:start;}
+.quoteFormCard,.pageCard,.summary,.panel,.configSection{border:1px solid var(--prod-border);border-radius:var(--prod-radius);background:var(--prod-card);box-shadow:var(--prod-shadow-soft);}
+.quoteFormCard{overflow:hidden;}
+
+.hero,.pageHero{padding:26px 42px;background:linear-gradient(135deg,#071f63,#004cca);border-radius:0;color:#fff;}
+.hero h1,.pageHero h1{font-size:32px;letter-spacing:-.025em;line-height:1.15;margin-bottom:10px;}
+.hero p,.pageHero p{font-size:17px;line-height:1.45;opacity:.9;}
+.hero .help{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);border-radius:14px;padding:14px 18px;}
+.hero .help strong{font-size:16px;}
+
+.processStepper.railStepper{margin:0;border-width:0 0 1px 0;border-radius:0;background:#fff;padding:18px 24px 17px;box-shadow:none;}
+.processStepperMeta{margin-bottom:12px;}
+.processStepperMeta span{color:var(--prod-blue);}
+.processStepperMeta strong{font-size:16px;}
+.processStepMarker{width:34px;height:34px;box-shadow:0 4px 10px rgba(6,27,79,.06);}
+.processStepText strong{font-size:12.5px;}
+.processStep.active .processStepMarker{background:var(--prod-yellow);border-color:#f2b400;color:var(--prod-navy);box-shadow:0 0 0 4px rgba(255,199,44,.22),0 8px 18px rgba(6,27,79,.12);}
+.processStep.active .processStepText strong{color:var(--prod-navy);}
+
+.sectionStack,.quoteFormCard .panel{padding:20px 28px;}
+.panel{padding:22px;}
+.panel h2{color:var(--prod-navy);letter-spacing:-.015em;}
+.panel p.muted,.muted{color:var(--prod-muted);}
+input,select,textarea{border-color:var(--prod-border)!important;border-radius:10px!important;}
+input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,76,202,.14)!important;border-color:var(--prod-blue)!important;background:#fff!important;}
+.actions.productionActions{padding:18px 28px 24px;border-top:1px solid var(--prod-border-soft);background:#fbfdff;}
+.primary,.btn-primary{background:var(--prod-blue)!important;border-color:var(--prod-blue)!important;box-shadow:0 8px 18px rgba(0,76,202,.16);}
+.secondary,.btn-secondary,.btn-ghost{border-color:var(--prod-border)!important;background:#fff!important;color:var(--prod-navy)!important;}
+
+.summary.productionSummary,.summary{position:sticky;top:100px;padding:24px;border-radius:18px;box-shadow:var(--prod-shadow);}
+.summary h3{display:flex;align-items:center;justify-content:space-between;font-size:22px;letter-spacing:-.02em;color:var(--prod-navy);}
+.summary h3 button{height:38px;border-radius:12px;border:1px solid var(--prod-border);background:#f8fbff;color:var(--prod-blue);font-weight:900;}
+.summary hr{border:0;border-top:1px solid var(--prod-border-soft);margin:18px 0 14px;}
+.summary small{color:#5a6b87;font-weight:900;letter-spacing:.045em;}
+.summary span{color:var(--prod-muted);font-size:13px;}
+.summary strong{color:#07133f;line-height:1.3;}
+.summaryBus{border-radius:12px!important;border:1px solid #e6edf7;background:linear-gradient(135deg,var(--prod-yellow) 0 32%,#eef2f7 32% 100%)!important;height:92px!important;}
+.weightEstimateCard{border-radius:14px;padding:14px;}
+.progress{border-radius:14px;background:#f8fbff;border:1px solid var(--prod-border-soft);padding:12px;}
+
+.kpiGrid{gap:14px;}
+.kpiGrid div{box-shadow:var(--prod-shadow-soft);border-color:var(--prod-border);}
+.requestTable{border-color:var(--prod-border);box-shadow:var(--prod-shadow-soft);}
+.requestHead{background:#f8fbff;color:#344054;}
+.requestRow{min-height:62px;}
+.requestRow:hover{background:#f7fbff;}
+.statusBadge{box-shadow:0 3px 9px rgba(6,27,79,.04);}
+.emptyStateCard{box-shadow:var(--prod-shadow-soft);}
+
+.cmsConfigNav button{border-color:var(--prod-border);box-shadow:var(--prod-shadow-soft);}
+.cmsConfigNav button.active{border-color:var(--prod-blue);box-shadow:0 0 0 3px rgba(0,76,202,.10);}
+.configNotice{border-color:#f4cf70;background:#fff9e6;}
+.adminExcelHub{border-color:var(--prod-border);background:#fff;}
+.featureGrid input,.featureGrid select,.floorPlanTableGrid input,.floorPlanTableGrid select{min-height:38px;}
+.featureEditorTable,.floorPlanTable,.contractEditorList button:not(.btn),.floorPlanList button:not(.btn){border-color:var(--prod-border);}
+.featureGrid.head,.floorPlanTableGrid .head{background:#f8fbff;}
+
+@media(max-width:1180px){
+  .quoteFormLayout,.pageLayout{width:calc(100vw - 32px);margin:18px auto;}
+  .productionQuoteLayout{grid-template-columns:1fr;}
+  .summary.productionSummary,.summary{position:static;}
+  .topbar.productionTopbar{height:auto;padding:14px 18px;}
+}
+
+@media(max-width:700px){
+  .quoteFormLayout,.pageLayout{width:100%;margin:0;}
+  .quoteFormCard,.pageCard{border-radius:0;border-left:0;border-right:0;}
+  .hero,.pageHero{padding:22px 18px;}
+  .hero h1,.pageHero h1{font-size:26px;}
+  .processStepper.railStepper{padding:14px 16px;}
+  .panel{padding:16px;}
+  .actions.productionActions{padding:14px 16px 18px;}
+  .summary{border-radius:0;}
+}
